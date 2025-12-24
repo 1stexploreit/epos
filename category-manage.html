@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Category Management - FreshMart POS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    *{font-family:'Inter',sans-serif;box-sizing:border-box}
+    body{background:#f8fafc;min-height:100vh}
+    .card{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 1px 2px rgba(0,0,0,0.06)}
+    .input{background:#fff;border:1.5px solid #e2e8f0;border-radius:8px;transition:all 0.15s}
+    .input:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+    .btn-primary{background:#10b981;color:#fff;font-weight:500;transition:all 0.15s}
+    .btn-primary:hover{background:#059669}
+    .btn-secondary{background:#f1f5f9;color:#475569;font-weight:500;transition:all 0.15s}
+    .btn-secondary:hover{background:#e2e8f0}
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-track{background:#f1f5f9}
+    ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+    .row-hover:hover{background:#f8fafc}
+    .emoji-btn{transition:all 0.12s}
+    .emoji-btn:hover{transform:scale(1.15)}
+    .emoji-btn.selected{background:#d1fae5;border-color:#10b981}
+    .fade-in{animation:fadeIn 0.2s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+    .tab-active{border-bottom:2px solid #10b981;color:#10b981}
+  </style>
+</head>
+<body class="text-slate-700">
+  
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button onclick="window.history.back()" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <div>
+            <h1 class="text-lg font-semibold text-slate-800">Category Management</h1>
+            <p class="text-xs text-slate-400">Manage product categories</p>
+          </div>
+        </div>
+        <button onclick="openAddModal()" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Add Category
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto p-4">
+    
+    <!-- Stats -->
+    <div class="grid grid-cols-4 gap-4 mb-5">
+      <div class="card px-4 py-3 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-lg">📁</div>
+        <div>
+          <p class="text-xl font-bold text-slate-800" id="totalCategories">0</p>
+          <p class="text-xs text-slate-400">Categories</p>
+        </div>
+      </div>
+      <div class="card px-4 py-3 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-lg">✅</div>
+        <div>
+          <p class="text-xl font-bold text-blue-600" id="activeCategories">0</p>
+          <p class="text-xs text-slate-400">Active</p>
+        </div>
+      </div>
+      <div class="card px-4 py-3 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-lg">🏷️</div>
+        <div>
+          <p class="text-xl font-bold text-purple-600" id="totalSubcategories">0</p>
+          <p class="text-xs text-slate-400">Subcategories</p>
+        </div>
+      </div>
+      <div class="card px-4 py-3 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-lg">📦</div>
+        <div>
+          <p class="text-xl font-bold text-amber-600" id="totalProducts">0</p>
+          <p class="text-xs text-slate-400">Products</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="card p-3 mb-4 flex items-center gap-3">
+      <div class="flex items-center gap-2 flex-1 bg-slate-50 rounded-lg px-3 py-2">
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="Search categories..." class="bg-transparent border-0 text-sm w-full focus:outline-none" oninput="filterCategories()">
+      </div>
+      <select id="statusFilter" onchange="filterCategories()" class="input px-3 py-2 text-sm">
+        <option value="">All Status</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+      <button onclick="resetFilters()" class="text-sm text-slate-500 hover:text-slate-700 px-2">Reset</button>
+    </div>
+
+    <!-- Table -->
+    <div class="card overflow-hidden">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-100">
+            <th class="text-left p-4 text-xs font-semibold text-slate-500 uppercase w-12"></th>
+            <th class="text-left p-4 text-xs font-semibold text-slate-500 uppercase">Category</th>
+            <th class="text-left p-4 text-xs font-semibold text-slate-500 uppercase">Subcategories</th>
+            <th class="text-center p-4 text-xs font-semibold text-slate-500 uppercase w-24">Products</th>
+            <th class="text-center p-4 text-xs font-semibold text-slate-500 uppercase w-24">Status</th>
+            <th class="text-center p-4 text-xs font-semibold text-slate-500 uppercase w-28">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="categoriesBody"></tbody>
+      </table>
+      <div id="emptyState" class="hidden py-12 text-center">
+        <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">📂</div>
+        <p class="text-slate-500 text-sm">No categories found</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add/Edit Modal -->
+  <div id="categoryModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
+    <div class="card w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
+      <!-- Modal Tabs -->
+      <div class="flex border-b border-slate-100">
+        <button onclick="switchModalTab('single')" id="tabSingle" class="flex-1 py-3 text-sm font-medium text-center tab-active">Single Category</button>
+        <button onclick="switchModalTab('multi')" id="tabMulti" class="flex-1 py-3 text-sm font-medium text-center text-slate-500 hover:text-slate-700">Quick Multi-Add</button>
+      </div>
+
+      <!-- Single Category Form -->
+      <div id="singleForm" class="p-5 overflow-y-auto flex-1">
+        <div class="space-y-4">
+          <!-- Icon & Name Row -->
+          <div class="flex gap-3">
+            <div>
+              <label class="text-xs font-medium text-slate-500 mb-1.5 block">Icon</label>
+              <button onclick="toggleEmojiPicker()" id="emojiBtn" class="w-12 h-12 border-2 border-slate-200 rounded-lg text-2xl flex items-center justify-center hover:border-emerald-400 transition">📦</button>
+              <input type="hidden" id="categoryEmoji" value="📦">
+            </div>
+            <div class="flex-1">
+              <label class="text-xs font-medium text-slate-500 mb-1.5 block">Category Name *</label>
+              <input type="text" id="categoryName" class="input w-full px-3 py-2.5 text-sm">
+            </div>
+          </div>
+
+          <!-- Emoji Picker -->
+          <div id="emojiPicker" class="hidden bg-slate-50 rounded-lg p-3">
+            <div class="grid grid-cols-12 gap-1.5 max-h-28 overflow-y-auto" id="emojiGrid"></div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label class="text-xs font-medium text-slate-500 mb-1.5 block">Description</label>
+            <input type="text" id="categoryDesc" class="input w-full px-3 py-2.5 text-sm" placeholder="Optional description">
+          </div>
+
+          <!-- Status -->
+          <div>
+            <label class="text-xs font-medium text-slate-500 mb-1.5 block">Status</label>
+            <div class="flex gap-4">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="catStatus" value="active" checked class="w-4 h-4 accent-emerald-500">
+                <span class="text-sm">Active</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="catStatus" value="inactive" class="w-4 h-4 accent-emerald-500">
+                <span class="text-sm">Inactive</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Subcategories -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-medium text-slate-500">Subcategories</label>
+              <button onclick="addSubcategory()" class="text-xs text-emerald-600 hover:text-emerald-700 font-medium">+ Add</button>
+            </div>
+            <div id="subcategoriesList" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Multi-Add Form -->
+      <div id="multiForm" class="p-5 overflow-y-auto flex-1 hidden">
+        <p class="text-xs text-slate-500 mb-3">Add multiple categories at once. Each row creates a new category.</p>
+        
+        <!-- Header -->
+        <div class="grid grid-cols-12 gap-2 px-2 py-2 bg-slate-50 rounded-lg mb-2 text-[10px] font-semibold text-slate-500 uppercase">
+          <div class="col-span-1">Icon</div>
+          <div class="col-span-4">Name *</div>
+          <div class="col-span-5">Subcategories (comma separated)</div>
+          <div class="col-span-1">Status</div>
+          <div class="col-span-1"></div>
+        </div>
+
+        <!-- Rows -->
+        <div id="multiCategoryRows" class="space-y-2 max-h-64 overflow-y-auto mb-3"></div>
+
+        <button onclick="addMultiRow()" class="w-full py-2.5 border-2 border-dashed border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 rounded-lg text-sm text-slate-500 hover:text-emerald-600 transition">
+          + Add Row
+        </button>
+      </div>
+
+      <!-- Footer -->
+      <div class="p-4 border-t border-slate-100 flex gap-3">
+        <button onclick="closeModal()" class="flex-1 btn-secondary py-2.5 rounded-lg text-sm">Cancel</button>
+        <button onclick="saveCategory()" id="saveBtn" class="flex-1 btn-primary py-2.5 rounded-lg text-sm">Save Category</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div id="deleteModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
+    <div class="card p-6 w-full max-w-sm text-center">
+      <div class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+      <h3 class="text-lg font-semibold text-slate-800 mb-1">Delete Category?</h3>
+      <p class="text-sm text-slate-500 mb-4" id="deleteWarning">This action cannot be undone.</p>
+      <div class="flex gap-3">
+        <button onclick="closeDeleteModal()" class="flex-1 btn-secondary py-2.5 rounded-lg text-sm">Cancel</button>
+        <button onclick="confirmDelete()" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg text-sm font-medium">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var emojis=['📦','🍎','🍌','🍊','🥬','🥦','🥕','🥛','🧀','🍞','🥐','🥤','🧃','☕','🍿','🍪','🧹','🧴','💊','👕','👖','📱','💻','🎮','📚','🏠','🚗','⚽','🎵','💄','👟','🍕','🍔','🍣','🥗','🍰','🎁','💎','🔧','🌸'];
+
+    var categories=[
+      {id:1,name:'Fruits',emoji:'🍎',description:'Fresh fruits',status:'active',subcategories:['Citrus','Berries','Tropical'],products:45},
+      {id:2,name:'Vegetables',emoji:'🥬',description:'Fresh vegetables',status:'active',subcategories:['Leafy Greens','Root','Cruciferous'],products:38},
+      {id:3,name:'Dairy',emoji:'🥛',description:'Milk and dairy',status:'active',subcategories:['Milk','Cheese','Yogurt'],products:24},
+      {id:4,name:'Bakery',emoji:'🍞',description:'Baked goods',status:'active',subcategories:['Bread','Pastries','Cakes'],products:32},
+      {id:5,name:'Beverages',emoji:'🥤',description:'Drinks',status:'active',subcategories:['Soft Drinks','Juices','Water'],products:56},
+      {id:6,name:'Snacks',emoji:'🍿',description:'Chips and snacks',status:'active',subcategories:['Chips','Cookies','Nuts'],products:67},
+      {id:7,name:'Household',emoji:'🧹',description:'Cleaning items',status:'inactive',subcategories:['Cleaning','Paper','Laundry'],products:28}
+    ];
+
+    var editingId=null,deleteId=null,tempSubcategories=[],currentTab='single';
+    var multiRows=[{id:1,emoji:'📦',name:'',subcategories:'',status:'active'}];
+    var multiIdCounter=1;
+
+    function updateSummary(){
+      document.getElementById('totalCategories').textContent=categories.length;
+      document.getElementById('activeCategories').textContent=categories.filter(c=>c.status==='active').length;
+      document.getElementById('totalSubcategories').textContent=categories.reduce((s,c)=>s+c.subcategories.length,0);
+      document.getElementById('totalProducts').textContent=categories.reduce((s,c)=>s+c.products,0);
+    }
+
+    function filterCategories(){renderCategories()}
+
+    function getFiltered(){
+      var search=document.getElementById('searchInput').value.toLowerCase();
+      var status=document.getElementById('statusFilter').value;
+      return categories.filter(c=>{
+        if(search&&c.name.toLowerCase().indexOf(search)===-1)return false;
+        if(status&&c.status!==status)return false;
+        return true;
+      });
+    }
+
+    function renderCategories(){
+      var filtered=getFiltered();
+      var tbody=document.getElementById('categoriesBody');
+      var html='';
+
+      for(var i=0;i<filtered.length;i++){
+        var c=filtered[i];
+        html+='<tr class="border-b border-slate-50 row-hover">';
+        html+='<td class="p-4"><span class="text-xl">'+c.emoji+'</span></td>';
+        html+='<td class="p-4"><p class="font-medium text-slate-800">'+c.name+'</p>';
+        if(c.description)html+='<p class="text-xs text-slate-400">'+c.description+'</p>';
+        html+='</td>';
+        html+='<td class="p-4"><div class="flex flex-wrap gap-1">';
+        for(var j=0;j<Math.min(c.subcategories.length,3);j++){
+          html+='<span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">'+c.subcategories[j]+'</span>';
+        }
+        if(c.subcategories.length>3)html+='<span class="px-2 py-0.5 bg-slate-100 text-slate-400 rounded text-xs">+'+(c.subcategories.length-3)+'</span>';
+        if(c.subcategories.length===0)html+='<span class="text-xs text-slate-300">—</span>';
+        html+='</div></td>';
+        html+='<td class="p-4 text-center"><span class="text-sm font-medium text-slate-600">'+c.products+'</span></td>';
+        html+='<td class="p-4 text-center"><span class="px-2 py-1 rounded-full text-xs font-medium '+(c.status==='active'?'bg-emerald-50 text-emerald-600':'bg-slate-100 text-slate-500')+'">'+(c.status==='active'?'Active':'Inactive')+'</span></td>';
+        html+='<td class="p-4 text-center"><div class="flex items-center justify-center gap-1">';
+        html+='<button onclick="editCategory('+c.id+')" class="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>';
+        html+='<button onclick="deleteCategory('+c.id+')" class="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>';
+        html+='</div></td></tr>';
+      }
+
+      tbody.innerHTML=html;
+      document.getElementById('emptyState').classList.toggle('hidden',filtered.length>0);
+      document.querySelector('table').classList.toggle('hidden',filtered.length===0);
+      updateSummary();
+    }
+
+    function resetFilters(){
+      document.getElementById('searchInput').value='';
+      document.getElementById('statusFilter').value='';
+      filterCategories();
+    }
+
+    function switchModalTab(tab){
+      currentTab=tab;
+      document.getElementById('singleForm').classList.toggle('hidden',tab!=='single');
+      document.getElementById('multiForm').classList.toggle('hidden',tab!=='multi');
+      document.getElementById('tabSingle').classList.toggle('tab-active',tab==='single');
+      document.getElementById('tabMulti').classList.toggle('tab-active',tab==='multi');
+      document.getElementById('tabSingle').classList.toggle('text-slate-500',tab!=='single');
+      document.getElementById('tabMulti').classList.toggle('text-slate-500',tab!=='multi');
+      document.getElementById('saveBtn').textContent=tab==='single'?(editingId?'Update Category':'Save Category'):'Save All Categories';
+      if(tab==='multi')renderMultiRows();
+    }
+
+    function toggleEmojiPicker(){
+      var picker=document.getElementById('emojiPicker');
+      picker.classList.toggle('hidden');
+      if(!picker.classList.contains('hidden'))renderEmojiGrid();
+    }
+
+    function renderEmojiGrid(){
+      var selected=document.getElementById('categoryEmoji').value;
+      var html='';
+      for(var i=0;i<emojis.length;i++){
+        html+='<button type="button" onclick="selectEmoji(\''+emojis[i]+'\')" class="emoji-btn w-7 h-7 text-base rounded border border-slate-200 flex items-center justify-center '+(emojis[i]===selected?'selected':'')+'">'+emojis[i]+'</button>';
+      }
+      document.getElementById('emojiGrid').innerHTML=html;
+    }
+
+    function selectEmoji(e){
+      document.getElementById('categoryEmoji').value=e;
+      document.getElementById('emojiBtn').textContent=e;
+      document.getElementById('emojiPicker').classList.add('hidden');
+    }
+
+    function renderSubcategories(){
+      var html='';
+      if(tempSubcategories.length===0){
+        html='<p class="text-xs text-slate-300 py-2">No subcategories</p>';
+      }else{
+        for(var i=0;i<tempSubcategories.length;i++){
+          html+='<div class="fade-in flex items-center gap-2"><input type="text" value="'+tempSubcategories[i]+'" onchange="tempSubcategories['+i+']=this.value" class="input flex-1 px-3 py-2 text-sm"><button onclick="tempSubcategories.splice('+i+',1);renderSubcategories()" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button></div>';
+        }
+      }
+      document.getElementById('subcategoriesList').innerHTML=html;
+    }
+
+    function addSubcategory(){
+      tempSubcategories.push('');
+      renderSubcategories();
+      var inputs=document.querySelectorAll('#subcategoriesList input');
+      if(inputs.length)inputs[inputs.length-1].focus();
+    }
+
+    // Multi-Add Functions
+    function renderMultiRows(){
+      var html='';
+      for(var i=0;i<multiRows.length;i++){
+        var r=multiRows[i];
+        html+='<div class="fade-in grid grid-cols-12 gap-2 items-center">';
+        html+='<div class="col-span-1"><button onclick="openMultiEmoji('+r.id+')" class="w-9 h-9 border border-slate-200 rounded-lg text-lg flex items-center justify-center hover:border-emerald-400">'+r.emoji+'</button></div>';
+        html+='<div class="col-span-4"><input type="text" value="'+r.name+'" onchange="updateMultiRow('+r.id+',\'name\',this.value)" class="input w-full px-2 py-2 text-sm"></div>';
+        html+='<div class="col-span-5"><input type="text" value="'+r.subcategories+'" onchange="updateMultiRow('+r.id+',\'subcategories\',this.value)" class="input w-full px-2 py-2 text-sm" placeholder="e.g., Sub1, Sub2, Sub3"></div>';
+        html+='<div class="col-span-1 text-center"><button onclick="toggleMultiStatus('+r.id+')" class="w-8 h-8 rounded-lg text-xs '+(r.status==='active'?'bg-emerald-50 text-emerald-600':'bg-slate-100 text-slate-400')+'">'+(r.status==='active'?'✓':'−')+'</button></div>';
+        html+='<div class="col-span-1 text-center">';
+        if(multiRows.length>1)html+='<button onclick="removeMultiRow('+r.id+')" class="p-1.5 text-slate-400 hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>';
+        html+='</div></div>';
+      }
+      document.getElementById('multiCategoryRows').innerHTML=html;
+    }
+
+    function addMultiRow(){
+      multiIdCounter++;
+      multiRows.push({id:multiIdCounter,emoji:'📦',name:'',subcategories:'',status:'active'});
+      renderMultiRows();
+    }
+
+    function removeMultiRow(id){
+      multiRows=multiRows.filter(r=>r.id!==id);
+      renderMultiRows();
+    }
+
+    function updateMultiRow(id,field,value){
+      var r=multiRows.find(r=>r.id===id);
+      if(r)r[field]=value;
+    }
+
+    function toggleMultiStatus(id){
+      var r=multiRows.find(r=>r.id===id);
+      if(r)r.status=r.status==='active'?'inactive':'active';
+      renderMultiRows();
+    }
+
+    function openMultiEmoji(id){
+      var popup=document.getElementById('multiEmojiPopup');
+      if(popup)popup.remove();
+      var p=document.createElement('div');
+      p.id='multiEmojiPopup';
+      p.className='fixed inset-0 z-[60] flex items-center justify-center bg-black/20';
+      p.onclick=function(e){if(e.target===p)p.remove()};
+      var html='<div class="card p-4 w-72"><p class="text-xs font-medium text-slate-500 mb-2">Select Icon</p><div class="grid grid-cols-10 gap-1.5 max-h-40 overflow-y-auto">';
+      for(var i=0;i<emojis.length;i++){
+        html+='<button onclick="setMultiEmoji('+id+',\''+emojis[i]+'\')" class="w-6 h-6 text-sm rounded border border-slate-200 hover:bg-emerald-50 hover:border-emerald-400 flex items-center justify-center">'+emojis[i]+'</button>';
+      }
+      html+='</div></div>';
+      p.innerHTML=html;
+      document.body.appendChild(p);
+    }
+
+    function setMultiEmoji(id,emoji){
+      var r=multiRows.find(r=>r.id===id);
+      if(r)r.emoji=emoji;
+      renderMultiRows();
+      var popup=document.getElementById('multiEmojiPopup');
+      if(popup)popup.remove();
+    }
+
+    function openAddModal(){
+      editingId=null;
+      currentTab='single';
+      document.getElementById('categoryName').value='';
+      document.getElementById('categoryDesc').value='';
+      document.getElementById('categoryEmoji').value='📦';
+      document.getElementById('emojiBtn').textContent='📦';
+      document.querySelector('input[name="catStatus"][value="active"]').checked=true;
+      tempSubcategories=[];
+      multiRows=[{id:1,emoji:'📦',name:'',subcategories:'',status:'active'}];
+      multiIdCounter=1;
+      renderSubcategories();
+      switchModalTab('single');
+      document.getElementById('emojiPicker').classList.add('hidden');
+      document.getElementById('tabMulti').classList.remove('hidden');
+      document.getElementById('categoryModal').classList.remove('hidden');
+    }
+
+    function editCategory(id){
+      var c=categories.find(x=>x.id===id);
+      if(!c)return;
+      editingId=id;
+      currentTab='single';
+      document.getElementById('categoryName').value=c.name;
+      document.getElementById('categoryDesc').value=c.description||'';
+      document.getElementById('categoryEmoji').value=c.emoji;
+      document.getElementById('emojiBtn').textContent=c.emoji;
+      document.querySelector('input[name="catStatus"][value="'+c.status+'"]').checked=true;
+      tempSubcategories=c.subcategories.slice();
+      renderSubcategories();
+      switchModalTab('single');
+      document.getElementById('emojiPicker').classList.add('hidden');
+      document.getElementById('tabMulti').classList.add('hidden');
+      document.getElementById('categoryModal').classList.remove('hidden');
+    }
+
+    function closeModal(){
+      document.getElementById('categoryModal').classList.add('hidden');
+      editingId=null;
+    }
+
+    function saveCategory(){
+      if(currentTab==='single'){
+        var name=document.getElementById('categoryName').value.trim();
+        if(!name){alert('Enter category name');return}
+        var emoji=document.getElementById('categoryEmoji').value;
+        var desc=document.getElementById('categoryDesc').value.trim();
+        var status=document.querySelector('input[name="catStatus"]:checked').value;
+        var subs=tempSubcategories.filter(s=>s.trim()!=='');
+
+        if(editingId){
+          var c=categories.find(x=>x.id===editingId);
+          if(c){c.name=name;c.emoji=emoji;c.description=desc;c.status=status;c.subcategories=subs}
+        }else{
+          var newId=Math.max(...categories.map(c=>c.id))+1;
+          categories.push({id:newId,name:name,emoji:emoji,description:desc,status:status,subcategories:subs,products:0});
+        }
+      }else{
+        var valid=multiRows.filter(r=>r.name.trim()!=='');
+        if(!valid.length){alert('Enter at least one category name');return}
+        for(var i=0;i<valid.length;i++){
+          var r=valid[i];
+          var newId=Math.max(...categories.map(c=>c.id))+1;
+          var subs=r.subcategories.split(',').map(s=>s.trim()).filter(s=>s!=='');
+          categories.push({id:newId,name:r.name.trim(),emoji:r.emoji,description:'',status:r.status,subcategories:subs,products:0});
+        }
+      }
+      closeModal();
+      renderCategories();
+    }
+
+    function deleteCategory(id){
+      var c=categories.find(x=>x.id===id);
+      if(!c)return;
+      deleteId=id;
+      document.getElementById('deleteWarning').textContent=c.products>0?'⚠️ '+c.products+' products will be unassigned.':'This action cannot be undone.';
+      document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal(){
+      document.getElementById('deleteModal').classList.add('hidden');
+      deleteId=null;
+    }
+
+    function confirmDelete(){
+      if(deleteId){
+        categories=categories.filter(c=>c.id!==deleteId);
+        renderCategories();
+      }
+      closeDeleteModal();
+    }
+
+    renderCategories();
+  </script>
+</body>
+</html>

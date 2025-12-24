@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salary Management - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.animate-modal{animation:slideIn 0.2s ease-out}
+.toast{animation:fadeIn 0.3s ease-out}
+@media print{.no-print{display:none!important}.print-header{display:block!important}}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Header -->
+<div class="bg-white border-b border-slate-200 no-print">
+<div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-slate-800 font-semibold">Salary Management</h1>
+<p class="text-xs text-slate-400">Manage employee salaries and payments</p>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="openPaymentModal()" class="px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm hover:shadow flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>Payment
+</button>
+</div>
+</div>
+</div>
+
+<main class="max-w-7xl mx-auto px-6 py-5 space-y-4">
+
+<!-- Monthly Summary Box -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-semibold text-slate-800">Monthly Summary</h2>
+<div class="flex items-center gap-2">
+<select id="selMonth" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50" onchange="render()"></select>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
+<div class="bg-slate-50 rounded-lg p-3">
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium mb-1">Base Salary</p>
+<p class="text-lg font-bold text-slate-700" id="sumSalary">৳0</p>
+</div>
+<div class="bg-emerald-50 rounded-lg p-3">
+<p class="text-[10px] text-emerald-600 uppercase tracking-wider font-medium mb-1">+ Bonus</p>
+<p class="text-lg font-bold text-emerald-600" id="sumBonus">৳0</p>
+</div>
+<div class="bg-orange-50 rounded-lg p-3">
+<p class="text-[10px] text-orange-500 uppercase tracking-wider font-medium mb-1">- Absent Ded.</p>
+<p class="text-lg font-bold text-orange-500" id="sumAbsentDed">৳0</p>
+</div>
+<div class="bg-amber-50 rounded-lg p-3">
+<p class="text-[10px] text-amber-600 uppercase tracking-wider font-medium mb-1">- Advance</p>
+<p class="text-lg font-bold text-amber-600" id="sumAdvance">৳0</p>
+</div>
+<div class="bg-slate-800 rounded-lg p-3 col-span-2">
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium mb-1">= Net Payable</p>
+<p class="text-lg font-bold text-white" id="sumPayable">৳0</p>
+</div>
+</div>
+<div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
+<div class="flex items-center gap-4">
+<span class="text-slate-500">Employees: <strong class="text-slate-700" id="sumEmpCount">0</strong></span>
+<span class="text-slate-300">|</span>
+<span class="text-slate-500">Absent: <strong class="text-slate-700" id="sumAbsentDays">0</strong> days</span>
+<span class="text-slate-300">|</span>
+<span class="text-slate-500">Paid: <strong class="text-emerald-600" id="sumPaidCount">0</strong></span>
+<span class="text-slate-300">|</span>
+<span class="text-slate-500">Pending: <strong class="text-amber-600" id="sumPendingCount">0</strong></span>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="openFullSheet()" class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center gap-1.5">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Full Sheet
+</button>
+<button onclick="openEmpSheetModal()" class="px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg flex items-center gap-1.5">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>Employee Sheet
+</button>
+</div>
+</div>
+</div>
+
+<!-- Salary Table -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 no-print">
+<div class="flex items-center gap-3">
+<h2 class="font-semibold text-slate-700 text-sm">Salary Sheet</h2>
+<span class="text-xs text-slate-400" id="sheetMonth">December 2024</span>
+</div>
+<div class="relative">
+<svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<input type="text" id="search" placeholder="Search..." class="pl-9 pr-4 py-1.5 border border-slate-200 rounded-lg text-xs w-48" oninput="render()">
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full">
+<thead class="bg-slate-50 border-b border-slate-200">
+<tr class="text-[10px] text-slate-500 uppercase tracking-wider">
+<th class="px-4 py-3 text-left font-semibold">#</th>
+<th class="px-4 py-3 text-left font-semibold">Employee</th>
+<th class="px-4 py-3 text-right font-semibold">Salary</th>
+<th class="px-4 py-3 text-right font-semibold">Bonus</th>
+<th class="px-4 py-3 text-center font-semibold">Absent</th>
+<th class="px-4 py-3 text-right font-semibold">Absent Ded.</th>
+<th class="px-4 py-3 text-right font-semibold">Advance</th>
+<th class="px-4 py-3 text-right font-semibold">Payable</th>
+<th class="px-4 py-3 text-center font-semibold">Status</th>
+<th class="px-4 py-3 text-right font-semibold no-print">Actions</th>
+</tr>
+</thead>
+<tbody id="tableBody" class="divide-y divide-slate-100 text-[13px]"></tbody>
+<tfoot class="bg-slate-50 border-t-2 border-slate-200 font-semibold text-sm">
+<tr>
+<td class="px-4 py-3" colspan="2">Total</td>
+<td class="px-4 py-3 text-right text-slate-700" id="footSalary">৳0</td>
+<td class="px-4 py-3 text-right text-emerald-600" id="footBonus">৳0</td>
+<td class="px-4 py-3 text-center text-slate-600" id="footAbsent">0</td>
+<td class="px-4 py-3 text-right text-orange-500" id="footAbsentDed">৳0</td>
+<td class="px-4 py-3 text-right text-amber-600" id="footAdvance">৳0</td>
+<td class="px-4 py-3 text-right text-slate-800" id="footPayable">৳0</td>
+<td class="px-4 py-3"></td>
+<td class="px-4 py-3 no-print"></td>
+</tr>
+</tfoot>
+</table>
+</div>
+<div id="emptyState" class="p-12 text-center" style="display:none">
+<div class="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
+<svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+</div>
+<p class="text-slate-600 font-medium">No employees found</p>
+</div>
+</div>
+</main>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2 toast" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Saved</span>
+</div>
+
+<!-- Payment Modal (All Employees) -->
+<div id="paymentModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closePaymentModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden animate-modal">
+<div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+<div>
+<h2 class="font-semibold text-slate-800">Salary Payment</h2>
+<p class="text-xs text-slate-400" id="paymentMonth"></p>
+</div>
+<button onclick="closePaymentModal()" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+<div class="p-6 overflow-y-auto max-h-[60vh]">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<input type="checkbox" id="selectAll" class="w-4 h-4 rounded border-slate-300 text-emerald-600" onchange="toggleSelectAll()">
+<label for="selectAll" class="text-sm text-slate-600 font-medium">Select All Pending</label>
+</div>
+<p class="text-sm text-slate-500">Selected: <strong class="text-emerald-600" id="selectedCount">0</strong> | Total: <strong id="selectedTotal">৳0</strong></p>
+</div>
+<div class="space-y-2" id="paymentList"></div>
+</div>
+<div class="px-6 py-4 border-t border-slate-200 flex items-center justify-between bg-slate-50">
+<div class="text-sm text-slate-500">
+<span>Payment Date:</span>
+<input type="date" id="paymentDate" class="ml-2 px-3 py-1.5 border border-slate-200 rounded-lg text-sm">
+</div>
+<div class="flex gap-3">
+<button onclick="closePaymentModal()" class="px-5 py-2.5 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="processPayment()" class="px-5 py-2.5 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm">Mark as Paid</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Salary Entry Modal -->
+<div id="salaryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeSalaryModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg animate-modal">
+<div class="px-6 py-4 border-b border-slate-200">
+<h2 class="font-semibold text-slate-800">Edit Salary - <span id="salaryEmpName"></span></h2>
+<p class="text-xs text-slate-400 mt-0.5" id="salaryMonth"></p>
+</div>
+<div class="p-6 space-y-4">
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-slate-50 rounded-lg p-3">
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Base Salary</p>
+<p class="text-lg font-bold text-slate-800" id="dispBaseSalary">৳0</p>
+</div>
+<div class="bg-slate-50 rounded-lg p-3">
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Per Day Rate</p>
+<p class="text-lg font-bold text-slate-800" id="dispDayRate">৳0</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Bonus</label><input type="number" id="inpBonus" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="0" oninput="calcPayable()"></div>
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Absent Days</label><input type="number" id="inpAbsent" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="0" oninput="calcPayable()"></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Absent Deduction</label><input type="number" id="inpAbsentDed" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50" readonly></div>
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Advance Received</label><input type="number" id="inpAdvance" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="0" oninput="calcPayable()"></div>
+</div>
+<div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg p-4 text-white">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Net Payable</p>
+<p class="text-2xl font-bold mt-1" id="dispPayable">৳0</p>
+</div>
+<div class="text-right text-xs text-slate-400">
+<p>Salary + Bonus</p>
+<p>- Absent Ded. - Advance</p>
+</div>
+</div>
+</div>
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Status</label>
+<select id="inpStatus" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm">
+<option value="Pending">Pending</option>
+<option value="Paid">Paid</option>
+</select></div>
+</div>
+<div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50">
+<button onclick="closeSalaryModal()" class="px-5 py-2.5 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="saveSalary()" class="px-5 py-2.5 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm">Save</button>
+</div>
+</div>
+</div>
+
+<!-- Employee Sheet Selection Modal -->
+<div id="empSheetModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeEmpSheetModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md animate-modal">
+<div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+<h2 class="font-semibold text-slate-800">Select Employee</h2>
+<button onclick="closeEmpSheetModal()" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+<div class="p-4 max-h-[60vh] overflow-y-auto">
+<div class="space-y-2" id="empSheetList"></div>
+</div>
+</div>
+</div>
+
+<!-- Full Salary Sheet Modal (Print View) -->
+<div id="fullSheetModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeFullSheet()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden animate-modal">
+<div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between no-print">
+<h2 class="font-semibold text-slate-800">Full Salary Sheet</h2>
+<div class="flex items-center gap-2">
+<button onclick="printFullSheet()" class="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>Print
+</button>
+<button onclick="closeFullSheet()" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+</div>
+<div class="p-6 overflow-auto max-h-[75vh]" id="fullSheetContent"></div>
+</div>
+</div>
+
+<!-- Individual Employee Sheet Modal -->
+<div id="indSheetModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeIndSheet()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden animate-modal">
+<div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between no-print">
+<h2 class="font-semibold text-slate-800">Employee Salary Sheet</h2>
+<div class="flex items-center gap-2">
+<button onclick="printIndSheet()" class="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>Print
+</button>
+<button onclick="closeIndSheet()" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+</div>
+<div class="p-6 overflow-auto max-h-[75vh]" id="indSheetContent"></div>
+</div>
+</div>
+
+<script>
+const fmt=n=>'৳'+n.toLocaleString('en-BD');
+const WORK_DAYS=26;
+let employees=[
+{id:1,name:"Rahim Ahmed",position:"Manager",phone:"+880 1711 111111",salary:25000,workDays:26},
+{id:2,name:"Karim Hossain",position:"Cashier",phone:"+880 1722 222222",salary:15000,workDays:26},
+{id:3,name:"Fatima Begum",position:"Sales",phone:"+880 1733 333333",salary:12000,workDays:26},
+{id:4,name:"Jamal Uddin",position:"Delivery",phone:"+880 1744 444444",salary:10000,workDays:26},
+{id:5,name:"Nasreen Akter",position:"Accountant",phone:"+880 1755 555555",salary:18000,workDays:26},
+];
+let salaryData={};
+let salaryEmpId=null,currentMonth='',selectedEmps=[];
+
+function initMonths(){
+const sel=document.getElementById('selMonth');
+const now=new Date();
+for(let i=0;i<12;i++){
+const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+const val=d.toISOString().slice(0,7);
+const label=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+sel.innerHTML+=`<option value="${val}">${label}</option>`;
+}
+currentMonth=sel.value;
+}
+
+function getMonthData(empId){
+const key=`${empId}-${currentMonth}`;
+if(!salaryData[key])salaryData[key]={bonus:0,absent:0,absentDed:0,advance:0,status:'Pending'};
+return salaryData[key];
+}
+
+function getDayRate(e){return e.salary/(e.workDays||WORK_DAYS);}
+
+function showToast(msg){
+const t=document.getElementById('toast');
+document.getElementById('toastMsg').textContent=msg;
+t.style.display='flex';
+setTimeout(()=>t.style.display='none',3000);
+}
+
+function render(){
+currentMonth=document.getElementById('selMonth').value;
+const search=document.getElementById('search').value.toLowerCase();
+const d=new Date(currentMonth+'-01');
+const monthLabel=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+document.getElementById('sheetMonth').textContent=monthLabel;
+
+const filtered=employees.filter(e=>e.name.toLowerCase().includes(search)||e.position.toLowerCase().includes(search));
+let tSalary=0,tBonus=0,tAbsentDed=0,tAdvance=0,tPayable=0,tAbsent=0,paidCount=0,pendingCount=0;
+
+if(!filtered.length){
+document.getElementById('tableBody').innerHTML='';
+document.getElementById('emptyState').style.display='block';
+}else{
+document.getElementById('emptyState').style.display='none';
+document.getElementById('tableBody').innerHTML=filtered.map((e,i)=>{
+const m=getMonthData(e.id);
+const dayRate=getDayRate(e);
+const absentDed=m.absent*dayRate;
+const payable=e.salary+m.bonus-absentDed-m.advance;
+tSalary+=e.salary;tBonus+=m.bonus;tAbsentDed+=absentDed;tAdvance+=m.advance;tPayable+=payable;tAbsent+=m.absent;
+if(m.status==='Paid')paidCount++;else pendingCount++;
+return`<tr class="hover:bg-slate-50/80">
+<td class="px-4 py-3 text-slate-400 text-xs">${i+1}</td>
+<td class="px-4 py-3"><div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-xs">${e.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+<div><p class="font-semibold text-slate-800">${e.name}</p><p class="text-[11px] text-slate-400">${e.position}</p></div>
+</div></td>
+<td class="px-4 py-3 text-right font-medium text-slate-700">${fmt(e.salary)}</td>
+<td class="px-4 py-3 text-right ${m.bonus?'text-emerald-600 font-medium':'text-slate-300'}">${m.bonus?'+'+fmt(m.bonus):'—'}</td>
+<td class="px-4 py-3 text-center"><span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${m.absent?'bg-orange-50 text-orange-600':'bg-slate-100 text-slate-400'}">${m.absent}</span></td>
+<td class="px-4 py-3 text-right ${absentDed?'text-orange-500 font-medium':'text-slate-300'}">${absentDed?'-'+fmt(Math.round(absentDed)):'—'}</td>
+<td class="px-4 py-3 text-right ${m.advance?'text-amber-600 font-medium':'text-slate-300'}">${m.advance?'-'+fmt(m.advance):'—'}</td>
+<td class="px-4 py-3 text-right font-bold text-slate-800">${fmt(Math.round(payable))}</td>
+<td class="px-4 py-3 text-center"><span class="inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full ${m.status==='Paid'?'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20':'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20'}">${m.status}</span></td>
+<td class="px-4 py-3 text-right no-print"><button onclick="openSalaryModal(${e.id})" class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button></td>
+</tr>`;}).join('');
+}
+document.getElementById('sumSalary').textContent=fmt(tSalary);
+document.getElementById('sumBonus').textContent=fmt(tBonus);
+document.getElementById('sumAbsentDed').textContent=fmt(Math.round(tAbsentDed));
+document.getElementById('sumAdvance').textContent=fmt(tAdvance);
+document.getElementById('sumPayable').textContent=fmt(Math.round(tPayable));
+document.getElementById('sumAbsentDays').textContent=tAbsent;
+document.getElementById('sumPaidCount').textContent=paidCount;
+document.getElementById('sumPendingCount').textContent=pendingCount;
+document.getElementById('sumEmpCount').textContent=employees.length;
+document.getElementById('footSalary').textContent=fmt(tSalary);
+document.getElementById('footBonus').textContent=fmt(tBonus);
+document.getElementById('footAbsent').textContent=tAbsent;
+document.getElementById('footAbsentDed').textContent=fmt(Math.round(tAbsentDed));
+document.getElementById('footAdvance').textContent=fmt(tAdvance);
+document.getElementById('footPayable').textContent=fmt(Math.round(tPayable));
+}
+
+// Payment Modal
+function openPaymentModal(){
+selectedEmps=[];
+const d=new Date(currentMonth+'-01');
+document.getElementById('paymentMonth').textContent=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+document.getElementById('paymentDate').value=new Date().toISOString().split('T')[0];
+document.getElementById('paymentList').innerHTML=employees.map(e=>{
+const m=getMonthData(e.id);
+const dayRate=getDayRate(e);
+const absentDed=m.absent*dayRate;
+const payable=Math.round(e.salary+m.bonus-absentDed-m.advance);
+const isPaid=m.status==='Paid';
+return`<div class="flex items-center justify-between p-3 rounded-lg border ${isPaid?'bg-emerald-50/50 border-emerald-200':'bg-white border-slate-200'}" data-id="${e.id}" data-payable="${payable}" data-paid="${isPaid}">
+<div class="flex items-center gap-3">
+<input type="checkbox" class="emp-check w-4 h-4 rounded border-slate-300 text-emerald-600" ${isPaid?'disabled checked':''} onchange="updateSelection()">
+<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-xs">${e.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+<div><p class="font-medium text-slate-800 text-sm">${e.name}</p><p class="text-[11px] text-slate-400">${e.position}</p></div>
+</div>
+<div class="text-right">
+<p class="font-bold ${isPaid?'text-emerald-600':'text-slate-800'}">${fmt(payable)}</p>
+<p class="text-[10px] ${isPaid?'text-emerald-500':'text-amber-500'} font-medium">${isPaid?'Paid':'Pending'}</p>
+</div>
+</div>`;}).join('');
+updateSelection();
+document.getElementById('paymentModal').style.display='flex';
+}
+function closePaymentModal(){document.getElementById('paymentModal').style.display='none';}
+
+function toggleSelectAll(){
+const checked=document.getElementById('selectAll').checked;
+document.querySelectorAll('.emp-check:not(:disabled)').forEach(cb=>cb.checked=checked);
+updateSelection();
+}
+
+function updateSelection(){
+selectedEmps=[];
+let total=0;
+document.querySelectorAll('#paymentList > div').forEach(div=>{
+const cb=div.querySelector('.emp-check');
+if(cb.checked&&!cb.disabled){
+selectedEmps.push(parseInt(div.dataset.id));
+total+=parseInt(div.dataset.payable);
+}
+});
+document.getElementById('selectedCount').textContent=selectedEmps.length;
+document.getElementById('selectedTotal').textContent=fmt(total);
+}
+
+function processPayment(){
+if(!selectedEmps.length){alert('Select at least one employee');return;}
+selectedEmps.forEach(id=>{
+const key=`${id}-${currentMonth}`;
+if(salaryData[key])salaryData[key].status='Paid';
+else salaryData[key]={bonus:0,absent:0,absentDed:0,advance:0,status:'Paid'};
+});
+closePaymentModal();render();showToast(selectedEmps.length+' payment(s) marked as paid');
+}
+
+// Salary Edit Modal
+function openSalaryModal(id){
+salaryEmpId=id;
+const e=employees.find(x=>x.id===id);
+const m=getMonthData(id);
+const d=new Date(currentMonth+'-01');
+document.getElementById('salaryEmpName').textContent=e.name;
+document.getElementById('salaryMonth').textContent=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+document.getElementById('dispBaseSalary').textContent=fmt(e.salary);
+document.getElementById('dispDayRate').textContent=fmt(Math.round(getDayRate(e)))+'/day';
+document.getElementById('inpBonus').value=m.bonus||'';
+document.getElementById('inpAbsent').value=m.absent||'';
+document.getElementById('inpAdvance').value=m.advance||'';
+document.getElementById('inpStatus').value=m.status;
+calcPayable();
+document.getElementById('salaryModal').style.display='flex';
+}
+function closeSalaryModal(){document.getElementById('salaryModal').style.display='none';}
+
+function calcPayable(){
+const e=employees.find(x=>x.id===salaryEmpId);
+if(!e)return;
+const bonus=parseFloat(document.getElementById('inpBonus').value)||0;
+const absent=parseFloat(document.getElementById('inpAbsent').value)||0;
+const advance=parseFloat(document.getElementById('inpAdvance').value)||0;
+const absentDed=absent*getDayRate(e);
+document.getElementById('inpAbsentDed').value=Math.round(absentDed);
+document.getElementById('dispPayable').textContent=fmt(Math.round(e.salary+bonus-absentDed-advance));
+}
+
+function saveSalary(){
+const key=`${salaryEmpId}-${currentMonth}`;
+salaryData[key]={
+bonus:parseFloat(document.getElementById('inpBonus').value)||0,
+absent:parseFloat(document.getElementById('inpAbsent').value)||0,
+absentDed:parseFloat(document.getElementById('inpAbsentDed').value)||0,
+advance:parseFloat(document.getElementById('inpAdvance').value)||0,
+status:document.getElementById('inpStatus').value
+};
+closeSalaryModal();render();showToast('Saved');
+}
+
+// Employee Sheet Selection
+function openEmpSheetModal(){
+document.getElementById('empSheetList').innerHTML=employees.map(e=>`
+<button onclick="openIndSheet(${e.id})" class="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 text-left transition-colors">
+<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-sm">${e.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+<div><p class="font-semibold text-slate-800">${e.name}</p><p class="text-xs text-slate-400">${e.position} • ${fmt(e.salary)}/month</p></div>
+</button>`).join('');
+document.getElementById('empSheetModal').style.display='flex';
+}
+function closeEmpSheetModal(){document.getElementById('empSheetModal').style.display='none';}
+
+// Full Sheet
+function openFullSheet(){
+const d=new Date(currentMonth+'-01');
+const monthLabel=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+let tSalary=0,tBonus=0,tAbsentDed=0,tAdvance=0,tPayable=0;
+const rows=employees.map((e,i)=>{
+const m=getMonthData(e.id);
+const absentDed=m.absent*getDayRate(e);
+const payable=e.salary+m.bonus-absentDed-m.advance;
+tSalary+=e.salary;tBonus+=m.bonus;tAbsentDed+=absentDed;tAdvance+=m.advance;tPayable+=payable;
+return`<tr class="border-b border-slate-200">
+<td class="px-3 py-2 text-center">${i+1}</td>
+<td class="px-3 py-2">${e.name}</td>
+<td class="px-3 py-2">${e.position}</td>
+<td class="px-3 py-2 text-right">${fmt(e.salary)}</td>
+<td class="px-3 py-2 text-right">${fmt(m.bonus)}</td>
+<td class="px-3 py-2 text-center">${m.absent}</td>
+<td class="px-3 py-2 text-right">${fmt(Math.round(absentDed))}</td>
+<td class="px-3 py-2 text-right">${fmt(m.advance)}</td>
+<td class="px-3 py-2 text-right font-semibold">${fmt(Math.round(payable))}</td>
+<td class="px-3 py-2 text-center">${m.status}</td>
+<td class="px-3 py-2"></td>
+</tr>`;}).join('');
+document.getElementById('fullSheetContent').innerHTML=`
+<div class="text-center mb-6">
+<h1 class="text-xl font-bold text-slate-800">FreshMart POS</h1>
+<p class="text-slate-500">Salary Sheet - ${monthLabel}</p>
+</div>
+<table class="w-full text-sm border border-slate-300">
+<thead class="bg-slate-100">
+<tr class="border-b border-slate-300 text-xs uppercase">
+<th class="px-3 py-2">#</th><th class="px-3 py-2 text-left">Name</th><th class="px-3 py-2 text-left">Position</th>
+<th class="px-3 py-2 text-right">Salary</th><th class="px-3 py-2 text-right">Bonus</th><th class="px-3 py-2 text-center">Absent</th>
+<th class="px-3 py-2 text-right">Absent Ded.</th><th class="px-3 py-2 text-right">Advance</th><th class="px-3 py-2 text-right">Payable</th>
+<th class="px-3 py-2 text-center">Status</th><th class="px-3 py-2">Signature</th>
+</tr>
+</thead>
+<tbody>${rows}</tbody>
+<tfoot class="bg-slate-100 font-semibold">
+<tr class="border-t-2 border-slate-300">
+<td colspan="3" class="px-3 py-2">Total</td>
+<td class="px-3 py-2 text-right">${fmt(tSalary)}</td>
+<td class="px-3 py-2 text-right">${fmt(tBonus)}</td>
+<td class="px-3 py-2"></td>
+<td class="px-3 py-2 text-right">${fmt(Math.round(tAbsentDed))}</td>
+<td class="px-3 py-2 text-right">${fmt(tAdvance)}</td>
+<td class="px-3 py-2 text-right">${fmt(Math.round(tPayable))}</td>
+<td colspan="2"></td>
+</tr>
+</tfoot>
+</table>
+<div class="mt-8 flex justify-between text-sm text-slate-600">
+<div class="text-center"><div class="w-40 border-t border-slate-400 pt-1">Prepared By</div></div>
+<div class="text-center"><div class="w-40 border-t border-slate-400 pt-1">Checked By</div></div>
+<div class="text-center"><div class="w-40 border-t border-slate-400 pt-1">Approved By</div></div>
+</div>`;
+document.getElementById('fullSheetModal').style.display='flex';
+}
+function closeFullSheet(){document.getElementById('fullSheetModal').style.display='none';}
+function printFullSheet(){
+const content=document.getElementById('fullSheetContent').innerHTML;
+const win=window.open('','','width=900,height=700');
+win.document.write('<html><head><title>Salary Sheet</title><style>body{font-family:Inter,sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px}th{background:#f5f5f5}.text-right{text-align:right}.text-center{text-align:center}</style></head><body>'+content+'</body></html>');
+win.document.close();win.print();
+}
+
+// Individual Sheet
+function openIndSheet(id){
+closeEmpSheetModal();
+const e=employees.find(x=>x.id===id);
+const m=getMonthData(id);
+const d=new Date(currentMonth+'-01');
+const monthLabel=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+const absentDed=m.absent*getDayRate(e);
+const payable=e.salary+m.bonus-absentDed-m.advance;
+document.getElementById('indSheetContent').innerHTML=`
+<div class="text-center mb-6">
+<h1 class="text-xl font-bold text-slate-800">FreshMart POS</h1>
+<p class="text-slate-500">Salary Slip - ${monthLabel}</p>
+</div>
+<div class="border border-slate-200 rounded-lg overflow-hidden">
+<div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center gap-4">
+<div class="w-14 h-14 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-lg">${e.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+<div><p class="font-bold text-slate-800 text-lg">${e.name}</p><p class="text-sm text-slate-500">${e.position} • ${e.phone}</p></div>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex justify-between py-2 border-b border-slate-100"><span class="text-slate-500">Base Salary</span><span class="font-semibold text-slate-800">${fmt(e.salary)}</span></div>
+<div class="flex justify-between py-2 border-b border-slate-100"><span class="text-slate-500">Bonus</span><span class="font-semibold text-emerald-600">+${fmt(m.bonus)}</span></div>
+<div class="flex justify-between py-2 border-b border-slate-100"><span class="text-slate-500">Absent Days</span><span class="font-semibold text-slate-800">${m.absent} days</span></div>
+<div class="flex justify-between py-2 border-b border-slate-100"><span class="text-slate-500">Absent Deduction</span><span class="font-semibold text-orange-500">-${fmt(Math.round(absentDed))}</span></div>
+<div class="flex justify-between py-2 border-b border-slate-100"><span class="text-slate-500">Advance Received</span><span class="font-semibold text-amber-600">-${fmt(m.advance)}</span></div>
+<div class="flex justify-between py-3 bg-slate-800 -mx-4 px-4 mt-4 rounded-b-lg"><span class="text-white font-medium">Net Payable</span><span class="font-bold text-white text-lg">${fmt(Math.round(payable))}</span></div>
+</div>
+</div>
+<div class="mt-6 flex justify-between text-sm text-slate-600">
+<div class="text-center"><div class="w-32 border-t border-slate-400 pt-1 mt-8">Employee Signature</div></div>
+<div class="text-center"><div class="w-32 border-t border-slate-400 pt-1 mt-8">Authorized Signature</div></div>
+</div>`;
+document.getElementById('indSheetModal').style.display='flex';
+}
+function closeIndSheet(){document.getElementById('indSheetModal').style.display='none';}
+function printIndSheet(){
+const content=document.getElementById('indSheetContent').innerHTML;
+const win=window.open('','','width=500,height=700');
+win.document.write('<html><head><title>Salary Slip</title><style>body{font-family:Inter,sans-serif;padding:20px;max-width:400px;margin:auto}</style></head><body>'+content+'</body></html>');
+win.document.close();win.print();
+}
+
+initMonths();render();
+</script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Profile - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.animate-fade{animation:fadeIn 0.3s ease-out}
+.animate-modal{animation:slideIn 0.2s ease-out}
+.toast{animation:fadeIn 0.3s ease-out}
+@media print{.no-print{display:none!important}.print-only{display:block!important}}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Header -->
+<header class="bg-white border-b border-slate-200 shadow-sm">
+<div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<button onclick="history.back()" class="p-2 rounded-lg hover:bg-slate-100 text-slate-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
+<div class="h-5 w-px bg-slate-200"></div>
+<span class="text-slate-800 font-semibold">Customer Profile</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+<button onclick="openEditModal()" class="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>Edit</button>
+<button onclick="openPaymentModal()" class="px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm hover:shadow flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Add Payment</button>
+</div>
+</div>
+</header>
+
+<main class="max-w-6xl mx-auto px-6 py-6 space-y-5">
+
+<!-- Top Section: Profile + Stats -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+<!-- Profile Card -->
+<div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<div class="flex items-start gap-5">
+<div class="relative">
+<img id="profilePhoto" src="https://ui-avatars.com/api/?name=Sarah+Johnson&size=88&background=10b981&color=fff&bold=true" class="w-20 h-20 rounded-xl shadow-sm">
+<span class="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full"></span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<h1 class="text-xl font-bold text-slate-800" id="dispName">Sarah Johnson</h1>
+<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-white rounded-md shadow-sm">VIP</span>
+</div>
+<p class="text-slate-400 text-sm mt-0.5 flex items-center gap-2">
+<span class="text-slate-500">#CUS-0001</span>
+<span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+<span class="text-emerald-600 font-medium">Active Customer</span>
+<span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+<span class="text-slate-400">Since Dec 2024</span>
+</p>
+</div>
+</div>
+<!-- Contact Grid -->
+<div class="grid grid-cols-2 gap-x-8 gap-y-3 mt-5 pt-5 border-t border-slate-100">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg></div>
+<div class="min-w-0"><p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Primary</p><p class="text-sm text-slate-700 font-medium truncate" id="dispMobile">+1 555 123 4567</p></div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg></div>
+<div class="min-w-0"><p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Secondary</p><p class="text-sm text-slate-700 font-medium truncate" id="dispMobile2">+1 555 987 6543</p></div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div>
+<div class="min-w-0"><p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Email</p><p class="text-sm text-slate-700 font-medium truncate" id="dispEmail">sarah.j@email.com</p></div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg></div>
+<div class="min-w-0"><p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">NID Number</p><p class="text-sm text-slate-700 font-medium truncate" id="dispNid">1234 5678 9012</p></div>
+</div>
+<div class="col-span-2 flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+<div class="min-w-0"><p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Address</p><p class="text-sm text-slate-700 font-medium truncate" id="dispAddress">456 Oak Avenue, Portland, OR 97201</p></div>
+</div>
+</div>
+<!-- Quick Actions -->
+<div class="flex items-center gap-2 mt-5 pt-5 border-t border-slate-100">
+<button class="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>New Invoice</button>
+<button class="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>Send Statement</button>
+<button class="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>Send SMS</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Balance Card -->
+<div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-sm p-5 text-white">
+<p class="text-slate-400 text-xs uppercase tracking-wider font-medium mb-1">Balance Due</p>
+<p class="text-3xl font-bold" id="statDue">$1,250.00</p>
+<div class="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-slate-700">
+<div>
+<p class="text-slate-400 text-xs uppercase tracking-wider font-medium mb-1">Total Billed</p>
+<p class="text-lg font-semibold" id="statBilled">$5,430.00</p>
+</div>
+<div>
+<p class="text-slate-400 text-xs uppercase tracking-wider font-medium mb-1">Total Paid</p>
+<p class="text-lg font-semibold text-emerald-400" id="statPaid">$4,180.00</p>
+</div>
+</div>
+<div class="mt-5 pt-4 border-t border-slate-700">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs text-slate-400">Credit Limit</span>
+<span class="text-xs text-slate-300">$1,250 / $5,000</span>
+</div>
+<div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full" style="width:25%"></div>
+</div>
+</div>
+<div class="mt-4 pt-4 border-t border-slate-700 flex items-center justify-between">
+<span class="text-xs text-slate-400"><span id="statCount">5</span> Invoices</span>
+<button class="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1">View Statement <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+</div>
+</div>
+</div>
+
+<!-- Tabs Card -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<!-- Tab Headers -->
+<div class="flex items-center justify-between border-b border-slate-200 bg-slate-50/50">
+<div class="flex">
+<button onclick="switchTab('invoices')" id="tabInvoices" class="px-6 py-3.5 text-sm font-semibold text-emerald-600 border-b-2 border-emerald-600 bg-white -mb-px">Invoices</button>
+<button onclick="switchTab('payments')" id="tabPayments" class="px-6 py-3.5 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700">Payments</button>
+<button onclick="switchTab('ledger')" id="tabLedger" class="px-6 py-3.5 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700">Ledger</button>
+</div>
+<div class="flex items-center gap-2 pr-4">
+<div class="relative">
+<svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<input type="text" id="tableSearch" placeholder="Search..." class="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg w-44 focus:w-56 transition-all" oninput="filterTable()">
+</div>
+<button onclick="exportData()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg" title="Export"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
+</div>
+</div>
+
+<!-- Invoices -->
+<div id="contentInvoices">
+<table class="w-full">
+<thead class="bg-slate-50 border-b border-slate-200"><tr class="text-xs text-slate-500 uppercase tracking-wider">
+<th class="px-6 py-3 text-left font-semibold">Invoice</th>
+<th class="px-6 py-3 text-left font-semibold">Date</th>
+<th class="px-6 py-3 text-right font-semibold">Amount</th>
+<th class="px-6 py-3 text-right font-semibold">Paid</th>
+<th class="px-6 py-3 text-right font-semibold">Due</th>
+<th class="px-6 py-3 text-center font-semibold">Status</th>
+<th class="px-6 py-3 text-right font-semibold"></th>
+</tr></thead>
+<tbody id="invoiceTable" class="text-sm divide-y divide-slate-100"></tbody>
+</table>
+</div>
+
+<!-- Payments -->
+<div id="contentPayments" style="display:none">
+<table class="w-full">
+<thead class="bg-slate-50 border-b border-slate-200"><tr class="text-xs text-slate-500 uppercase tracking-wider">
+<th class="px-6 py-3 text-left font-semibold">Receipt</th>
+<th class="px-6 py-3 text-left font-semibold">Date</th>
+<th class="px-6 py-3 text-left font-semibold">Method</th>
+<th class="px-6 py-3 text-right font-semibold">Amount</th>
+<th class="px-6 py-3 text-left font-semibold">Reference</th>
+<th class="px-6 py-3 text-right font-semibold"></th>
+</tr></thead>
+<tbody id="paymentTable" class="text-sm divide-y divide-slate-100"></tbody>
+</table>
+</div>
+
+<!-- Ledger -->
+<div id="contentLedger" style="display:none">
+<table class="w-full">
+<thead class="bg-slate-50 border-b border-slate-200"><tr class="text-xs text-slate-500 uppercase tracking-wider">
+<th class="px-6 py-3 text-left font-semibold">Date</th>
+<th class="px-6 py-3 text-left font-semibold">Description</th>
+<th class="px-6 py-3 text-right font-semibold">Debit</th>
+<th class="px-6 py-3 text-right font-semibold">Credit</th>
+<th class="px-6 py-3 text-right font-semibold">Balance</th>
+</tr></thead>
+<tbody id="ledgerTable" class="text-sm divide-y divide-slate-100"></tbody>
+<tfoot class="bg-slate-50 border-t border-slate-200">
+<tr class="text-sm font-semibold">
+<td colspan="2" class="px-6 py-3 text-slate-600">Total</td>
+<td class="px-6 py-3 text-right text-red-600" id="ledgerTotalDebit">$0.00</td>
+<td class="px-6 py-3 text-right text-emerald-600" id="ledgerTotalCredit">$0.00</td>
+<td class="px-6 py-3 text-right text-slate-800" id="ledgerFinalBalance">$0.00</td>
+</tr>
+</tfoot>
+</table>
+</div>
+</div>
+
+</main>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Saved successfully</span>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeEditModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md animate-modal">
+<div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+<h2 class="font-semibold text-slate-800">Edit Customer</h2>
+<button onclick="closeEditModal()" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+<div class="p-6 space-y-4">
+<div class="flex justify-center mb-2">
+<div class="relative">
+<img id="editPhoto" src="https://ui-avatars.com/api/?name=Sarah+Johnson&size=80&background=10b981&color=fff" class="w-20 h-20 rounded-xl">
+<label class="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center cursor-pointer hover:bg-emerald-700 shadow-lg">
+<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+<input type="file" class="hidden" accept="image/*" onchange="previewPhoto(this)">
+</label>
+</div>
+</div>
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Full Name</label><input type="text" id="editName" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:border-emerald-500"></div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Primary Phone</label><input type="tel" id="editMobile" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm"></div>
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Secondary Phone</label><input type="tel" id="editMobile2" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm"></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Email</label><input type="email" id="editEmail" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm"></div>
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">NID Number</label><input type="text" id="editNid" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm"></div>
+</div>
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Address</label><textarea id="editAddress" rows="2" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm resize-none"></textarea></div>
+</div>
+<div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50">
+<button onclick="closeEditModal()" class="px-5 py-2.5 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="saveCustomer()" class="px-5 py-2.5 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm">Save Changes</button>
+</div>
+</div>
+</div>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closePaymentModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm animate-modal">
+<div class="px-6 py-4 border-b border-slate-200"><h2 class="font-semibold text-slate-800">Add Payment</h2></div>
+<div class="p-6 space-y-4">
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Amount</label><input type="number" id="payAmount" placeholder="0.00" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm"></div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Method</label><select id="payMethod" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm"><option>Cash</option><option>Bank Transfer</option><option>Card</option><option>Mobile</option></select></div>
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Date</label><input type="date" id="payDate" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm"></div>
+</div>
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Note (optional)</label><input type="text" id="payNote" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm"></div>
+</div>
+<div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50">
+<button onclick="closePaymentModal()" class="px-5 py-2.5 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="savePayment()" class="px-5 py-2.5 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm">Save Payment</button>
+</div>
+</div>
+</div>
+
+<script>
+let customer={name:"Sarah Johnson",email:"sarah.j@email.com",mobile:"+1 555 123 4567",mobile2:"+1 555 987 6543",nid:"1234 5678 9012",address:"456 Oak Avenue, Portland, OR 97201"};
+let invoices=[
+{id:"INV-0012",date:"2025-01-15",amount:850,paid:850,status:"Paid"},
+{id:"INV-0009",date:"2025-01-08",amount:1200,paid:500,status:"Partial"},
+{id:"INV-0005",date:"2024-12-22",amount:1580,paid:1580,status:"Paid"},
+{id:"INV-0003",date:"2024-12-10",amount:920,paid:0,status:"Unpaid"},
+{id:"INV-0001",date:"2024-11-28",amount:880,paid:880,status:"Paid"},
+];
+let payments=[
+{id:"RCP-0008",date:"2025-01-15",method:"Cash",amount:850,note:"INV-0012"},
+{id:"RCP-0007",date:"2025-01-10",method:"Bank Transfer",amount:500,note:"Partial"},
+{id:"RCP-0005",date:"2024-12-22",method:"Card",amount:1580,note:"Full payment"},
+{id:"RCP-0003",date:"2024-11-28",method:"Cash",amount:880,note:"—"},
+];
+
+const fmt=n=>'$'+n.toFixed(2).replace(/\d(?=(\d{3})+\.)/g,'$&,');
+const fmtDate=d=>new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const statusStyle=s=>s==='Paid'?'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20':s==='Partial'?'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20':'bg-red-50 text-red-700 ring-1 ring-red-600/20';
+let currentTab='invoices';
+
+function showToast(msg){
+const t=document.getElementById('toast');
+document.getElementById('toastMsg').textContent=msg;
+t.style.display='flex';
+setTimeout(()=>t.style.display='none',3000);
+}
+
+function isOverdue(date,status){
+if(status==='Paid')return false;
+const d=new Date(date),now=new Date();
+return (now-d)/(1000*60*60*24)>30;
+}
+
+function render(){
+const billed=invoices.reduce((s,i)=>s+i.amount,0),paid=payments.reduce((s,p)=>s+p.amount,0);
+document.getElementById('statBilled').textContent=fmt(billed);
+document.getElementById('statPaid').textContent=fmt(paid);
+document.getElementById('statDue').textContent=fmt(billed-paid);
+document.getElementById('statCount').textContent=invoices.length;
+document.getElementById('dispName').textContent=customer.name;
+document.getElementById('dispMobile').textContent=customer.mobile||'—';
+document.getElementById('dispMobile2').textContent=customer.mobile2||'—';
+document.getElementById('dispEmail').textContent=customer.email||'—';
+document.getElementById('dispNid').textContent=customer.nid||'—';
+document.getElementById('dispAddress').textContent=customer.address||'—';
+}
+
+function renderInvoices(filter=''){
+const search=filter.toLowerCase();
+const filtered=invoices.filter(i=>!search||i.id.toLowerCase().includes(search)||i.status.toLowerCase().includes(search));
+document.getElementById('invoiceTable').innerHTML=filtered.length?filtered.map(i=>`<tr class="hover:bg-slate-50/80 ${isOverdue(i.date,i.status)?'bg-red-50/30':''}">
+<td class="px-6 py-4 font-semibold text-slate-800">${i.id}${isOverdue(i.date,i.status)?'<span class="ml-2 text-[10px] font-semibold text-red-500 uppercase">Overdue</span>':''}</td>
+<td class="px-6 py-4 text-slate-500">${fmtDate(i.date)}</td>
+<td class="px-6 py-4 text-right text-slate-800 font-medium">${fmt(i.amount)}</td>
+<td class="px-6 py-4 text-right text-slate-500">${fmt(i.paid)}</td>
+<td class="px-6 py-4 text-right font-semibold ${i.amount-i.paid>0?'text-red-600':'text-slate-400'}">${fmt(i.amount-i.paid)}</td>
+<td class="px-6 py-4 text-center"><span class="inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${statusStyle(i.status)}">${i.status}</span></td>
+<td class="px-6 py-4 text-right"><button class="text-slate-400 hover:text-emerald-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button></td>
+</tr>`).join(''):'<tr><td colspan="7" class="px-6 py-12 text-center text-slate-400">No invoices found</td></tr>';
+}
+
+function renderPayments(filter=''){
+const search=filter.toLowerCase();
+const filtered=payments.filter(p=>!search||p.id.toLowerCase().includes(search)||p.method.toLowerCase().includes(search));
+document.getElementById('paymentTable').innerHTML=filtered.length?filtered.map(p=>`<tr class="hover:bg-slate-50/80">
+<td class="px-6 py-4 font-semibold text-slate-800">${p.id}</td>
+<td class="px-6 py-4 text-slate-500">${fmtDate(p.date)}</td>
+<td class="px-6 py-4"><span class="inline-flex items-center gap-1.5 text-slate-600"><span class="w-2 h-2 rounded-full ${p.method==='Cash'?'bg-emerald-500':p.method==='Card'?'bg-blue-500':'bg-amber-500'}"></span>${p.method}</span></td>
+<td class="px-6 py-4 text-right text-emerald-600 font-semibold">${fmt(p.amount)}</td>
+<td class="px-6 py-4 text-slate-400">${p.note||'—'}</td>
+<td class="px-6 py-4 text-right"><button class="text-slate-400 hover:text-emerald-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button></td>
+</tr>`).join(''):'<tr><td colspan="6" class="px-6 py-12 text-center text-slate-400">No payments found</td></tr>';
+}
+
+function filterTable(){
+const v=document.getElementById('tableSearch').value;
+if(currentTab==='invoices')renderInvoices(v);
+else if(currentTab==='payments')renderPayments(v);
+}
+
+function exportData(){
+showToast('Exporting '+currentTab+'...');
+}
+
+function renderLedger(){
+let bal=0,totalDebit=0,totalCredit=0;
+const all=[...invoices.map(i=>({date:i.date,desc:'Invoice '+i.id,debit:i.amount,credit:0})),...payments.map(p=>({date:p.date,desc:'Payment '+p.id,debit:0,credit:p.amount}))].sort((a,b)=>new Date(a.date)-new Date(b.date));
+document.getElementById('ledgerTable').innerHTML=all.map(e=>{
+bal+=e.debit-e.credit;
+totalDebit+=e.debit;
+totalCredit+=e.credit;
+return`<tr class="hover:bg-slate-50/80">
+<td class="px-6 py-4 text-slate-500">${fmtDate(e.date)}</td>
+<td class="px-6 py-4 text-slate-800 font-medium">${e.desc}</td>
+<td class="px-6 py-4 text-right ${e.debit?'text-red-600 font-semibold':'text-slate-300'}">${e.debit?fmt(e.debit):'—'}</td>
+<td class="px-6 py-4 text-right ${e.credit?'text-emerald-600 font-semibold':'text-slate-300'}">${e.credit?fmt(e.credit):'—'}</td>
+<td class="px-6 py-4 text-right font-bold text-slate-800">${fmt(bal)}</td>
+</tr>`;}).join('');
+document.getElementById('ledgerTotalDebit').textContent=fmt(totalDebit);
+document.getElementById('ledgerTotalCredit').textContent=fmt(totalCredit);
+document.getElementById('ledgerFinalBalance').textContent=fmt(bal);
+}
+
+function switchTab(tab){
+currentTab=tab;
+document.getElementById('tableSearch').value='';
+['invoices','payments','ledger'].forEach(t=>{
+const isActive=t===tab;
+document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).className='px-6 py-3.5 text-sm font-'+(isActive?'semibold text-emerald-600 border-b-2 border-emerald-600 bg-white -mb-px':'medium text-slate-500 border-b-2 border-transparent hover:text-slate-700');
+document.getElementById('content'+t.charAt(0).toUpperCase()+t.slice(1)).style.display=isActive?'block':'none';
+});
+if(tab==='ledger')renderLedger();
+}
+
+function openEditModal(){
+document.getElementById('editName').value=customer.name;
+document.getElementById('editEmail').value=customer.email;
+document.getElementById('editMobile').value=customer.mobile;
+document.getElementById('editMobile2').value=customer.mobile2;
+document.getElementById('editNid').value=customer.nid;
+document.getElementById('editAddress').value=customer.address;
+document.getElementById('editModal').style.display='flex';
+}
+function closeEditModal(){document.getElementById('editModal').style.display='none';}
+function saveCustomer(){
+customer.name=document.getElementById('editName').value;
+customer.email=document.getElementById('editEmail').value;
+customer.mobile=document.getElementById('editMobile').value;
+customer.mobile2=document.getElementById('editMobile2').value;
+customer.nid=document.getElementById('editNid').value;
+customer.address=document.getElementById('editAddress').value;
+closeEditModal();render();showToast('Customer updated successfully');
+}
+function previewPhoto(inp){if(inp.files[0]){const r=new FileReader();r.onload=e=>{document.getElementById('editPhoto').src=e.target.result;document.getElementById('profilePhoto').src=e.target.result;};r.readAsDataURL(inp.files[0]);}}
+
+function openPaymentModal(){document.getElementById('payDate').value=new Date().toISOString().split('T')[0];document.getElementById('paymentModal').style.display='flex';}
+function closePaymentModal(){document.getElementById('paymentModal').style.display='none';document.getElementById('payAmount').value='';document.getElementById('payNote').value='';}
+function savePayment(){
+const amt=parseFloat(document.getElementById('payAmount').value);
+if(!amt||amt<=0)return alert('Enter valid amount');
+payments.unshift({id:'RCP-'+String(payments.length+1).padStart(4,'0'),date:document.getElementById('payDate').value,method:document.getElementById('payMethod').value,amount:amt,note:document.getElementById('payNote').value});
+closePaymentModal();render();renderPayments();showToast('Payment added successfully');
+}
+
+render();renderInvoices();renderPayments();
+</script>
+</body>
+</html>

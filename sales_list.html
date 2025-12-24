@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Sales List - FreshMart POS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    *{font-family:'Inter',sans-serif;box-sizing:border-box;}
+    body{background:#f8fafc;min-height:100vh;}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+    .input-light{background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b;border-radius:6px;}
+    .input-light:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1);}
+    .btn-primary{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;font-weight:600;}
+    .btn-primary:hover{background:linear-gradient(135deg,#34d399 0%,#10b981 100%);}
+    .tag{font-size:9px;padding:3px 6px;border-radius:4px;font-weight:600;text-transform:uppercase;}
+    ::-webkit-scrollbar{width:6px;height:6px;}
+    ::-webkit-scrollbar-track{background:#f1f5f9;}
+    ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px;}
+    .row-hover:hover{background:#f0fdf4;}
+    .row-even{background:#f8fafc;}
+    .row-odd{background:#ffffff;}
+    .status-pending{background:#fef3c7;color:#d97706;}
+    .status-confirmed{background:#d1fae5;color:#059669;}
+    .status-delivered{background:#dbeafe;color:#2563eb;}
+    .status-cancelled{background:#fee2e2;color:#dc2626;}
+    .status-onhold{background:#f3e8ff;color:#9333ea;}
+  </style>
+</head>
+<body class="text-slate-700">
+  
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-[1400px] mx-auto px-4 py-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <button onclick="window.history.back()" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="tag bg-emerald-100 text-emerald-700">Sales</span>
+              <span class="text-xl font-bold text-slate-800">Sales List</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">View and manage all sales invoices</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="exportSales()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-medium transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Export
+          </button>
+          <a href="#" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            New Sale
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-[1400px] mx-auto p-4 md:p-6">
+    
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="card p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">Total Sales</p>
+            <p class="text-xl font-bold text-slate-800">$45,230</p>
+          </div>
+        </div>
+      </div>
+      <div class="card p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">Collected</p>
+            <p class="text-xl font-bold text-blue-600">$38,450</p>
+          </div>
+        </div>
+      </div>
+      <div class="card p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center">
+            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">Pending</p>
+            <p class="text-xl font-bold text-amber-600">$6,780</p>
+          </div>
+        </div>
+      </div>
+      <div class="card p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center">
+            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">Invoices</p>
+            <p class="text-xl font-bold text-purple-600">156</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card p-4 mb-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-100">
+      <div class="flex flex-wrap gap-3 items-center">
+        <div class="flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-2 py-1.5 shadow-sm">
+          <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="searchInput" placeholder="Search invoice, customer..." class="bg-transparent border-0 text-sm w-44 focus:outline-none" oninput="filterSales()">
+        </div>
+        <div class="flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-3 py-2 shadow-sm">
+          <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <input type="date" id="dateFrom" class="bg-transparent border-0 text-sm focus:outline-none" onchange="filterSales()">
+          <span class="text-slate-400">-</span>
+          <input type="date" id="dateTo" class="bg-transparent border-0 text-sm focus:outline-none" onchange="filterSales()">
+        </div>
+        <select id="statusFilter" onchange="filterSales()" class="bg-white border border-emerald-200 rounded-lg px-2 py-1.5 text-sm shadow-sm focus:outline-none">
+          <option value="">All Status</option>
+          <option value="pending">⏳ Pending</option>
+          <option value="confirmed">✅ Confirmed</option>
+          <option value="delivered">📦 Delivered</option>
+          <option value="onhold">⏸️ On Hold</option>
+          <option value="cancelled">❌ Cancelled</option>
+        </select>
+        <select id="paymentFilter" onchange="filterSales()" class="bg-white border border-emerald-200 rounded-lg px-2 py-1.5 text-sm shadow-sm focus:outline-none">
+          <option value="">All Payments</option>
+          <option value="paid">Fully Paid</option>
+          <option value="partial">Partial</option>
+          <option value="unpaid">Unpaid</option>
+        </select>
+        <select id="customerFilter" onchange="filterSales()" class="bg-white border border-emerald-200 rounded-lg px-2 py-1.5 text-sm shadow-sm focus:outline-none">
+          <option value="">All Customers</option>
+          <option value="1">John Smith</option>
+          <option value="2">Emma Wilson</option>
+          <option value="3">Michael Brown</option>
+        </select>
+        <select id="warehouse" class="bg-white border border-emerald-200 rounded-lg px-2 py-1.5 text-sm shadow-sm focus:outline-none">
+          <option value="all">All Warehouses</option>
+          <option value="main">Main Warehouse</option>
+          <option value="branch1">Branch 1</option>
+        </select>
+        <button onclick="resetFilters()" class="px-3 py-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium">Reset</button>
+      </div>
+    </div>
+
+    <!-- Sales Table -->
+    <div class="card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full" style="font-size: 0.80em;">
+          <thead>
+            <tr class="bg-slate-50">
+              <th class="text-left p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Invoice</th>
+              <th class="text-left p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+              <th class="text-left p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Customer</th>
+              <th class="text-center p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Items</th>
+              <th class="text-right p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Total</th>
+              <th class="text-right p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Paid</th>
+              <th class="text-right p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Balance</th>
+              <th class="text-center p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+              <th class="text-center p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider w-16">Action</th>
+            </tr>
+          </thead>
+          <tbody id="salesBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-sm text-slate-500">
+          <span>Show</span>
+          <select id="pageSize" onchange="renderSales()" class="bg-slate-100 border-0 rounded-md px-2 py-1 text-sm">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+          </select>
+          <span class="text-slate-400">|</span>
+          <span>Showing <span id="showingFrom">1</span>-<span id="showingTo">10</span> of <span id="totalItems">156</span></span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="prevPage()" class="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-sm disabled:opacity-50">Previous</button>
+          <div id="pageNumbers" class="flex items-center gap-1"></div>
+          <button onclick="nextPage()" class="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-sm disabled:opacity-50">Next</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- View Modal -->
+  <div id="viewModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50 p-4 hidden">
+    <div class="card p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-lg font-bold text-slate-800">Invoice Details</h3>
+          <p id="modalInvoice" class="text-emerald-600 font-semibold">INV-0001</p>
+        </div>
+        <button onclick="closeViewModal()" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="modalContent"></div>
+      <div class="flex gap-3 mt-5 pt-4 border-t border-slate-100">
+        <button onclick="closeViewModal()" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 font-medium transition">Close</button>
+        <button onclick="printInvoice()" class="flex-1 py-2.5 btn-primary rounded-xl flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          Print
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deliver Modal -->
+  <div id="deliverModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50 p-4 hidden">
+    <div class="card p-6 w-full max-w-md">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Mark as Delivered</h3>
+        <button onclick="closeDeliverModal()" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="deliverContent" class="space-y-4">
+        <div class="bg-emerald-50 rounded-xl p-4">
+          <p class="text-sm text-emerald-600 font-medium" id="deliverInvoice">INV-0001</p>
+          <p class="text-xs text-emerald-500" id="deliverCustomer">John Smith</p>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 uppercase tracking-wider mb-1 block">Delivery Date</label>
+          <input type="date" id="deliverDate" class="w-full input-light px-3 py-2.5 text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 uppercase tracking-wider mb-1 block">Delivered By</label>
+          <input type="text" id="deliveredBy" class="w-full input-light px-3 py-2.5 text-sm" placeholder="Delivery person name">
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 uppercase tracking-wider mb-1 block">Notes</label>
+          <textarea id="deliverNotes" rows="2" class="w-full input-light px-3 py-2.5 text-sm resize-none" placeholder="Any delivery notes..."></textarea>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-5">
+        <button onclick="closeDeliverModal()" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 font-medium transition">Cancel</button>
+        <button onclick="confirmDeliver()" class="flex-1 py-2.5 btn-primary rounded-xl">Confirm Delivery</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div id="deleteModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50 p-4 hidden">
+    <div class="card p-6 w-full max-w-sm text-center">
+      <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </div>
+      <h3 class="text-lg font-bold text-slate-800 mb-2">Delete Invoice?</h3>
+      <p class="text-sm text-slate-500 mb-5">This action cannot be undone. The invoice will be permanently removed.</p>
+      <div class="flex gap-3">
+        <button onclick="closeDeleteModal()" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 font-medium transition">Cancel</button>
+        <button onclick="confirmDelete()" class="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium transition">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var sales = [
+      { id: 1, invoice: 'INV-0001', date: '2024-01-15', dueDate: '2024-01-22', customer: 'John Smith', mobile: '555-1234', items: 5, total: 245.50, paid: 245.50, status: 'delivered', method: 'cash' },
+      { id: 2, invoice: 'INV-0002', date: '2024-01-15', dueDate: '2024-01-22', customer: 'Emma Wilson', mobile: '555-5678', items: 3, total: 89.99, paid: 50.00, status: 'pending', method: 'card' },
+      { id: 3, invoice: 'INV-0003', date: '2024-01-14', dueDate: '2024-01-21', customer: 'Michael Brown', mobile: '555-9012', items: 8, total: 456.00, paid: 456.00, status: 'confirmed', method: 'bank' },
+      { id: 4, invoice: 'INV-0004', date: '2024-01-14', dueDate: '2024-01-21', customer: 'Walk-in', mobile: '-', items: 2, total: 34.50, paid: 34.50, status: 'delivered', method: 'cash' },
+      { id: 5, invoice: 'INV-0005', date: '2024-01-13', dueDate: '2024-01-20', customer: 'Sarah Davis', mobile: '555-3456', items: 6, total: 178.25, paid: 0, status: 'cancelled', method: '-' },
+      { id: 6, invoice: 'INV-0006', date: '2024-01-13', dueDate: '2024-01-20', customer: 'James Wilson', mobile: '555-7890', items: 4, total: 299.00, paid: 150.00, status: 'onhold', method: 'mobile' },
+      { id: 7, invoice: 'INV-0007', date: '2024-01-12', dueDate: '2024-01-19', customer: 'Lisa Anderson', mobile: '555-2345', items: 7, total: 523.75, paid: 523.75, status: 'delivered', method: 'card' },
+      { id: 8, invoice: 'INV-0008', date: '2024-01-12', dueDate: '2024-01-19', customer: 'Walk-in', mobile: '-', items: 1, total: 15.99, paid: 15.99, status: 'delivered', method: 'cash' },
+      { id: 9, invoice: 'INV-0009', date: '2024-01-11', dueDate: '2024-01-18', customer: 'Robert Taylor', mobile: '555-6789', items: 9, total: 678.50, paid: 400.00, status: 'pending', method: 'bank' },
+      { id: 10, invoice: 'INV-0010', date: '2024-01-11', dueDate: '2024-01-18', customer: 'Jennifer Martin', mobile: '555-0123', items: 3, total: 145.00, paid: 145.00, status: 'confirmed', method: 'cash' },
+      { id: 11, invoice: 'INV-0011', date: '2024-01-10', dueDate: '2024-01-17', customer: 'William Garcia', mobile: '555-4567', items: 5, total: 267.80, paid: 267.80, status: 'delivered', method: 'card' },
+      { id: 12, invoice: 'INV-0012', date: '2024-01-10', dueDate: '2024-01-17', customer: 'Walk-in', mobile: '-', items: 2, total: 42.00, paid: 42.00, status: 'delivered', method: 'cash' }
+    ];
+
+    var currentPage = 1;
+    var deleteId = null;
+    var deliverId = null;
+
+    var activeActionMenu = null;
+
+    function toggleActions(id) {
+      var menu = document.getElementById('actions-' + id);
+      if (activeActionMenu && activeActionMenu !== menu) {
+        activeActionMenu.classList.add('hidden');
+      }
+      menu.classList.toggle('hidden');
+      activeActionMenu = menu.classList.contains('hidden') ? null : menu;
+    }
+
+    function hideActions() {
+      if (activeActionMenu) {
+        activeActionMenu.classList.add('hidden');
+        activeActionMenu = null;
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.relative')) {
+        hideActions();
+      }
+    });
+
+    function getStatusClass(status) {
+      var classes = { pending: 'status-pending', confirmed: 'status-confirmed', delivered: 'status-delivered', cancelled: 'status-cancelled', onhold: 'status-onhold' };
+      return classes[status] || 'status-pending';
+    }
+
+    function getStatusLabel(status) {
+      var labels = { pending: '⏳ Pending', confirmed: '✅ Confirmed', delivered: '📦 Delivered', cancelled: '❌ Cancelled', onhold: '⏸️ On Hold' };
+      return labels[status] || status;
+    }
+
+    function filterSales() {
+      currentPage = 1;
+      renderSales();
+    }
+
+    function getFilteredSales() {
+      var search = document.getElementById('searchInput').value.toLowerCase();
+      var status = document.getElementById('statusFilter').value;
+      var payment = document.getElementById('paymentFilter').value;
+      var dateFrom = document.getElementById('dateFrom').value;
+      var dateTo = document.getElementById('dateTo').value;
+
+      return sales.filter(function(s) {
+        if (search && s.invoice.toLowerCase().indexOf(search) === -1 && s.customer.toLowerCase().indexOf(search) === -1) return false;
+        if (status && s.status !== status) return false;
+        if (dateFrom && s.date < dateFrom) return false;
+        if (dateTo && s.date > dateTo) return false;
+        if (payment === 'paid' && s.paid < s.total) return false;
+        if (payment === 'partial' && (s.paid === 0 || s.paid >= s.total)) return false;
+        if (payment === 'unpaid' && s.paid > 0) return false;
+        return true;
+      });
+    }
+
+    function renderSales() {
+      var filtered = getFilteredSales();
+      var pageSize = parseInt(document.getElementById('pageSize').value);
+      var start = (currentPage - 1) * pageSize;
+      var end = start + pageSize;
+      var paged = filtered.slice(start, end);
+
+      var tbody = document.getElementById('salesBody');
+      var html = '';
+
+      for (var i = 0; i < paged.length; i++) {
+        var s = paged[i];
+        var balance = s.total - s.paid;
+        
+        html += '<tr class="border-b border-slate-100 row-hover ' + (i % 2 === 0 ? 'row-even' : 'row-odd') + '">';
+        html += '<td class="p-3"><span class="font-semibold text-emerald-600">' + s.invoice + '</span></td>';
+        html += '<td class="p-3"><span class="text-sm text-slate-600">' + s.date + '</span></td>';
+        html += '<td class="p-3"><p class="font-medium text-slate-800">' + s.customer + '</p></td>';
+        html += '<td class="p-3 text-center"><span class="tag bg-slate-100 text-slate-600">' + s.items + '</span></td>';
+        html += '<td class="p-3 text-right font-semibold text-slate-800">$' + s.total.toFixed(2) + '</td>';
+        html += '<td class="p-3 text-right font-medium text-emerald-600">$' + s.paid.toFixed(2) + '</td>';
+        html += '<td class="p-3 text-right font-medium ' + (balance > 0 ? 'text-red-500' : 'text-slate-400') + '">$' + balance.toFixed(2) + '</td>';
+        html += '<td class="p-3 text-center"><span class="tag ' + getStatusClass(s.status) + '">' + getStatusLabel(s.status) + '</span></td>';
+        html += '<td class="p-3 text-center"><div class="relative inline-block">';
+        html += '<button onclick="toggleActions(' + s.id + ')" class="px-2 py-1 rounded-md hover:bg-slate-200 flex items-center justify-center gap-1 text-slate-500 text-xs"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>Action</button>';
+        html += '<div id="actions-' + s.id + '" class="hidden absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg z-20 py-1 min-w-[120px]">';
+        html += '<button onclick="viewSale(' + s.id + ');hideActions()" class="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-50 flex items-center gap-2 text-slate-600"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>View</button>';
+        if (s.status === 'confirmed') {
+          html += '<button onclick="deliverSale(' + s.id + ');hideActions()" class="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-50 flex items-center gap-2 text-emerald-600"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>Deliver</button>';
+        }
+        html += '<button onclick="editSale(' + s.id + ');hideActions()" class="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-50 flex items-center gap-2 text-slate-600"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Edit</button>';
+        html += '<button onclick="printSale(' + s.id + ');hideActions()" class="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-50 flex items-center gap-2 text-slate-600"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>Print</button>';
+        html += '<div class="border-t border-slate-100 my-1"></div>';
+        html += '<button onclick="deleteSale(' + s.id + ');hideActions()" class="w-full px-3 py-1.5 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-500"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>Delete</button>';
+        html += '</div></div></td></tr>';
+      }
+
+      tbody.innerHTML = html;
+
+      document.getElementById('showingFrom').textContent = filtered.length ? start + 1 : 0;
+      document.getElementById('showingTo').textContent = Math.min(end, filtered.length);
+      document.getElementById('totalItems').textContent = filtered.length;
+
+      renderPagination(filtered.length, pageSize);
+    }
+
+    function renderPagination(total, pageSize) {
+      var totalPages = Math.ceil(total / pageSize);
+      var container = document.getElementById('pageNumbers');
+      var html = '';
+
+      for (var i = 1; i <= Math.min(totalPages, 5); i++) {
+        html += '<button onclick="goToPage(' + i + ')" class="w-7 h-7 rounded-md ' + (i === currentPage ? 'bg-emerald-500 text-white' : 'bg-slate-100 hover:bg-slate-200') + ' text-sm font-medium">' + i + '</button>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    function goToPage(page) { currentPage = page; renderSales(); }
+    function prevPage() { if (currentPage > 1) { currentPage--; renderSales(); } }
+    function nextPage() { var filtered = getFilteredSales(); var pageSize = parseInt(document.getElementById('pageSize').value); if (currentPage < Math.ceil(filtered.length / pageSize)) { currentPage++; renderSales(); } }
+
+    function resetFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('dateFrom').value = '';
+      document.getElementById('dateTo').value = '';
+      document.getElementById('statusFilter').value = '';
+      document.getElementById('paymentFilter').value = '';
+      document.getElementById('customerFilter').value = '';
+      filterSales();
+    }
+
+    function viewSale(id) {
+      var s = sales.find(function(x) { return x.id === id; });
+      if (!s) return;
+      document.getElementById('modalInvoice').textContent = s.invoice;
+      var balance = s.total - s.paid;
+      var html = '<div class="grid grid-cols-2 gap-4 mb-4">';
+      html += '<div><p class="text-xs text-slate-400">Customer</p><p class="font-medium">' + s.customer + '</p></div>';
+      html += '<div><p class="text-xs text-slate-400">Mobile</p><p class="font-medium">' + s.mobile + '</p></div>';
+      html += '<div><p class="text-xs text-slate-400">Date</p><p class="font-medium">' + s.date + '</p></div>';
+      html += '<div><p class="text-xs text-slate-400">Due Date</p><p class="font-medium">' + s.dueDate + '</p></div>';
+      html += '<div><p class="text-xs text-slate-400">Status</p><p><span class="tag ' + getStatusClass(s.status) + '">' + getStatusLabel(s.status) + '</span></p></div>';
+      html += '<div><p class="text-xs text-slate-400">Payment Method</p><p class="font-medium capitalize">' + s.method + '</p></div>';
+      html += '</div>';
+      html += '<div class="bg-slate-50 rounded-xl p-4">';
+      html += '<div class="flex justify-between mb-2"><span class="text-slate-500">Items</span><span class="font-medium">' + s.items + '</span></div>';
+      html += '<div class="flex justify-between mb-2"><span class="text-slate-500">Total</span><span class="font-semibold">$' + s.total.toFixed(2) + '</span></div>';
+      html += '<div class="flex justify-between mb-2"><span class="text-slate-500">Paid</span><span class="font-medium text-emerald-600">$' + s.paid.toFixed(2) + '</span></div>';
+      html += '<div class="flex justify-between pt-2 border-t border-slate-200"><span class="text-slate-500">Balance</span><span class="font-bold ' + (balance > 0 ? 'text-red-500' : 'text-slate-800') + '">$' + balance.toFixed(2) + '</span></div>';
+      html += '</div>';
+      document.getElementById('modalContent').innerHTML = html;
+      document.getElementById('viewModal').classList.remove('hidden');
+      document.getElementById('viewModal').classList.add('flex');
+    }
+
+    function closeViewModal() {
+      document.getElementById('viewModal').classList.add('hidden');
+      document.getElementById('viewModal').classList.remove('flex');
+    }
+
+    function editSale(id) { alert('Edit sale: ' + id); }
+    function printSale(id) { alert('Print sale: ' + id); }
+    function printInvoice() { alert('Printing...'); }
+
+    function deliverSale(id) {
+      var s = sales.find(function(x) { return x.id === id; });
+      if (!s) return;
+      deliverId = id;
+      document.getElementById('deliverInvoice').textContent = s.invoice;
+      document.getElementById('deliverCustomer').textContent = s.customer;
+      document.getElementById('deliverDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('deliveredBy').value = '';
+      document.getElementById('deliverNotes').value = '';
+      document.getElementById('deliverModal').classList.remove('hidden');
+      document.getElementById('deliverModal').classList.add('flex');
+    }
+
+    function closeDeliverModal() {
+      document.getElementById('deliverModal').classList.add('hidden');
+      document.getElementById('deliverModal').classList.remove('flex');
+      deliverId = null;
+    }
+
+    function confirmDeliver() {
+      if (deliverId) {
+        var s = sales.find(function(x) { return x.id === deliverId; });
+        if (s) {
+          s.status = 'delivered';
+          renderSales();
+        }
+      }
+      closeDeliverModal();
+      alert('Order marked as delivered!');
+    }
+
+    function deleteSale(id) {
+      deleteId = id;
+      document.getElementById('deleteModal').classList.remove('hidden');
+      document.getElementById('deleteModal').classList.add('flex');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.add('hidden');
+      document.getElementById('deleteModal').classList.remove('flex');
+      deleteId = null;
+    }
+
+    function confirmDelete() {
+      if (deleteId) {
+        sales = sales.filter(function(s) { return s.id !== deleteId; });
+        renderSales();
+      }
+      closeDeleteModal();
+    }
+
+    function exportSales() { alert('Exporting sales...'); }
+
+    renderSales();
+  </script>
+</body>
+</html>

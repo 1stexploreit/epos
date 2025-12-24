@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Dashboard - FreshMart POS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    :root { --theme-main: #10b981; --theme-light: #ecfdf5; --theme-hover: #34d399; --theme-dark: #059669; }
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+    .scrollbar-thin::-webkit-scrollbar { width: 5px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #f1f5f9; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .dark-scroll::-webkit-scrollbar-track { background: #334155; }
+    .dark-scroll::-webkit-scrollbar-thumb { background: #475569; }
+    .theme-bg { background-color: var(--theme-main); }
+    .theme-bg-light { background-color: var(--theme-light); }
+    .theme-bg-gradient { background: linear-gradient(to right, var(--theme-main), var(--theme-dark)); }
+    .theme-bg-gradient-br { background: linear-gradient(to bottom right, var(--theme-main), var(--theme-dark)); }
+    .theme-text { color: var(--theme-main); }
+    .theme-shadow { box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--theme-main) 30%, transparent); }
+    .theme-btn { background-color: var(--theme-main); }
+    .theme-btn:hover { background-color: var(--theme-hover); }
+    #sidebar { transition: transform 0.3s ease-in-out; }
+    @media (max-width: 1023px) { #sidebar { position: fixed; top: 0; left: 0; height: 100%; z-index: 50; transform: translateX(-100%); } #sidebar.open { transform: translateX(0); } }
+    #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 40; }
+    #overlay.show { display: block; }
+    .modal { display: none; }
+    .modal.active { display: flex; }
+    .theme-option { transition: all 0.2s; }
+    .theme-option:hover { transform: scale(1.02); }
+    .theme-option.active { ring: 2px; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen overflow-hidden">
+  <div id="overlay" onclick="closeSidebar()"></div>
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <div id="sidebar" class="w-64 flex flex-col flex-shrink-0 lg:translate-x-0"></div>
+
+    <!-- Main Content -->
+    <div id="mainContent" class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <!-- Topbar -->
+      <div id="topbar" class="px-4 md:px-6 py-3 flex items-center justify-between shadow-sm flex-shrink-0"></div>
+
+      <!-- Content Area -->
+      <div id="contentArea" class="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-6">
+        <div id="statsCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          <div id="chartCard" class="lg:col-span-8 rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-5">
+              <div><h3 id="chartTitle" class="text-sm font-semibold">Sales Overview</h3><p id="chartSub" class="text-xs">Weekly performance</p></div>
+              <div id="chartTabs" class="flex gap-1 p-1 rounded-xl">
+                <button class="px-4 py-1.5 text-xs font-medium text-white theme-bg-gradient rounded-lg shadow-sm">Week</button>
+                <button id="chartTabMonth" class="px-4 py-1.5 text-xs font-medium rounded-lg">Month</button>
+              </div>
+            </div>
+            <div class="h-56"><canvas id="salesChart"></canvas></div>
+          </div>
+          <div id="walletCard" class="lg:col-span-4 rounded-2xl flex flex-col shadow-sm" style="max-height: 340px;">
+            <div id="walletHeader" class="p-4 flex items-center justify-between flex-shrink-0">
+              <h3 class="text-sm font-semibold">Wallet Balance</h3>
+              <span class="text-lg font-bold theme-text">$271,450</span>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin" id="walletList"></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div id="tableCard" class="lg:col-span-2 rounded-2xl overflow-hidden shadow-sm">
+            <div id="tableHeader" class="p-4 flex items-center justify-between flex-wrap gap-2">
+              <div id="tabContainer" class="flex gap-1 p-1 rounded-xl"></div>
+              <button class="theme-text text-xs font-medium hover:underline">View All</button>
+            </div>
+            <div id="ordersContent" class="overflow-x-auto"><table class="w-full"><thead id="ordersHead"><tr><th class="text-left p-3 text-[11px] font-semibold uppercase">Order ID</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Customer</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Total</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Status</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Time</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
+            <div id="receivableContent" class="hidden overflow-x-auto"><table class="w-full"><thead><tr><th class="text-left p-3 text-[11px] font-semibold uppercase">Customer</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Invoice</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Due Date</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Amount</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Status</th></tr></thead><tbody id="receivableBody"></tbody></table></div>
+            <div id="receiveContent" class="hidden overflow-x-auto"><table class="w-full"><thead><tr><th class="text-left p-3 text-[11px] font-semibold uppercase">Description</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Category</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Method</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Time</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Amount</th></tr></thead><tbody id="receiveBody"></tbody></table></div>
+            <div id="paymentsContent" class="hidden overflow-x-auto"><table class="w-full"><thead><tr><th class="text-left p-3 text-[11px] font-semibold uppercase">Description</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Category</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Method</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Time</th><th class="text-left p-3 text-[11px] font-semibold uppercase">Amount</th></tr></thead><tbody id="paymentsBody"></tbody></table></div>
+          </div>
+          <div class="space-y-4">
+            <div id="todayBalanceCard" class="theme-bg-gradient-br rounded-2xl p-5 text-white theme-shadow">
+              <div class="flex items-center gap-2 mb-4"><div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg></div><h3 class="font-semibold text-sm">Today Balance</h3></div>
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-sm"><span class="text-white/70">Total Receive</span><span class="text-emerald-200 font-medium">+$45,200</span></div>
+                <div class="flex items-center justify-between text-sm"><span class="text-white/70">Total Payment</span><span class="text-red-200 font-medium">-$12,500</span></div>
+                <div class="border-t border-white/20 pt-3 mt-3 flex items-center justify-between"><span class="text-white/80 font-medium">Net Balance</span><span class="text-2xl font-bold">$32,700</span></div>
+              </div>
+            </div>
+            <div id="notesCard" class="rounded-2xl p-4 shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2"><div class="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center"><svg class="text-amber-600" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"></path><path d="M15 3v6h6"></path></svg></div><h3 id="notesTitle" class="font-semibold text-sm">Notes</h3></div>
+                <button onclick="openNoteModal()" class="w-7 h-7 theme-bg hover:opacity-90 rounded-lg flex items-center justify-center"><svg class="text-white" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+              </div>
+              <div id="noteContent" class="min-h-20 rounded-xl p-3"></div>
+              <div class="flex items-center justify-between mt-3">
+                <button onclick="prevNote()" class="p-1.5 hover:bg-slate-100 rounded-lg" id="notePrev"><i data-lucide="chevron-left" class="h-4 w-4"></i></button>
+                <div class="flex gap-1.5" id="noteDots"></div>
+                <button onclick="nextNote()" class="p-1.5 hover:bg-slate-100 rounded-lg" id="noteNext"><i data-lucide="chevron-right" class="h-4 w-4"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Theme Modal -->
+  <div id="themeModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 w-[480px] shadow-2xl">
+      <div class="flex items-center justify-between mb-5">
+        <div><h3 class="text-xl font-bold text-slate-800">Choose Theme</h3><p class="text-sm text-slate-500">Select your preferred appearance</p></div>
+        <button onclick="closeThemeModal()" class="p-2 hover:bg-slate-100 rounded-lg"><svg class="text-slate-500" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <!-- Light Theme -->
+        <div onclick="setTheme('light')" class="theme-option cursor-pointer rounded-2xl border-2 border-slate-200 p-3 hover:border-emerald-500" id="themeLight">
+          <div class="rounded-xl overflow-hidden border border-slate-200 mb-3">
+            <div class="flex h-24">
+              <div class="w-1/4 bg-white border-r border-slate-200 p-1.5">
+                <div class="w-full h-2 bg-emerald-500 rounded mb-1"></div>
+                <div class="w-full h-1.5 bg-slate-200 rounded mb-0.5"></div>
+                <div class="w-full h-1.5 bg-slate-200 rounded mb-0.5"></div>
+                <div class="w-full h-1.5 bg-slate-200 rounded"></div>
+              </div>
+              <div class="flex-1 bg-slate-100 p-1.5">
+                <div class="w-full h-2 bg-white rounded mb-1"></div>
+                <div class="flex gap-1">
+                  <div class="flex-1 h-6 bg-white rounded"></div>
+                  <div class="flex-1 h-6 bg-white rounded"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="text-sm font-semibold text-slate-800 text-center">Light</p>
+          <p class="text-[10px] text-slate-500 text-center">Light sidebar & content</p>
+        </div>
+        <!-- Combined Theme -->
+        <div onclick="setTheme('combined')" class="theme-option cursor-pointer rounded-2xl border-2 border-emerald-500 p-3 ring-2 ring-emerald-500/20" id="themeCombined">
+          <div class="rounded-xl overflow-hidden border border-slate-200 mb-3">
+            <div class="flex h-24">
+              <div class="w-1/4 bg-slate-900 p-1.5">
+                <div class="w-full h-2 bg-emerald-500 rounded mb-1"></div>
+                <div class="w-full h-1.5 bg-slate-700 rounded mb-0.5"></div>
+                <div class="w-full h-1.5 bg-slate-700 rounded mb-0.5"></div>
+                <div class="w-full h-1.5 bg-slate-700 rounded"></div>
+              </div>
+              <div class="flex-1 bg-slate-100 p-1.5">
+                <div class="w-full h-2 bg-white rounded mb-1"></div>
+                <div class="flex gap-1">
+                  <div class="flex-1 h-6 bg-white rounded"></div>
+                  <div class="flex-1 h-6 bg-white rounded"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="text-sm font-semibold text-slate-800 text-center">Combined</p>
+          <p class="text-[10px] text-slate-500 text-center">Dark sidebar, light content</p>
+        </div>
+        <!-- Dark Theme -->
+        <div onclick="setTheme('dark')" class="theme-option cursor-pointer rounded-2xl border-2 border-slate-200 p-3 hover:border-emerald-500" id="themeDark">
+          <div class="rounded-xl overflow-hidden border border-slate-700 mb-3">
+            <div class="flex h-24">
+              <div class="w-1/4 bg-slate-900 p-1.5">
+                <div class="w-full h-2 bg-emerald-500 rounded mb-1"></div>
+                <div class="w-full h-1.5 bg-slate-700 rounded mb-0.5"></div>
+                <div class="w-full h-1.5 bg-slate-700 rounded mb-0.5"></div>
+                <div class="w-full h-1.5 bg-slate-700 rounded"></div>
+              </div>
+              <div class="flex-1 bg-slate-800 p-1.5">
+                <div class="w-full h-2 bg-slate-700 rounded mb-1"></div>
+                <div class="flex gap-1">
+                  <div class="flex-1 h-6 bg-slate-700 rounded"></div>
+                  <div class="flex-1 h-6 bg-slate-700 rounded"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="text-sm font-semibold text-slate-800 text-center">Dark</p>
+          <p class="text-[10px] text-slate-500 text-center">Full dark mode</p>
+        </div>
+      </div>
+      <button onclick="closeThemeModal()" class="mt-5 w-full py-3 theme-btn text-white rounded-xl font-medium theme-shadow">Done</button>
+    </div>
+  </div>
+
+  <!-- Add Note Modal -->
+  <div id="addNoteModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 w-96 shadow-2xl">
+      <div class="flex items-center justify-between mb-4"><h3 class="text-xl font-bold text-slate-800">Add New Note</h3><button onclick="closeNoteModal()" class="p-2 hover:bg-slate-100 rounded-lg"><svg class="text-slate-500" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+      <textarea id="newNoteText" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm resize-none h-28 focus:outline-none focus:border-emerald-500" placeholder="Enter your note..."></textarea>
+      <div class="flex gap-3 mt-4">
+        <button onclick="closeNoteModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium text-slate-600">Cancel</button>
+        <button onclick="saveNote()" class="flex-1 py-3 theme-btn text-white rounded-xl font-medium theme-shadow">Save Note</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentTheme = 'combined';
+    let customerMenuOpen = false;
+    let salesChart = null;
+
+    const recentOrders = [
+      { id: '#ORD-2847', customer: 'John Smith', total: 149.97, status: 'Completed', time: '10:30 AM' },
+      { id: '#ORD-2846', customer: 'Emma Wilson', total: 999.99, status: 'Processing', time: '10:15 AM' },
+      { id: '#ORD-2845', customer: 'Michael Brown', total: 87.45, status: 'Completed', time: '09:45 AM' },
+      { id: '#ORD-2844', customer: 'Sarah Davis', total: 259.98, status: 'Pending', time: '09:30 AM' },
+    ];
+    const todayReceivable = [
+      { customer: 'ABC Corporation', invoice: 'INV-001', dueDate: 'Today', amount: 2500, status: 'Due Today' },
+      { customer: 'XYZ Ltd', invoice: 'INV-002', dueDate: 'Today', amount: 1850, status: 'Due Today' },
+      { customer: 'Smith & Sons', invoice: 'INV-003', dueDate: 'Tomorrow', amount: 3200, status: 'Upcoming' },
+      { customer: 'Tech Solutions', invoice: 'INV-004', dueDate: 'Dec 25', amount: 950, status: 'Upcoming' },
+    ];
+    const todayReceive = [
+      { desc: 'Cash Sales - Walk-in', category: 'Sales', method: 'Cash', time: '10:30 AM', amount: 18500 },
+      { desc: 'Card Payment - Online', category: 'Sales', method: 'Visa Card', time: '11:15 AM', amount: 15200 },
+      { desc: 'Invoice #INV-098', category: 'Collection', method: 'Bank Transfer', time: '12:00 PM', amount: 8500 },
+      { desc: 'Refund Credit', category: 'Adjustment', method: 'Cash', time: '2:30 PM', amount: 3000 },
+    ];
+    const todayPayments = [
+      { desc: 'Supplier - Tech Distributors', category: 'Inventory', method: 'Bank Transfer', time: '9:00 AM', amount: 6500 },
+      { desc: 'Monthly Salary', category: 'Payroll', method: 'Bank Transfer', time: '10:00 AM', amount: 3500 },
+      { desc: 'Electricity Bill', category: 'Utilities', method: 'Online', time: '11:30 AM', amount: 1500 },
+      { desc: 'Office Supplies', category: 'Operations', method: 'Cash', time: '3:00 PM', amount: 1000 },
+    ];
+    const walletItems = [
+      { name: 'Cash', sub: 'Main drawer', amount: '$125,400', svg: '<path d="M11 15h2v2h-2v-2Z"/><path d="M5 3v18h14V3H5Zm12 4h-4m4 4h-4m-6 0 2 2 4-4"/>', lc: 'bg-emerald-50', lic: 'text-emerald-600', dc: 'bg-emerald-500/20', dic: 'text-emerald-400' },
+      { name: 'Visa Card', sub: '****4582', amount: '$52,300', svg: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>', lc: 'bg-blue-50', lic: 'text-blue-600', dc: 'bg-blue-500/20', dic: 'text-blue-400' },
+      { name: 'Mastercard', sub: '****7891', amount: '$36,950', svg: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>', lc: 'bg-orange-50', lic: 'text-orange-600', dc: 'bg-orange-500/20', dic: 'text-orange-400' },
+      { name: 'PayPal', sub: 'store@email.com', amount: '$28,400', svg: '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" x2="12.01" y1="18" y2="18"/>', lc: 'bg-purple-50', lic: 'text-purple-600', dc: 'bg-purple-500/20', dic: 'text-purple-400' },
+      { name: 'Apple Pay', sub: 'Connected', amount: '$15,200', svg: '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" x2="12.01" y1="18" y2="18"/>', lc: 'bg-green-50', lic: 'text-green-600', dc: 'bg-green-500/20', dic: 'text-green-400' },
+      { name: 'Bank Account', sub: '****3421', amount: '$13,200', svg: '<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>', lc: 'bg-sky-50', lic: 'text-sky-600', dc: 'bg-sky-500/20', dic: 'text-sky-400' },
+    ];
+    let notes = [
+      { text: 'Remember to reorder iPhone 15 Pro cases - stock running low. Contact supplier by EOD.', date: 'Today, 9:30 AM' },
+      { text: 'Staff meeting scheduled for tomorrow at 10 AM. Discuss Q4 sales targets.', date: 'Today, 8:15 AM' },
+      { text: 'New supplier contract needs review. Check terms for bulk discounts.', date: 'Yesterday' },
+      { text: 'Customer feedback: Need more payment options. Consider Apple Pay.', date: 'Dec 18' },
+    ];
+    let currentNote = 0;
+
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+    function toggleCustomerMenu(e) { e.preventDefault(); customerMenuOpen = !customerMenuOpen; const sub = document.getElementById('customerSubmenu'); const arr = document.getElementById('customerArrow'); if(sub){ if (customerMenuOpen) { sub.classList.remove('hidden'); arr.style.transform = 'rotate(180deg)'; } else { sub.classList.add('hidden'); arr.style.transform = 'rotate(0deg)'; } } }
+
+    function openThemeModal() { document.getElementById('themeModal').classList.add('active'); updateThemeModalSelection(); }
+    function closeThemeModal() { document.getElementById('themeModal').classList.remove('active'); }
+    function updateThemeModalSelection() {
+      ['Light', 'Combined', 'Dark'].forEach(t => {
+        const el = document.getElementById('theme' + t);
+        if (t.toLowerCase() === currentTheme) { el.className = 'theme-option cursor-pointer rounded-2xl border-2 border-emerald-500 p-3 ring-2 ring-emerald-500/20'; }
+        else { el.className = 'theme-option cursor-pointer rounded-2xl border-2 border-slate-200 p-3 hover:border-emerald-500'; }
+      });
+    }
+
+    function setTheme(theme) {
+      currentTheme = theme;
+      updateThemeModalSelection();
+      renderAll();
+    }
+
+    function isDark() { return currentTheme === 'dark'; }
+    function isSidebarDark() { return currentTheme === 'combined' || currentTheme === 'dark'; }
+    function getSidebarBg() { return currentTheme === 'dark' ? 'bg-slate-800' : (currentTheme === 'combined' ? 'bg-slate-900' : 'bg-white border-r border-slate-200'); }
+
+    function renderSidebar() {
+      const sb = document.getElementById('sidebar');
+      const dark = isSidebarDark();
+      sb.className = `w-64 flex flex-col flex-shrink-0 lg:translate-x-0 ${getSidebarBg()}`;
+      const borderC = dark ? (currentTheme === 'dark' ? 'border-slate-700' : 'border-slate-700') : 'border-slate-200';
+      const textM = dark ? 'text-white' : 'text-slate-800';
+      const textS = dark ? 'text-slate-400' : 'text-slate-500';
+      const navActive = dark ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-600';
+      const navItem = dark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-50';
+      const navIcon = dark ? 'text-slate-400' : 'text-slate-400';
+      const subItem = dark ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-200' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700';
+      const branchBg = dark ? 'bg-slate-800' : 'bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200';
+      const branchIcon = dark ? 'bg-emerald-500/20' : 'bg-emerald-50';
+      const branchIconC = dark ? 'text-emerald-400' : 'text-emerald-600';
+      const closeBtn = dark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-600';
+      
+      sb.innerHTML = `
+        <div class="p-4 border-b ${borderC} flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 theme-bg-gradient-br rounded-xl flex items-center justify-center theme-shadow"><span class="text-lg font-bold text-white">FM</span></div>
+            <div><h1 class="font-bold text-lg ${textM}">FreshMart</h1><p class="text-xs ${textS}">POS System</p></div>
+          </div>
+          <button class="lg:hidden p-1 ${closeBtn}" onclick="closeSidebar()"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto scrollbar-thin ${dark ? 'dark-scroll' : ''}">
+          <div class="text-[10px] font-semibold ${textS} uppercase tracking-wider mb-3">Main Menu</div>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl ${navActive}"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg><span class="text-sm font-medium">Dashboard</span></a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl ${navItem}"><svg class="${navIcon}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg><span class="text-sm font-medium">POS Terminal</span></a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl ${navItem}"><svg class="${navIcon}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.55 4.24"></path><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg><span class="text-sm font-medium">Products</span><span class="ml-auto ${dark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-600'} text-[10px] px-2 py-0.5 rounded-lg font-medium">36</span></a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl ${navItem}"><svg class="${navIcon}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg><span class="text-sm font-medium">Orders</span></a>
+          <div>
+            <a href="#" onclick="toggleCustomerMenu(event)" class="flex items-center gap-3 px-3 py-2.5 rounded-xl ${navItem}"><svg class="${navIcon}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><span class="text-sm font-medium">Customers</span><svg class="${navIcon} ml-auto transition-transform" id="customerArrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></a>
+            <div id="customerSubmenu" class="hidden ml-4 pl-4 border-l ${borderC} mt-1 space-y-1">
+              <a href="#" class="flex items-center px-3 py-2 rounded-lg ${subItem} text-sm">All Customers</a>
+              <a href="#" class="flex items-center px-3 py-2 rounded-lg ${subItem} text-sm">Add Customer</a>
+              <a href="#" class="flex items-center px-3 py-2 rounded-lg ${subItem} text-sm">Customer Groups</a>
+              <a href="#" class="flex items-center px-3 py-2 rounded-lg ${subItem} text-sm">Loyalty Program</a>
+            </div>
+          </div>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl ${navItem}"><svg class="${navIcon}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg><span class="text-sm font-medium">Analytics</span></a>
+          <div class="text-[10px] font-semibold ${textS} uppercase tracking-wider mb-3 mt-6">Inventory</div>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl ${navItem}"><svg class="${navIcon}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"></path><path d="M7 7h.01"></path></svg><span class="text-sm font-medium">Categories</span></a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl ${navItem}"><svg class="${navIcon}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"></path><path d="M6 18h12"></path><path d="M6 14h12"></path><rect width="12" height="12" x="6" y="10"></rect></svg><span class="text-sm font-medium">Stock Management</span></a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl ${navItem}"><svg class="${navIcon}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17h4V5H2v12h3"></path><path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1"></path><circle cx="7.5" cy="17.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg><span class="text-sm font-medium">Suppliers</span></a>
+          <div class="text-[10px] font-semibold ${textS} uppercase tracking-wider mb-3 mt-6">Settings</div>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl ${navItem}"><svg class="${navIcon}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg><span class="text-sm font-medium">System Settings</span></a>
+        </nav>
+        <div class="p-4 border-t ${borderC}">
+          <div class="flex items-center gap-3 ${branchBg} p-3 rounded-xl">
+            <div class="w-9 h-9 ${branchIcon} rounded-xl flex items-center justify-center"><svg class="${branchIconC}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
+            <div class="flex-1 min-w-0"><p class="text-sm font-medium ${textM} truncate">Main Branch</p><p class="text-xs ${textS}">Downtown, New York</p></div>
+            <div class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
+          </div>
+        </div>`;
+    }
+
+    function renderTopbar() {
+      const tb = document.getElementById('topbar');
+      const dark = isDark();
+      tb.className = `${dark ? 'bg-slate-800 border-b border-slate-700' : 'bg-white border-b border-slate-200'} px-4 md:px-6 py-3 flex items-center justify-between shadow-sm flex-shrink-0`;
+      const textM = dark ? 'text-white' : 'text-slate-800';
+      const textS = dark ? 'text-slate-400' : 'text-slate-500';
+      const btnHover = dark ? 'hover:bg-slate-700' : 'hover:bg-slate-100';
+      const iconC = dark ? 'text-slate-300' : 'text-slate-500';
+      const dropdownBg = dark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
+      const dropdownHover = dark ? 'hover:bg-slate-700' : 'hover:bg-slate-50';
+      const dropdownText = dark ? 'text-slate-300' : 'text-slate-600';
+      const dropdownTextM = dark ? 'text-white' : 'text-slate-800';
+      const dropdownBorder = dark ? 'border-slate-700' : 'border-slate-100';
+      
+      tb.innerHTML = `
+        <div class="flex items-center gap-3">
+          <button class="lg:hidden p-2 ${iconC} ${btnHover} rounded-xl" onclick="toggleSidebar()"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg></button>
+          <div class="flex items-center gap-3 lg:hidden">
+            <div class="w-8 h-8 theme-bg-gradient-br rounded-lg flex items-center justify-center"><span class="text-sm font-bold text-white">FM</span></div>
+            <div><h1 class="font-bold text-sm ${textM}">FreshMart</h1><p class="text-[10px] ${textS}">POS System</p></div>
+          </div>
+          <div class="hidden lg:block"><h2 class="text-xl font-bold ${textM}">Dashboard</h2><p class="text-sm ${textS}">Welcome back! Here's your store overview</p></div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="hidden sm:flex items-center gap-1.5 px-3 py-2 theme-bg-light theme-text rounded-xl text-sm font-medium hover:opacity-80"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg><span class="hidden md:inline">POS</span></button>
+          
+          <!-- Language Dropdown -->
+          <div class="relative hidden sm:block">
+            <button id="langBtn" class="p-2 ${iconC} ${btnHover} rounded-xl flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg><span class="text-xs font-medium">EN</span></button>
+            <div id="langDropdown" class="hidden absolute right-0 top-full mt-2 w-40 ${dropdownBg} border rounded-xl shadow-xl z-50 py-2">
+              <a href="#" class="flex items-center gap-3 px-4 py-2 ${dropdownHover} ${dropdownText}" onclick="setLang('EN',event)"><span>🇺🇸</span><span class="text-sm">English</span></a>
+              <a href="#" class="flex items-center gap-3 px-4 py-2 ${dropdownHover} ${dropdownText}" onclick="setLang('ES',event)"><span>🇪🇸</span><span class="text-sm">Español</span></a>
+              <a href="#" class="flex items-center gap-3 px-4 py-2 ${dropdownHover} ${dropdownText}" onclick="setLang('FR',event)"><span>🇫🇷</span><span class="text-sm">Français</span></a>
+              <a href="#" class="flex items-center gap-3 px-4 py-2 ${dropdownHover} ${dropdownText}" onclick="setLang('DE',event)"><span>🇩🇪</span><span class="text-sm">Deutsch</span></a>
+            </div>
+          </div>
+          
+          <!-- Theme Button -->
+          <button onclick="openThemeModal()" class="p-2 ${iconC} ${btnHover} rounded-xl" title="Change Theme"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z"></path></svg></button>
+          
+          <!-- Notifications Dropdown -->
+          <div class="relative">
+            <button id="notifBtn" class="relative p-2 ${iconC} ${btnHover} rounded-xl"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">3</span></button>
+            <div id="notifDropdown" class="hidden absolute right-0 top-full mt-2 w-80 ${dropdownBg} border rounded-2xl shadow-xl z-50 overflow-hidden">
+              <div class="px-4 py-3 border-b ${dropdownBorder} flex items-center justify-between">
+                <h3 class="text-sm font-semibold ${dropdownTextM}">Notifications</h3>
+                <span class="text-xs theme-text cursor-pointer font-medium">Mark all read</span>
+              </div>
+              <div class="max-h-72 overflow-y-auto scrollbar-thin">
+                <div class="px-4 py-3 ${dropdownHover} border-b ${dropdownBorder} cursor-pointer">
+                  <div class="flex gap-3">
+                    <div class="w-2 h-2 theme-bg rounded-full mt-1.5 flex-shrink-0"></div>
+                    <div>
+                      <p class="text-sm ${dropdownText}">New order <span class="font-semibold ${dropdownTextM}">#2847</span> received</p>
+                      <p class="text-xs ${textS} mt-0.5">2 min ago</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="px-4 py-3 ${dropdownHover} border-b ${dropdownBorder} cursor-pointer">
+                  <div class="flex gap-3">
+                    <div class="w-2 h-2 bg-orange-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                    <div>
+                      <p class="text-sm ${dropdownText}"><span class="font-semibold ${dropdownTextM}">Low stock</span> alert - iPhone cases</p>
+                      <p class="text-xs ${textS} mt-0.5">15 min ago</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="px-4 py-3 ${dropdownHover} cursor-pointer">
+                  <div class="flex gap-3">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                    <div>
+                      <p class="text-sm ${dropdownText}">Payment received from <span class="font-semibold ${dropdownTextM}">ABC Corp</span></p>
+                      <p class="text-xs ${textS} mt-0.5">1 hour ago</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="px-4 py-2.5 border-t ${dropdownBorder} ${dark ? 'bg-slate-700' : 'bg-slate-50'}">
+                <button class="w-full text-xs font-medium theme-text">View All Notifications</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- User Menu Dropdown -->
+          <div class="relative">
+            <button id="userBtn" class="flex items-center gap-2 p-1.5 ${btnHover} rounded-xl">
+              <div class="w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-md"><span class="text-xs font-medium text-white">JD</span></div>
+              <div class="text-right hidden md:block"><p class="text-sm font-medium ${textM}">John Doe</p><p class="text-[10px] ${textS}">Manager</p></div>
+              <svg class="${textS} hidden sm:block" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div id="userDropdown" class="hidden absolute right-0 top-full mt-2 w-56 ${dropdownBg} border rounded-2xl shadow-xl z-50 overflow-hidden">
+              <div class="p-4 border-b ${dropdownBorder} ${dark ? 'bg-slate-700' : 'bg-gradient-to-r from-slate-50 to-slate-100'}">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-md"><span class="text-sm font-medium text-white">JD</span></div>
+                  <div>
+                    <p class="text-sm font-semibold ${dropdownTextM}">John Doe</p>
+                    <p class="text-xs ${textS}">john@freshmart.com</p>
+                  </div>
+                </div>
+              </div>
+              <div class="py-2">
+                <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm ${dropdownText} ${dropdownHover}">
+                  <svg class="${textS}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  My Profile
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm ${dropdownText} ${dropdownHover}">
+                  <svg class="${textS}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  Settings
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm ${dropdownText} ${dropdownHover}">
+                  <svg class="${textS}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                  Help Center
+                </a>
+              </div>
+              <div class="border-t ${dropdownBorder} py-2">
+                <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 ${dark ? 'hover:bg-red-500/10' : 'hover:bg-red-50'}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                  Logout
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      
+      // Add dropdown event listeners
+      setupDropdowns();
+    }
+    
+    function setupDropdowns() {
+      ['langBtn', 'notifBtn', 'userBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.onclick = (e) => {
+            e.stopPropagation();
+            const map = { langBtn: 'langDropdown', notifBtn: 'notifDropdown', userBtn: 'userDropdown' };
+            const dd = document.getElementById(map[id]);
+            const isHidden = dd.classList.contains('hidden');
+            Object.values(map).forEach(d => { const x = document.getElementById(d); if(x) x.classList.add('hidden'); });
+            if (isHidden) dd.classList.remove('hidden');
+          };
+        }
+      });
+    }
+    
+    function setLang(lang, e) {
+      e.preventDefault();
+      const btn = document.getElementById('langBtn');
+      if (btn) {
+        const span = btn.querySelector('span:last-child');
+        if (span) span.textContent = lang;
+      }
+      document.getElementById('langDropdown').classList.add('hidden');
+    }
+    
+    document.addEventListener('click', () => {
+      ['langDropdown', 'notifDropdown', 'userDropdown'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+    });
+
+    function renderStatsCards() {
+      const dark = isDark();
+      const cardC = dark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-slate-200';
+      const textM = dark ? 'text-white' : 'text-slate-800';
+      const textS = dark ? 'text-slate-400' : 'text-slate-500';
+      const borderC = dark ? 'border-slate-700' : 'border-slate-100';
+      const barBg = dark ? 'bg-slate-700' : 'bg-slate-100';
+
+      document.getElementById('statsCards').innerHTML = `
+        <div class="${cardC} rounded-2xl p-4 hover:shadow-md transition-all shadow-sm">
+          <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 theme-bg-gradient-br rounded-xl flex items-center justify-center theme-shadow"><svg class="text-white" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg></div><span class="text-xs theme-bg-light theme-text px-2 py-1 rounded-lg font-medium">+12%</span></div>
+          <p class="text-2xl font-bold ${textM}">142</p><p class="text-xs ${textS} uppercase tracking-wide mt-1">Today Orders</p>
+          <div class="flex items-center gap-3 mt-3 pt-3 border-t ${borderC} text-xs ${textS}"><span>Online <strong class="${textM}">68</strong></span><span>App <strong class="${textM}">52</strong></span><span>Store <strong class="${textM}">22</strong></span></div>
+        </div>
+        <div class="${cardC} rounded-2xl p-4 hover:shadow-md transition-all shadow-sm">
+          <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30"><svg class="text-white" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div><span class="text-xs ${dark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'} px-2 py-1 rounded-lg font-medium">+8.5%</span></div>
+          <p class="text-2xl font-bold ${textM}">$32,700</p><p class="text-xs ${textS} uppercase tracking-wide mt-1">Today Revenue</p>
+          <div class="flex items-center gap-4 mt-3 pt-3 border-t ${borderC} text-xs"><span class="${textS}">In <strong class="theme-text">$45,200</strong></span><span class="${textS}">Out <strong class="text-red-500">$12,500</strong></span></div>
+        </div>
+        <div class="${cardC} rounded-2xl p-4 hover:shadow-md transition-all shadow-sm">
+          <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 bg-gradient-to-br from-violet-500 to-violet-700 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30"><svg class="text-white" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg></div><span class="text-xs ${dark ? 'bg-violet-500/20 text-violet-400' : 'bg-violet-50 text-violet-600'} px-2 py-1 rounded-lg font-medium">Balance</span></div>
+          <p class="text-2xl font-bold ${textM}">$214,500</p><p class="text-xs ${textS} uppercase tracking-wide mt-1">Account Balance</p>
+          <div class="flex items-center gap-4 mt-3 pt-3 border-t ${borderC} text-xs"><span class="${textS}">Payable <strong class="text-red-500">$125k</strong></span><span class="${textS}">Receivable <strong class="theme-text">$89.5k</strong></span></div>
+        </div>
+        <div class="${cardC} rounded-2xl p-4 hover:shadow-md transition-all shadow-sm">
+          <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-700 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/30"><svg class="text-white" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.55 4.24"></path><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></div><span class="text-xs ${dark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-50 text-amber-600'} px-2 py-1 rounded-lg font-medium">$3.4M</span></div>
+          <p class="text-2xl font-bold ${textM}">183,838</p><p class="text-xs ${textS} uppercase tracking-wide mt-1">Inventory Items</p>
+          <div class="mt-3 pt-3 border-t ${borderC}"><div class="flex gap-1 h-1.5 rounded-full overflow-hidden ${barBg} mb-2"><div class="bg-emerald-500 rounded-full" style="flex:75"></div><div class="bg-amber-500 rounded-full" style="flex:18"></div><div class="bg-red-500 rounded-full" style="flex:7"></div></div><div class="flex items-center gap-2 text-[10px] ${textS}"><span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>137,878</span><span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>33,091</span><span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>12,869</span></div></div>
+        </div>`;
+    }
+
+    function renderCards() {
+      const dark = isDark();
+      const cardC = dark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-slate-200';
+      const borderC = dark ? 'border-slate-700' : 'border-slate-100';
+      const textM = dark ? 'text-white' : 'text-slate-800';
+      const textS = dark ? 'text-slate-400' : 'text-slate-500';
+      const tabBg = dark ? 'bg-slate-700' : 'bg-slate-100';
+      const noteBg = dark ? 'bg-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200';
+      const iconC = dark ? 'text-slate-400' : 'text-slate-400';
+      const btnHover = dark ? 'hover:bg-slate-700' : 'hover:bg-slate-100';
+
+      document.getElementById('contentArea').className = `flex-1 overflow-y-auto scrollbar-thin ${dark ? 'dark-scroll' : ''} p-4 md:p-6 ${dark ? 'bg-slate-900' : 'bg-slate-100'}`;
+      document.getElementById('chartCard').className = `lg:col-span-8 ${cardC} rounded-2xl p-5 shadow-sm`;
+      document.getElementById('chartTitle').className = `text-sm font-semibold ${textM}`;
+      document.getElementById('chartSub').className = `text-xs ${textS}`;
+      document.getElementById('chartTabs').className = `flex gap-1 ${tabBg} p-1 rounded-xl`;
+      document.getElementById('chartTabMonth').className = `px-4 py-1.5 text-xs font-medium ${textS} rounded-lg`;
+      document.getElementById('walletCard').className = `lg:col-span-4 ${cardC} rounded-2xl flex flex-col shadow-sm`;
+      document.getElementById('walletHeader').className = `p-4 border-b ${borderC} flex items-center justify-between flex-shrink-0`;
+      document.getElementById('walletHeader').querySelector('h3').className = `text-sm font-semibold ${textM}`;
+      document.getElementById('tableCard').className = `lg:col-span-2 ${cardC} rounded-2xl overflow-hidden shadow-sm`;
+      document.getElementById('tableHeader').className = `p-4 border-b ${borderC} flex items-center justify-between flex-wrap gap-2`;
+      document.getElementById('tabContainer').className = `flex gap-1 ${tabBg} p-1 rounded-xl`;
+      document.getElementById('ordersHead').className = dark ? 'bg-slate-700' : 'bg-slate-50';
+      document.getElementById('notesCard').className = `${cardC} rounded-2xl p-4 shadow-sm`;
+      document.getElementById('notesTitle').className = `font-semibold text-sm ${textM}`;
+      document.getElementById('noteContent').className = `min-h-20 ${noteBg} rounded-xl p-3 border`;
+      document.getElementById('notePrev').className = `p-1.5 ${btnHover} rounded-lg`;
+      document.getElementById('noteNext').className = `p-1.5 ${btnHover} rounded-lg`;
+      document.getElementById('notePrev').innerHTML = `<svg class="${iconC}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
+      document.getElementById('noteNext').innerHTML = `<svg class="${iconC}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+      
+      // Today Balance Card
+      const tbc = document.getElementById('todayBalanceCard');
+      if (dark) {
+        tbc.className = 'bg-slate-700 border border-slate-600 rounded-2xl p-5 text-white';
+        tbc.innerHTML = `
+          <div class="flex items-center gap-2 mb-4"><div class="w-9 h-9 bg-emerald-500/20 rounded-xl flex items-center justify-center"><svg class="text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg></div><h3 class="font-semibold text-sm text-white">Today Balance</h3></div>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-sm"><span class="text-slate-400">Total Receive</span><span class="text-emerald-400 font-medium">+$45,200</span></div>
+            <div class="flex items-center justify-between text-sm"><span class="text-slate-400">Total Payment</span><span class="text-red-400 font-medium">-$12,500</span></div>
+            <div class="border-t border-slate-600 pt-3 mt-3 flex items-center justify-between"><span class="text-slate-300 font-medium">Net Balance</span><span class="text-2xl font-bold text-white">$32,700</span></div>
+          </div>`;
+      } else {
+        tbc.className = 'theme-bg-gradient-br rounded-2xl p-5 text-white theme-shadow';
+        tbc.innerHTML = `
+          <div class="flex items-center gap-2 mb-4"><div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg></div><h3 class="font-semibold text-sm">Today Balance</h3></div>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-sm"><span class="text-white/70">Total Receive</span><span class="text-emerald-200 font-medium">+$45,200</span></div>
+            <div class="flex items-center justify-between text-sm"><span class="text-white/70">Total Payment</span><span class="text-red-200 font-medium">-$12,500</span></div>
+            <div class="border-t border-white/20 pt-3 mt-3 flex items-center justify-between"><span class="text-white/80 font-medium">Net Balance</span><span class="text-2xl font-bold">$32,700</span></div>
+          </div>`;
+      }
+    }
+
+    function renderWallet() {
+      const dark = isDark();
+      const itemC = dark ? 'hover:bg-slate-700 border-slate-700' : 'hover:bg-slate-50 border-slate-100';
+      const textM = dark ? 'text-white' : 'text-slate-700';
+      const textS = dark ? 'text-slate-400' : 'text-slate-400';
+
+      document.getElementById('walletList').innerHTML = walletItems.map(w => `<div class="flex items-center justify-between p-3 ${itemC} rounded-xl transition-colors border"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl ${dark ? w.dc : w.lc} flex items-center justify-center"><svg class="${dark ? w.dic : w.lic}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${w.svg}</svg></div><div><p class="text-sm font-medium ${textM}">${w.name}</p><p class="text-[10px] ${textS}">${w.sub}</p></div></div><span class="text-sm font-semibold ${textM}">${w.amount}</span></div>`).join('');
+    }
+
+    function renderTabs() {
+      const dark = isDark();
+      const activeC = 'px-3 py-1.5 text-xs font-medium text-white theme-bg rounded-lg';
+      const inactiveC = `px-3 py-1.5 text-xs font-medium ${dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'} rounded-lg`;
+      document.getElementById('tabContainer').innerHTML = `
+        <button id="tabOrders" onclick="switchTab('orders')" class="${activeC}">Orders</button>
+        <button id="tabReceivable" onclick="switchTab('receivable')" class="${inactiveC}">Receivable</button>
+        <button id="tabReceive" onclick="switchTab('receive')" class="${inactiveC}">Receive</button>
+        <button id="tabPayments" onclick="switchTab('payments')" class="${inactiveC}">Payments</button>`;
+    }
+
+    function renderOrders() {
+      const dark = isDark();
+      const hoverC = dark ? 'hover:bg-slate-700' : 'hover:bg-slate-50';
+      const textM = dark ? 'text-white' : 'text-slate-800';
+      const textS = dark ? 'text-slate-300' : 'text-slate-700';
+      const textMuted = dark ? 'text-slate-400' : 'text-slate-500';
+      const avatarBg = dark ? 'bg-slate-700' : 'bg-slate-100';
+      const avatarText = dark ? 'text-slate-300' : 'text-slate-600';
+      const headC = dark ? 'text-slate-400' : 'text-slate-500';
+      document.getElementById('ordersHead').innerHTML = `<tr><th class="text-left p-3 text-[11px] font-semibold ${headC} uppercase">Order ID</th><th class="text-left p-3 text-[11px] font-semibold ${headC} uppercase">Customer</th><th class="text-left p-3 text-[11px] font-semibold ${headC} uppercase">Total</th><th class="text-left p-3 text-[11px] font-semibold ${headC} uppercase">Status</th><th class="text-left p-3 text-[11px] font-semibold ${headC} uppercase">Time</th></tr>`;
+      document.getElementById('ordersBody').className = `divide-y ${dark ? 'divide-slate-700' : 'divide-slate-100'}`;
+      document.getElementById('ordersBody').innerHTML = recentOrders.map(o => {
+        const sc = o.status === 'Completed' ? 'theme-bg-light theme-text' : o.status === 'Processing' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700';
+        return `<tr class="${hoverC}"><td class="p-3"><span class="text-sm font-semibold theme-text">${o.id}</span></td><td class="p-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full ${avatarBg} flex items-center justify-center text-[10px] font-medium ${avatarText}">${o.customer.split(' ').map(n=>n[0]).join('')}</div><span class="text-sm ${textS}">${o.customer}</span></div></td><td class="p-3 text-sm font-semibold ${textM}">$${o.total.toFixed(2)}</td><td class="p-3"><span class="px-2 py-1 rounded-lg text-[11px] font-medium ${sc}">${o.status}</span></td><td class="p-3 text-sm ${textMuted}">${o.time}</td></tr>`;
+      }).join('');
+    }
+
+    function renderReceivable() {
+      const dark = isDark();
+      const hoverC = dark ? 'hover:bg-slate-700' : 'hover:bg-slate-50';
+      const textM = dark ? 'text-white' : 'text-slate-800';
+      const textS = dark ? 'text-slate-300' : 'text-slate-700';
+      const avatarBg = dark ? 'bg-slate-700' : 'bg-slate-100';
+      const avatarText = dark ? 'text-slate-300' : 'text-slate-600';
+      document.getElementById('receivableBody').className = `divide-y ${dark ? 'divide-slate-700' : 'divide-slate-100'}`;
+      document.getElementById('receivableBody').innerHTML = todayReceivable.map(r => {
+        const sc = r.status === 'Due Today' ? 'bg-red-50 text-red-700' : (dark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600');
+        return `<tr class="${hoverC}"><td class="p-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full ${avatarBg} flex items-center justify-center text-[10px] font-medium ${avatarText}">${r.customer.split(' ').map(n=>n[0]).join('').slice(0,2)}</div><span class="text-sm ${textS}">${r.customer}</span></div></td><td class="p-3"><span class="text-sm font-medium theme-text">${r.invoice}</span></td><td class="p-3 text-sm ${textS}">${r.dueDate}</td><td class="p-3 text-sm font-semibold ${textM}">$${r.amount.toLocaleString()}</td><td class="p-3"><span class="px-2 py-1 rounded-lg text-[11px] font-medium ${sc}">${r.status}</span></td></tr>`;
+      }).join('');
+    }
+
+    function renderReceive() {
+      const dark = isDark();
+      const hoverC = dark ? 'hover:bg-slate-700' : 'hover:bg-slate-50';
+      const textS = dark ? 'text-slate-300' : 'text-slate-700';
+      const textMuted = dark ? 'text-slate-400' : 'text-slate-500';
+      document.getElementById('receiveBody').className = `divide-y ${dark ? 'divide-slate-700' : 'divide-slate-100'}`;
+      document.getElementById('receiveBody').innerHTML = todayReceive.map(r => {
+        const cc = r.category === 'Sales' ? 'theme-bg-light theme-text' : r.category === 'Collection' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700';
+        return `<tr class="${hoverC}"><td class="p-3 text-sm ${textS}">${r.desc}</td><td class="p-3"><span class="px-2 py-1 rounded-lg text-[11px] font-medium ${cc}">${r.category}</span></td><td class="p-3 text-sm ${textMuted}">${r.method}</td><td class="p-3 text-sm ${textMuted}">${r.time}</td><td class="p-3 text-sm font-semibold theme-text">+$${r.amount.toLocaleString()}</td></tr>`;
+      }).join('');
+    }
+
+    function renderPayments() {
+      const dark = isDark();
+      const hoverC = dark ? 'hover:bg-slate-700' : 'hover:bg-slate-50';
+      const textS = dark ? 'text-slate-300' : 'text-slate-700';
+      const textMuted = dark ? 'text-slate-400' : 'text-slate-500';
+      document.getElementById('paymentsBody').className = `divide-y ${dark ? 'divide-slate-700' : 'divide-slate-100'}`;
+      document.getElementById('paymentsBody').innerHTML = todayPayments.map(p => {
+        const cc = p.category === 'Inventory' ? 'bg-orange-50 text-orange-700' : p.category === 'Payroll' ? 'bg-violet-50 text-violet-700' : p.category === 'Utilities' ? 'bg-cyan-50 text-cyan-700' : (dark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600');
+        return `<tr class="${hoverC}"><td class="p-3 text-sm ${textS}">${p.desc}</td><td class="p-3"><span class="px-2 py-1 rounded-lg text-[11px] font-medium ${cc}">${p.category}</span></td><td class="p-3 text-sm ${textMuted}">${p.method}</td><td class="p-3 text-sm ${textMuted}">${p.time}</td><td class="p-3 text-sm font-semibold text-red-500">-$${p.amount.toLocaleString()}</td></tr>`;
+      }).join('');
+    }
+
+    function switchTab(tab) {
+      const dark = isDark();
+      const activeC = 'px-3 py-1.5 text-xs font-medium text-white theme-bg rounded-lg';
+      const inactiveC = `px-3 py-1.5 text-xs font-medium ${dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'} rounded-lg`;
+      ['orders', 'receivable', 'receive', 'payments'].forEach(t => {
+        const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        const content = document.getElementById(t + 'Content');
+        if (t === tab) { btn.className = activeC; content.classList.remove('hidden'); }
+        else { btn.className = inactiveC; content.classList.add('hidden'); }
+      });
+    }
+
+    function renderNotes() {
+      const dark = isDark();
+      const note = notes[currentNote];
+      const textM = dark ? 'text-slate-200' : 'text-slate-600';
+      const textS = dark ? 'text-slate-500' : 'text-slate-400';
+      document.getElementById('noteContent').innerHTML = `<p class="text-sm ${textM} leading-relaxed">${note.text}</p><p class="text-xs ${textS} mt-2">${note.date}</p>`;
+      document.getElementById('noteDots').innerHTML = notes.map((_, i) => `<button onclick="goToNote(${i})" class="w-2 h-2 rounded-full transition-colors ${i === currentNote ? 'theme-bg' : (dark ? 'bg-slate-600 hover:bg-slate-500' : 'bg-slate-200 hover:bg-slate-300')}"></button>`).join('');
+    }
+    function nextNote() { currentNote = (currentNote + 1) % notes.length; renderNotes(); }
+    function prevNote() { currentNote = (currentNote - 1 + notes.length) % notes.length; renderNotes(); }
+    function goToNote(i) { currentNote = i; renderNotes(); }
+    function openNoteModal() { document.getElementById('addNoteModal').classList.add('active'); }
+    function closeNoteModal() { document.getElementById('addNoteModal').classList.remove('active'); document.getElementById('newNoteText').value = ''; }
+    function saveNote() { const t = document.getElementById('newNoteText').value.trim(); if (t) { notes.unshift({ text: t, date: 'Just now' }); currentNote = 0; renderNotes(); closeNoteModal(); } }
+
+    function initChart() {
+      const dark = isDark();
+      if (salesChart) salesChart.destroy();
+      const ctx = document.getElementById('salesChart').getContext('2d');
+      const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+      gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+      gradient.addColorStop(1, 'rgba(16, 185, 129, 0.01)');
+      salesChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ data: [4200, 3800, 5100, 4600, 6200, 7800, 5400], backgroundColor: gradient, borderColor: '#10b981', borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: dark ? '#1e293b' : '#fff', pointBorderColor: '#10b981', pointBorderWidth: 2, pointRadius: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: dark ? '#334155' : '#f1f5f9' }, ticks: { color: dark ? '#94a3b8' : '#64748b' } }, x: { grid: { display: false }, ticks: { color: dark ? '#94a3b8' : '#64748b' } } } }
+      });
+    }
+
+    function renderAll() {
+      document.body.className = `${isDark() ? 'bg-slate-900 text-slate-200' : 'bg-slate-100 text-slate-800'} min-h-screen overflow-hidden`;
+      renderSidebar();
+      renderTopbar();
+      renderCards();
+      renderStatsCards();
+      renderWallet();
+      renderTabs();
+      renderOrders();
+      renderReceivable();
+      renderReceive();
+      renderPayments();
+      renderNotes();
+      initChart();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Add Product - FreshMart POS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    *{font-family:'Inter',sans-serif;box-sizing:border-box}
+    .scrollbar-thin::-webkit-scrollbar{width:4px}
+    .scrollbar-thin::-webkit-scrollbar-track{background:#f1f5f9}
+    .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+    .emoji-btn{transition:all 0.15s}
+    .emoji-btn:hover{transform:scale(1.15)}
+    .emoji-btn.selected{background:#ecfdf5;border-color:#10b981}
+    .image-upload{border:2px dashed #cbd5e1;transition:all 0.2s}
+    .image-upload:hover{border-color:#10b981;background:#ecfdf5}
+    .custom-row{animation:slideIn 0.15s ease}
+    .tab-btn.active{background:#10b981;color:white}
+    .status-radio:checked+label{background:#10b981;color:white;border-color:#10b981}
+    @keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+  <div class="max-w-6xl mx-auto p-3 md:p-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h1 class="text-xl font-bold text-slate-800">Add New Product</h1>
+        <p class="text-xs text-slate-500">Create products in your inventory</p>
+      </div>
+      <button onclick="window.history.back()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-sm font-medium text-slate-600 flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 12H5m7-7l-7 7 7 7"/></svg>Back
+      </button>
+    </div>
+
+    <!-- Tab Switcher -->
+    <div class="bg-white rounded-xl shadow-sm p-1.5 mb-4 flex gap-1.5">
+      <button onclick="switchTab('single')" id="tabSingle" class="tab-btn active flex-1 py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>Single Product
+      </button>
+      <button onclick="switchTab('multi')" id="tabMulti" class="tab-btn flex-1 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Quick Multi-Add
+      </button>
+    </div>
+
+    <!-- SINGLE PRODUCT TAB -->
+    <div id="singleTab">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Main Form -->
+        <div class="lg:col-span-2 space-y-4">
+          <!-- Basic Information -->
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
+              <div class="w-6 h-6 bg-emerald-50 rounded-md flex items-center justify-center"><svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></div>
+              Basic Information
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">SKU / Barcode *</label>
+                <div class="flex gap-2">
+                  <input type="text" id="prodSku" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-emerald-500">
+                  <button onclick="generateSku()" class="px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium whitespace-nowrap">Generate</button>
+                </div>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Product Name *</label>
+                <input type="text" id="prodName" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+              </div>
+              <div class="md:col-span-2 grid grid-cols-3 gap-3">
+                <div>
+                  <label class="text-xs font-medium text-slate-500 mb-1 block">Brand</label>
+                  <input type="text" id="prodBrand" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-slate-500 mb-1 block">Category *</label>
+                  <select id="prodCategory" onchange="loadSubCategories()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+                    <option value="">Select Category</option>
+                    <option value="fruits">🍎 Fruits</option>
+                    <option value="vegetables">🥬 Vegetables</option>
+                    <option value="dairy">🥛 Dairy</option>
+                    <option value="bakery">🍞 Bakery</option>
+                    <option value="beverages">🥤 Beverages</option>
+                    <option value="snacks">🍿 Snacks</option>
+                    <option value="household">🧹 Household</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-slate-500 mb-1 block">Sub Category</label>
+                  <select id="prodSubCategory" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+                    <option value="">Select</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pricing -->
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
+              <div class="w-6 h-6 bg-blue-50 rounded-md flex items-center justify-center"><svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+              Pricing & Discount
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Cost Price</label>
+                <input type="number" step="0.01" id="prodCost" oninput="calculateMargin()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Selling Price *</label>
+                <input type="number" step="0.01" id="prodPrice" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500" oninput="calculateMargin()">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Wholesale Price</label>
+                <input type="number" step="0.01" id="prodWholesale" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Profit Margin</label>
+                <div id="profitMargin" class="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600">--</div>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Flat Discount</label>
+                <input type="number" step="0.01" id="prodFlatDiscount" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Reward Points</label>
+                <input type="number" id="prodPoints" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+              </div>
+            </div>
+          </div>
+
+          <!-- Inventory & Units -->
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
+              <div class="w-6 h-6 bg-amber-50 rounded-md flex items-center justify-center"><svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></div>
+              Inventory & Units
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Single Unit Type *</label>
+                <select id="prodUnitType" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+                  <option value="piece">Piece (Pcs)</option>
+                  <option value="packet">Packet (Pkt)</option>
+                  <option value="bottle">Bottle</option>
+                  <option value="can">Can</option>
+                  <option value="bag">Bag</option>
+                  <option value="kg">Kilogram (Kg)</option>
+                  <option value="liter">Liter (L)</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Bulk Unit Type</label>
+                <select id="prodBulkType" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+                  <option value="">None</option>
+                  <option value="box">Box</option>
+                  <option value="carton">Carton</option>
+                  <option value="case">Case</option>
+                  <option value="crate">Crate</option>
+                  <option value="pack">Pack</option>
+                  <option value="dozen">Dozen</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Qty per Bulk</label>
+                <input type="number" id="prodBulkQty" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500" placeholder="e.g., 12">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Bulk Price</label>
+                <input type="number" step="0.01" id="prodBulkPrice" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Opening Stock *</label>
+                <input type="number" id="prodStock" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Low Stock Alert</label>
+                <input type="number" id="prodLowStock" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">Shelf Location</label>
+                <input type="text" id="prodLocation" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500" placeholder="e.g., A1-S3">
+              </div>
+              <div class="flex items-end">
+                <label class="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg w-full border border-slate-200">
+                  <input type="checkbox" id="prodTrackStock" checked class="w-4 h-4 rounded accent-emerald-500">
+                  <span class="text-xs font-medium text-slate-600">Track Stock</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Info -->
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                <div class="w-6 h-6 bg-indigo-50 rounded-md flex items-center justify-center"><svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+                Additional Info
+              </h3>
+              <button onclick="addCustomField()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-600 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>Add Field
+              </button>
+            </div>
+            <div id="customFieldsList"></div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-4">
+          <!-- Product Emoji -->
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-slate-800">Product Emoji</h3>
+              <button onclick="openEmojiLibrary()" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[10px] font-medium text-slate-600 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>Add Emoji
+              </button>
+            </div>
+            <div class="flex items-center gap-3 mb-3 p-3 bg-slate-50 rounded-lg">
+              <div id="selectedEmojiPreview" class="w-12 h-12 bg-white rounded-lg border-2 border-emerald-500 flex items-center justify-center text-2xl shadow-sm">📦</div>
+              <div>
+                <p class="text-xs font-medium text-slate-700">Selected Icon</p>
+                <p class="text-[10px] text-slate-500">Click below to change</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-8 gap-1 max-h-32 overflow-y-auto scrollbar-thin" id="emojiGrid"></div>
+            <input type="hidden" id="selectedEmoji" value="📦">
+          </div>
+
+          <!-- Status & Options -->
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3">Status & Options</h3>
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs font-medium text-slate-500 mb-2 block">Product Status</label>
+                <div class="flex gap-1">
+                  <input type="radio" name="prodStatus" id="statusActive" value="active" checked class="hidden status-radio">
+                  <label for="statusActive" class="flex-1 py-2 text-center text-xs font-medium border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-all">Active</label>
+                  <input type="radio" name="prodStatus" id="statusInactive" value="inactive" class="hidden status-radio">
+                  <label for="statusInactive" class="flex-1 py-2 text-center text-xs font-medium border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-all">Inactive</label>
+                  <input type="radio" name="prodStatus" id="statusDraft" value="draft" class="hidden status-radio">
+                  <label for="statusDraft" class="flex-1 py-2 text-center text-xs font-medium border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-all">Draft</label>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <label class="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg hover:bg-slate-100 border border-slate-200">
+                  <input type="checkbox" id="prodFeatured" class="w-4 h-4 rounded accent-emerald-500">
+                  <span class="text-xs font-medium text-slate-700">Featured Product</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg hover:bg-slate-100 border border-slate-200">
+                  <input type="checkbox" id="prodSellable" checked class="w-4 h-4 rounded accent-emerald-500">
+                  <span class="text-xs font-medium text-slate-700">Available for Sale</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer p-2 bg-emerald-50 rounded-lg hover:bg-emerald-100 border border-emerald-200">
+                  <input type="checkbox" id="prodWebsite" onchange="toggleWebsiteOptions()" class="w-4 h-4 rounded accent-emerald-500">
+                  <span class="text-xs font-medium text-emerald-700">Website / App</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Product Image -->
+          <div id="imageCard" class="bg-white rounded-xl shadow-sm p-4" style="display:none">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3">Product Image</h3>
+            <div class="image-upload rounded-lg p-4 text-center cursor-pointer" onclick="document.getElementById('imageInput').click()">
+              <div id="imagePreview" class="hidden mb-2"><img id="previewImg" src="" class="w-20 h-20 object-cover rounded-lg mx-auto"></div>
+              <div id="imagePlaceholder">
+                <svg class="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                <p class="text-xs text-slate-500">Click to upload</p>
+              </div>
+              <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="previewImage(this)">
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div id="descriptionCard" class="bg-white rounded-xl shadow-sm p-4" style="display:none">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3">Description</h3>
+            <textarea id="prodDesc" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-emerald-500"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="mt-4 flex items-center justify-between bg-white rounded-xl shadow-sm p-3">
+        <button onclick="window.history.back()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium text-sm text-slate-600 flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 12H5m7-7l-7 7 7 7"/></svg>Cancel
+        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="saveProduct('draft')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium text-sm text-slate-600">Save Draft</button>
+          <button onclick="saveProduct('active')" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-sm shadow-lg shadow-emerald-500/30 flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Save Product
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MULTI-ADD TAB -->
+    <div id="multiTab" class="hidden">
+      <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-800">Quick Multi-Add Products</h3>
+            <p class="text-xs text-slate-500">Add multiple products under same category</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="openEmojiLibrary()" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-600 flex items-center gap-1">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>Add Emoji
+            </button>
+            <select id="multiCategory" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+              <option value="">Select Category</option>
+              <option value="fruits">🍎 Fruits</option>
+              <option value="vegetables">🥬 Vegetables</option>
+              <option value="dairy">🥛 Dairy</option>
+              <option value="bakery">🍞 Bakery</option>
+              <option value="beverages">🥤 Beverages</option>
+              <option value="snacks">🍿 Snacks</option>
+              <option value="household">🧹 Household</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Table Header -->
+        <div class="grid grid-cols-12 gap-1.5 px-2 py-2 bg-slate-100 rounded-lg mb-2 text-[11px] font-semibold text-slate-500 uppercase">
+          <div class="col-span-1 text-center">Icon</div>
+          <div class="col-span-3">Name *</div>
+          <div class="col-span-1">Unit</div>
+          <div class="col-span-1">Bulk</div>
+          <div class="col-span-1">Cost</div>
+          <div class="col-span-2">Price *</div>
+          <div class="col-span-1">Wholesale</div>
+          <div class="col-span-1">Stock *</div>
+          <div class="col-span-1"></div>
+        </div>
+
+        <!-- Product Rows -->
+        <div id="multiProductRows" class="space-y-2 mb-3 max-h-[380px] overflow-y-auto scrollbar-thin"></div>
+
+        <!-- Add Row Button -->
+        <button onclick="addMultiRow()" class="w-full py-3 border-2 border-dashed border-slate-300 hover:border-emerald-400 hover:bg-emerald-50 rounded-lg text-sm font-medium text-slate-500 hover:text-emerald-600 flex items-center justify-center gap-1 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>Add Product Row
+        </button>
+      </div>
+
+      <!-- Multi Actions -->
+      <div class="flex items-center justify-between bg-white rounded-xl shadow-sm p-3">
+        <div class="flex items-center gap-3">
+          <div class="text-sm text-slate-600">
+            <span class="font-semibold text-emerald-600 text-base" id="validRowCount">0</span> ready
+          </div>
+          <button onclick="clearAllRows()" class="text-xs text-red-500 hover:text-red-600 font-medium">Clear All</button>
+        </div>
+        <button onclick="saveAllProducts()" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-sm shadow-lg shadow-emerald-500/30 flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Save All
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Emoji Library Modal -->
+  <div id="emojiLibraryModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-5 w-96 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-slate-800">Emoji Library</h3>
+        <button onclick="closeEmojiLibrary()" class="p-1 hover:bg-slate-100 rounded"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <div class="mb-4">
+        <label class="text-xs font-medium text-slate-500 mb-1 block">Add Custom Emoji</label>
+        <div class="flex gap-2">
+          <input type="text" id="newEmojiInput" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-lg text-center focus:outline-none focus:border-emerald-500" maxlength="2">
+          <button onclick="addNewEmoji()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium">Add</button>
+        </div>
+      </div>
+      <div class="mb-3">
+        <p class="text-xs font-medium text-slate-500 mb-2">Current Emojis (<span id="emojiCount">0</span>)</p>
+        <div class="grid grid-cols-10 gap-1.5 max-h-48 overflow-y-auto scrollbar-thin p-1 bg-slate-50 rounded-lg" id="emojiLibraryGrid"></div>
+      </div>
+      <div class="flex justify-end">
+        <button onclick="closeEmojiLibrary()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-600">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div id="successModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 w-80 shadow-2xl text-center">
+      <div class="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <h3 class="text-lg font-bold text-slate-800 mb-1">Saved!</h3>
+      <p class="text-xs text-slate-500 mb-4" id="successMessage">Products added successfully.</p>
+      <div class="flex gap-2">
+        <button onclick="addAnother()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium text-sm text-slate-600">Add More</button>
+        <button onclick="closeModal()" class="flex-1 py-2 bg-emerald-500 text-white rounded-lg font-medium text-sm">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var emojis=['📦','🍎','🍌','🍊','🍇','🍓','🥕','🥦','🥬','🍅','🥛','🧀','🥚','🍞','🥐','🥩','🍗','🍟','🥤','🧃','☕','🍿','🪥','🧹','🧴','💊','🧊','🍕','🍔','🌭','🥗','🍜','🍣','🍩','🍪','🧁','🍰','🥧','🍫','🍬'];
+    var subCategories={fruits:['Citrus','Berries','Tropical'],vegetables:['Leafy','Root','Cruciferous'],dairy:['Milk','Cheese','Yogurt'],bakery:['Bread','Pastries','Cakes'],beverages:['Soft Drinks','Juices','Water'],snacks:['Chips','Cookies','Nuts'],household:['Cleaning','Paper','Laundry']};
+    var unitTypes=[{v:'piece',l:'Pcs'},{v:'packet',l:'Pkt'},{v:'bottle',l:'Btl'},{v:'can',l:'Can'},{v:'bag',l:'Bag'},{v:'kg',l:'Kg'},{v:'liter',l:'L'}];
+    var bulkTypes=[{v:'',l:'-'},{v:'box',l:'Box'},{v:'carton',l:'Ctn'},{v:'case',l:'Case'},{v:'pack',l:'Pack'},{v:'dozen',l:'Dzn'}];
+    var customFields=[];
+    var multiProducts=[{id:1,emoji:'📦',sku:'',name:'',unit:'piece',bulk:'',cost:'',price:'',wholesale:'',stock:''}];
+    var multiIdCounter=1;
+
+    function genSku(){return 'SKU'+Date.now().toString(36).toUpperCase()+Math.random().toString(36).substring(2,5).toUpperCase()}
+    function generateSku(){document.getElementById('prodSku').value=genSku()}
+
+    function switchTab(tab){
+      document.getElementById('singleTab').classList.toggle('hidden',tab!=='single');
+      document.getElementById('multiTab').classList.toggle('hidden',tab!=='multi');
+      document.getElementById('tabSingle').classList.toggle('active',tab==='single');
+      document.getElementById('tabMulti').classList.toggle('active',tab==='multi');
+      document.getElementById('tabSingle').classList.toggle('text-slate-600',tab!=='single');
+      document.getElementById('tabMulti').classList.toggle('text-slate-600',tab!=='multi');
+      if(tab==='multi')renderMultiRows();
+    }
+
+    function calculateMargin(){
+      var c=parseFloat(document.getElementById('prodCost').value)||0;
+      var p=parseFloat(document.getElementById('prodPrice').value)||0;
+      var m=document.getElementById('profitMargin');
+      if(c>0&&p>0){
+        var pr=p-c,pct=(pr/c*100).toFixed(1);
+        m.textContent=pr.toFixed(2)+' ('+pct+'%)';
+        m.className='w-full bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-sm text-emerald-600';
+      }else{
+        m.textContent='--';
+        m.className='w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600';
+      }
+    }
+
+    function loadSubCategories(){
+      var c=document.getElementById('prodCategory').value;
+      var s=document.getElementById('prodSubCategory');
+      s.innerHTML='<option value="">Select</option>';
+      if(subCategories[c])subCategories[c].forEach(function(sc){s.innerHTML+='<option value="'+sc.toLowerCase()+'">'+sc+'</option>'});
+    }
+
+    function toggleWebsiteOptions(){
+      var w=document.getElementById('prodWebsite').checked;
+      document.getElementById('imageCard').style.display=w?'block':'none';
+      document.getElementById('descriptionCard').style.display=w?'block':'none';
+    }
+
+    function previewImage(i){
+      if(i.files&&i.files[0]){
+        var r=new FileReader();
+        r.onload=function(e){
+          document.getElementById('previewImg').src=e.target.result;
+          document.getElementById('imagePreview').classList.remove('hidden');
+          document.getElementById('imagePlaceholder').classList.add('hidden');
+        };
+        r.readAsDataURL(i.files[0]);
+      }
+    }
+
+    // Emoji Library
+    function openEmojiLibrary(){
+      renderEmojiLibraryGrid();
+      document.getElementById('emojiLibraryModal').classList.remove('hidden');
+      document.getElementById('emojiLibraryModal').classList.add('flex');
+    }
+
+    function closeEmojiLibrary(){
+      document.getElementById('emojiLibraryModal').classList.add('hidden');
+      document.getElementById('emojiLibraryModal').classList.remove('flex');
+      renderEmojiGrid();
+    }
+
+    function renderEmojiLibraryGrid(){
+      document.getElementById('emojiCount').textContent=emojis.length;
+      var html='';
+      for(var i=0;i<emojis.length;i++){
+        html+='<div class="relative group"><button type="button" class="w-7 h-7 text-base rounded border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:border-emerald-400">'+emojis[i]+'</button><button onclick="removeEmoji('+i+')" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] hidden group-hover:flex items-center justify-center">×</button></div>';
+      }
+      document.getElementById('emojiLibraryGrid').innerHTML=html;
+    }
+
+    function addNewEmoji(){
+      var input=document.getElementById('newEmojiInput');
+      var newEmoji=input.value.trim();
+      if(newEmoji && !emojis.includes(newEmoji)){
+        emojis.push(newEmoji);
+        renderEmojiLibraryGrid();
+        input.value='';
+      }
+    }
+
+    function removeEmoji(index){
+      if(emojis.length>1){
+        emojis.splice(index,1);
+        renderEmojiLibraryGrid();
+      }
+    }
+
+    function renderEmojiGrid(){
+      var s=document.getElementById('selectedEmoji').value;
+      var html='';
+      for(var i=0;i<emojis.length;i++){
+        html+='<button type="button" onclick="selectEmoji(\''+emojis[i]+'\')" class="emoji-btn w-7 h-7 text-base rounded border border-slate-200 flex items-center justify-center '+(emojis[i]===s?'selected':'')+'">'+emojis[i]+'</button>';
+      }
+      document.getElementById('emojiGrid').innerHTML=html;
+    }
+
+    function selectEmoji(e){
+      document.getElementById('selectedEmoji').value=e;
+      document.getElementById('selectedEmojiPreview').textContent=e;
+      renderEmojiGrid();
+    }
+
+    function renderCustomFields(){
+      var list=document.getElementById('customFieldsList');
+      if(customFields.length){
+        var html='';
+        for(var i=0;i<customFields.length;i++){
+          html+='<div class="custom-row flex items-center gap-2 p-2 bg-slate-50 rounded-lg mb-2"><input type="text" value="'+customFields[i].label+'" onchange="customFields['+i+'].label=this.value" class="w-1/3 px-2 py-1.5 text-xs border border-slate-200 rounded bg-white focus:outline-none focus:border-emerald-500" placeholder="Field name"><input type="text" value="'+customFields[i].value+'" onchange="customFields['+i+'].value=this.value" class="flex-1 px-2 py-1.5 text-xs border border-slate-200 rounded bg-white focus:outline-none focus:border-emerald-500" placeholder="Value"><button onclick="removeCustomField('+i+')" class="p-1 text-red-400 hover:text-red-500"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button></div>';
+        }
+        list.innerHTML=html;
+      }else{
+        list.innerHTML='<p class="text-xs text-slate-400 text-center py-2">No custom fields</p>';
+      }
+    }
+
+    function addCustomField(){customFields.push({label:'',value:''});renderCustomFields()}
+    function removeCustomField(i){customFields.splice(i,1);renderCustomFields()}
+
+    // Multi-Add
+    function renderMultiRows(){
+      var html='';
+      for(var i=0;i<multiProducts.length;i++){
+        var p=multiProducts[i];
+        // Auto generate SKU if empty
+        if(!p.sku){p.sku=genSku()}
+        html+='<div class="custom-row grid grid-cols-12 gap-1.5 p-2 bg-slate-50 rounded-lg items-center">';
+        html+='<div class="col-span-1"><button onclick="openMultiEmojiPicker('+p.id+')" class="w-9 h-9 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-lg hover:border-emerald-400">'+p.emoji+'</button></div>';
+        html+='<div class="col-span-3"><div class="relative"><input type="text" value="'+p.name+'" onchange="updateMP('+p.id+',\'name\',this.value)" class="w-full px-2 py-2 pr-8 text-xs border border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:outline-none"><span class="absolute right-2 top-1/2 -translate-y-1/2 text-emerald-500 cursor-help" title="SKU: '+p.sku+'"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg></span></div></div>';
+        html+='<div class="col-span-1"><select onchange="updateMP('+p.id+',\'unit\',this.value)" class="w-full px-1 py-2 text-xs border border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:outline-none">';
+        for(var j=0;j<unitTypes.length;j++){html+='<option value="'+unitTypes[j].v+'" '+(p.unit===unitTypes[j].v?'selected':'')+'>'+unitTypes[j].l+'</option>';}
+        html+='</select></div>';
+        html+='<div class="col-span-1"><select onchange="updateMP('+p.id+',\'bulk\',this.value)" class="w-full px-1 py-2 text-xs border border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:outline-none">';
+        for(var k=0;k<bulkTypes.length;k++){html+='<option value="'+bulkTypes[k].v+'" '+(p.bulk===bulkTypes[k].v?'selected':'')+'>'+bulkTypes[k].l+'</option>';}
+        html+='</select></div>';
+        html+='<div class="col-span-1"><input type="number" step="0.01" value="'+p.cost+'" onchange="updateMP('+p.id+',\'cost\',this.value)" class="w-full px-2 py-2 text-xs border border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:outline-none"></div>';
+        html+='<div class="col-span-2"><input type="number" step="0.01" value="'+p.price+'" onchange="updateMP('+p.id+',\'price\',this.value)" class="w-full px-2 py-2 text-xs border border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:outline-none"></div>';
+        html+='<div class="col-span-1"><input type="number" step="0.01" value="'+p.wholesale+'" onchange="updateMP('+p.id+',\'wholesale\',this.value)" class="w-full px-2 py-2 text-xs border border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:outline-none"></div>';
+        html+='<div class="col-span-1"><input type="number" value="'+p.stock+'" onchange="updateMP('+p.id+',\'stock\',this.value)" class="w-full px-2 py-2 text-xs border border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:outline-none"></div>';
+        html+='<div class="col-span-1 flex justify-center">';
+        if(multiProducts.length>1){html+='<button onclick="removeMultiRow('+p.id+')" class="p-1.5 text-red-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>';}
+        html+='</div></div>';
+      }
+      document.getElementById('multiProductRows').innerHTML=html;
+      updateValidCount();
+    }
+
+    function addMultiRow(){
+      multiIdCounter++;
+      multiProducts.push({id:multiIdCounter,emoji:'📦',sku:'',name:'',unit:'piece',bulk:'',cost:'',price:'',wholesale:'',stock:''});
+      renderMultiRows();
+    }
+
+    function removeMultiRow(id){
+      multiProducts=multiProducts.filter(function(p){return p.id!==id});
+      renderMultiRows();
+    }
+
+    function updateMP(id,f,v){
+      for(var i=0;i<multiProducts.length;i++){
+        if(multiProducts[i].id===id){multiProducts[i][f]=v;break;}
+      }
+      updateValidCount();
+    }
+
+    function updateValidCount(){
+      var count=0;
+      for(var i=0;i<multiProducts.length;i++){
+        if(multiProducts[i].name&&multiProducts[i].price&&multiProducts[i].stock)count++;
+      }
+      document.getElementById('validRowCount').textContent=count;
+    }
+
+    function clearAllRows(){
+      if(confirm('Clear all?')){
+        multiProducts=[{id:1,emoji:'📦',sku:'',name:'',unit:'piece',bulk:'',cost:'',price:'',wholesale:'',stock:''}];
+        multiIdCounter=1;
+        renderMultiRows();
+      }
+    }
+
+    function openMultiEmojiPicker(id){
+      var ex=document.getElementById('emojiPickerPopup');
+      if(ex)ex.remove();
+      var p=document.createElement('div');
+      p.id='emojiPickerPopup';
+      p.className='fixed inset-0 z-50 flex items-center justify-center bg-black/20';
+      p.onclick=function(e){if(e.target===p)p.remove()};
+      var html='<div class="bg-white rounded-xl p-4 shadow-2xl w-80"><h4 class="font-semibold text-sm text-slate-700 mb-3">Select Emoji</h4><div class="grid grid-cols-10 gap-1.5 max-h-48 overflow-y-auto">';
+      for(var i=0;i<emojis.length;i++){
+        html+='<button onclick="setME('+id+',\''+emojis[i]+'\')" class="w-7 h-7 text-base rounded border border-slate-200 hover:bg-emerald-50 hover:border-emerald-400 flex items-center justify-center">'+emojis[i]+'</button>';
+      }
+      html+='</div></div>';
+      p.innerHTML=html;
+      document.body.appendChild(p);
+    }
+
+    function setME(id,e){
+      for(var i=0;i<multiProducts.length;i++){
+        if(multiProducts[i].id===id){multiProducts[i].emoji=e;break;}
+      }
+      renderMultiRows();
+      var popup=document.getElementById('emojiPickerPopup');
+      if(popup)popup.remove();
+    }
+
+    function saveAllProducts(){
+      var cat=document.getElementById('multiCategory').value;
+      if(!cat){alert('Select category');return}
+      var valid=[];
+      for(var i=0;i<multiProducts.length;i++){
+        if(multiProducts[i].name&&multiProducts[i].price&&multiProducts[i].stock)valid.push(multiProducts[i]);
+      }
+      if(!valid.length){alert('Fill at least one complete row (Name, Price, Stock)');return}
+      document.getElementById('successMessage').textContent=valid.length+' product(s) added.';
+      document.getElementById('successModal').classList.remove('hidden');
+      document.getElementById('successModal').classList.add('flex');
+    }
+
+    function saveProduct(status){
+      var n=document.getElementById('prodName').value.trim();
+      var sku=document.getElementById('prodSku').value.trim();
+      var c=document.getElementById('prodCategory').value;
+      var p=parseFloat(document.getElementById('prodPrice').value);
+      var st=parseInt(document.getElementById('prodStock').value);
+      if(!sku){alert('Enter or generate SKU');return}
+      if(!n){alert('Enter product name');return}
+      if(!c){alert('Select category');return}
+      if(isNaN(p)||p<=0){alert('Enter valid price');return}
+      if(isNaN(st)){alert('Enter stock');return}
+      document.getElementById('successMessage').textContent=status==='draft'?'Saved as draft.':'Product added.';
+      document.getElementById('successModal').classList.remove('hidden');
+      document.getElementById('successModal').classList.add('flex');
+    }
+
+    function closeModal(){
+      document.getElementById('successModal').classList.add('hidden');
+      document.getElementById('successModal').classList.remove('flex');
+    }
+
+    function addAnother(){
+      closeModal();
+      if(!document.getElementById('singleTab').classList.contains('hidden')){
+        document.getElementById('prodName').value='';
+        document.getElementById('prodSku').value='';
+        document.getElementById('prodCategory').value='';
+        document.getElementById('prodSubCategory').innerHTML='<option value="">Select</option>';
+        document.getElementById('prodBrand').value='';
+        document.getElementById('prodCost').value='';
+        document.getElementById('prodPrice').value='';
+        document.getElementById('prodWholesale').value='';
+        document.getElementById('prodStock').value='';
+        document.getElementById('prodLowStock').value='';
+        document.getElementById('prodLocation').value='';
+        document.getElementById('prodBulkQty').value='';
+        document.getElementById('prodBulkPrice').value='';
+        document.getElementById('prodDesc').value='';
+        document.getElementById('selectedEmoji').value='📦';
+        document.getElementById('selectedEmojiPreview').textContent='📦';
+        document.getElementById('profitMargin').textContent='--';
+        document.getElementById('profitMargin').className='w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600';
+        document.getElementById('statusActive').checked=true;
+        customFields=[];
+        renderCustomFields();
+        renderEmojiGrid();
+        document.getElementById('prodSku').focus();
+      }else{
+        multiProducts=[{id:1,emoji:'📦',sku:'',name:'',unit:'piece',bulk:'',cost:'',price:'',wholesale:'',stock:''}];
+        multiIdCounter=1;
+        renderMultiRows();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded',function(){
+      renderEmojiGrid();
+      renderCustomFields();
+      renderMultiRows();
+      document.getElementById('prodSku').focus();
+    });
+  </script>
+</body>
+</html>

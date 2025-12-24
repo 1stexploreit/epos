@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employees - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Header -->
+<div class="bg-white border-b border-slate-200">
+<div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-slate-800 font-semibold">Employees</h1>
+<p class="text-xs text-slate-400">Manage your employee database</p>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="exportData()" class="px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Export
+</button>
+<button onclick="addEmployee()" class="px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm hover:shadow flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Add Employee
+</button>
+</div>
+</div>
+</div>
+
+<main class="max-w-7xl mx-auto px-6 py-5 space-y-4">
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-4">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Total Employees</p>
+<p class="text-2xl font-bold text-slate-800 mt-1" id="statTotal">0</p>
+</div>
+<div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-4">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Active</p>
+<p class="text-2xl font-bold text-emerald-600 mt-1" id="statActive">0</p>
+</div>
+<div class="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+<svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-4">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">On Probation</p>
+<p class="text-2xl font-bold text-amber-500 mt-1" id="statProbation">0</p>
+</div>
+<div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+<svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-4">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Total Salary</p>
+<p class="text-2xl font-bold text-blue-600 mt-1" id="statSalary">৳0</p>
+</div>
+<div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+<svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Search & Filter -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-3">
+<div class="flex flex-col md:flex-row gap-2">
+<div class="flex-1 relative">
+<svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<input type="text" id="search" placeholder="Search by name, phone, position..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm" oninput="renderTable()">
+</div>
+<div class="flex gap-2">
+<select id="filterDept" class="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600" onchange="renderTable()">
+<option value="">All Departments</option>
+<option>Management</option>
+<option>Sales</option>
+<option>Accounts</option>
+<option>Warehouse</option>
+<option>Delivery</option>
+</select>
+<select id="filterStatus" class="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600" onchange="renderTable()">
+<option value="">All Status</option>
+<option value="Active">Active</option>
+<option value="Inactive">Inactive</option>
+<option value="Probation">Probation</option>
+</select>
+<select id="filterSort" class="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600" onchange="renderTable()">
+<option value="newest">Newest First</option>
+<option value="oldest">Oldest First</option>
+<option value="name">Name A-Z</option>
+<option value="salary-high">Salary High-Low</option>
+<option value="salary-low">Salary Low-High</option>
+</select>
+</div>
+</div>
+</div>
+
+<!-- Employee Table -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<table class="w-full">
+<thead class="bg-slate-50 border-b border-slate-200">
+<tr class="text-[10px] text-slate-500 uppercase tracking-wider">
+<th class="px-4 py-3 text-left font-semibold">Employee</th>
+<th class="px-4 py-3 text-left font-semibold">Contact</th>
+<th class="px-4 py-3 text-left font-semibold">Department</th>
+<th class="px-4 py-3 text-left font-semibold">Joined</th>
+<th class="px-4 py-3 text-right font-semibold">Salary</th>
+<th class="px-4 py-3 text-center font-semibold">Status</th>
+<th class="px-4 py-3 text-right font-semibold">Actions</th>
+</tr>
+</thead>
+<tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
+</table>
+<div id="emptyState" class="p-12 text-center" style="display:none">
+<div class="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
+<svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+</div>
+<p class="text-slate-600 font-medium">No employees found</p>
+<p class="text-sm text-slate-400 mt-1">Try adjusting your search or filters</p>
+</div>
+<!-- Pagination -->
+<div class="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-slate-50/50">
+<p class="text-xs text-slate-500">Showing <span id="showCount" class="font-medium text-slate-700">0</span> of <span id="totalCount" class="font-medium text-slate-700">0</span> employees</p>
+<div class="flex items-center gap-1">
+<button onclick="changePage(-1)" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg" id="prevBtn"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
+<span class="px-2 py-1 text-xs text-slate-600" id="pageInfo">1 / 1</span>
+<button onclick="changePage(1)" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg" id="nextBtn"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+</div>
+</div>
+</div>
+
+</main>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Saved</span>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+<div class="text-center">
+<div class="w-14 h-14 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+<svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+</div>
+<h3 class="text-lg font-semibold text-slate-800 mb-2">Delete Employee?</h3>
+<p class="text-sm text-slate-500 mb-6">This action cannot be undone.</p>
+<div class="flex gap-3">
+<button onclick="closeDeleteModal()" class="flex-1 px-4 py-2.5 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Cancel</button>
+<button onclick="confirmDelete()" class="flex-1 px-4 py-2.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium">Delete</button>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const fmt=n=>'৳'+n.toLocaleString('en-BD');
+
+let employees=[
+{id:'EMP-001',name:"Rahim Ahmed",position:"Manager",department:"Management",phone:"+880 1711 111111",email:"rahim@email.com",joinDate:"2023-01-15",salary:25000,status:"Active"},
+{id:'EMP-002',name:"Karim Hossain",position:"Cashier",department:"Sales",phone:"+880 1722 222222",email:"karim@email.com",joinDate:"2023-03-20",salary:15000,status:"Active"},
+{id:'EMP-003',name:"Fatima Begum",position:"Sales Executive",department:"Sales",phone:"+880 1733 333333",email:"fatima@email.com",joinDate:"2023-06-10",salary:12000,status:"Active"},
+{id:'EMP-004',name:"Jamal Uddin",position:"Delivery Boy",department:"Delivery",phone:"+880 1744 444444",email:"jamal@email.com",joinDate:"2024-01-05",salary:10000,status:"Probation"},
+{id:'EMP-005',name:"Nasreen Akter",position:"Accountant",department:"Accounts",phone:"+880 1755 555555",email:"nasreen@email.com",joinDate:"2023-02-28",salary:18000,status:"Active"},
+{id:'EMP-006',name:"Abdul Karim",position:"Stock Manager",department:"Warehouse",phone:"+880 1766 666666",email:"abdul@email.com",joinDate:"2023-08-15",salary:16000,status:"Active"},
+{id:'EMP-007',name:"Salma Khatun",position:"Sales Associate",department:"Sales",phone:"+880 1777 777777",email:"salma@email.com",joinDate:"2024-02-01",salary:11000,status:"Probation"},
+{id:'EMP-008',name:"Rafiq Islam",position:"Driver",department:"Delivery",phone:"+880 1788 888888",email:"rafiq@email.com",joinDate:"2022-11-10",salary:12000,status:"Inactive"},
+];
+
+let deleteId=null;
+let currentPage=1;
+const perPage=10;
+
+function showToast(msg){
+const t=document.getElementById('toast');
+document.getElementById('toastMsg').textContent=msg;
+t.style.display='flex';
+setTimeout(()=>t.style.display='none',3000);
+}
+
+function updateStats(){
+const active=employees.filter(e=>e.status==='Active').length;
+const probation=employees.filter(e=>e.status==='Probation').length;
+const totalSalary=employees.filter(e=>e.status!=='Inactive').reduce((s,e)=>s+e.salary,0);
+document.getElementById('statTotal').textContent=employees.length;
+document.getElementById('statActive').textContent=active;
+document.getElementById('statProbation').textContent=probation;
+document.getElementById('statSalary').textContent=fmt(totalSalary);
+}
+
+function getFiltered(){
+const search=document.getElementById('search').value.toLowerCase();
+const dept=document.getElementById('filterDept').value;
+const status=document.getElementById('filterStatus').value;
+const sort=document.getElementById('filterSort').value;
+
+let list=employees.filter(e=>{
+const match=e.name.toLowerCase().includes(search)||e.phone.includes(search)||e.position.toLowerCase().includes(search)||e.id.toLowerCase().includes(search);
+return match&&(!dept||e.department===dept)&&(!status||e.status===status);
+});
+
+if(sort==='newest')list.sort((a,b)=>new Date(b.joinDate)-new Date(a.joinDate));
+else if(sort==='oldest')list.sort((a,b)=>new Date(a.joinDate)-new Date(b.joinDate));
+else if(sort==='name')list.sort((a,b)=>a.name.localeCompare(b.name));
+else if(sort==='salary-high')list.sort((a,b)=>b.salary-a.salary);
+else if(sort==='salary-low')list.sort((a,b)=>a.salary-b.salary);
+return list;
+}
+
+function renderTable(){
+const filtered=getFiltered();
+const totalPages=Math.ceil(filtered.length/perPage)||1;
+if(currentPage>totalPages)currentPage=totalPages;
+const start=(currentPage-1)*perPage;
+const paged=filtered.slice(start,start+perPage);
+
+document.getElementById('totalCount').textContent=filtered.length;
+document.getElementById('showCount').textContent=paged.length;
+document.getElementById('pageInfo').textContent=currentPage+' / '+totalPages;
+document.getElementById('prevBtn').disabled=currentPage===1;
+document.getElementById('nextBtn').disabled=currentPage===totalPages;
+
+if(!filtered.length){
+document.getElementById('tableBody').innerHTML='';
+document.getElementById('emptyState').style.display='block';
+return;
+}
+document.getElementById('emptyState').style.display='none';
+
+document.getElementById('tableBody').innerHTML=paged.map(e=>{
+const statusClass=e.status==='Active'?'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20':e.status==='Probation'?'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20':'bg-slate-100 text-slate-500 ring-1 ring-slate-500/10';
+const joinDate=new Date(e.joinDate).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});
+return`<tr class="hover:bg-slate-50/80 text-[13px]">
+<td class="px-4 py-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-sm">${e.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+<div>
+<p class="font-semibold text-slate-800">${e.name}</p>
+<p class="text-[11px] text-slate-400">${e.id} • ${e.position}</p>
+</div>
+</div>
+</td>
+<td class="px-4 py-3">
+<p class="text-slate-700">${e.phone}</p>
+<p class="text-[11px] text-slate-400">${e.email||'—'}</p>
+</td>
+<td class="px-4 py-3 text-slate-600">${e.department||'—'}</td>
+<td class="px-4 py-3 text-slate-600">${joinDate}</td>
+<td class="px-4 py-3 text-right font-semibold text-slate-700">${fmt(e.salary)}</td>
+<td class="px-4 py-3 text-center"><span class="inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full ${statusClass}">${e.status}</span></td>
+<td class="px-4 py-3">
+<div class="flex justify-end gap-1">
+<button onclick="viewEmployee('${e.id}')" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="View">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+</button>
+<button onclick="editEmployee('${e.id}')" class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Edit">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+</button>
+<button onclick="openDeleteModal('${e.id}')" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg" title="Delete">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+</button>
+</div>
+</td>
+</tr>`;}).join('');
+}
+
+function changePage(dir){
+currentPage+=dir;
+renderTable();
+}
+
+function addEmployee(){
+showToast('Opening employee form...');
+}
+
+function viewEmployee(id){
+showToast('Opening profile: '+id);
+}
+
+function editEmployee(id){
+showToast('Editing: '+id);
+}
+
+function openDeleteModal(id){
+deleteId=id;
+document.getElementById('deleteModal').style.display='flex';
+}
+
+function closeDeleteModal(){
+document.getElementById('deleteModal').style.display='none';
+}
+
+function confirmDelete(){
+employees=employees.filter(e=>e.id!==deleteId);
+closeDeleteModal();
+updateStats();
+renderTable();
+showToast('Employee deleted');
+}
+
+function exportData(){
+showToast('Exporting employee data...');
+}
+
+updateStats();
+renderTable();
+</script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Receive Payment - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.toast{animation:fadeIn 0.3s ease-out}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Top Action Bar -->
+<div class="bg-white border-b border-slate-200">
+<div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-slate-800 font-semibold">Receive Payment</h1>
+<p class="text-xs text-slate-400">Record customer payments</p>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="resetForm()" class="px-3 py-2 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Reset</button>
+<button onclick="viewHistory()" class="px-3 py-2 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium flex items-center gap-1.5">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+History
+</button>
+</div>
+</div>
+</div>
+
+<main class="max-w-6xl mx-auto px-6 py-5">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+<!-- Left: Payment Form -->
+<div class="lg:col-span-2 space-y-4">
+
+<!-- Customer Search -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Select Customer *</label>
+<div class="relative mt-2">
+<svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<input type="text" id="customerSearch" placeholder="Search by name, phone, or ID..." class="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm" oninput="filterCustomers()" onfocus="showDropdown()">
+<div id="customerDropdown" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto z-30" style="display:none">
+<div id="customerList"></div>
+</div>
+</div>
+
+<!-- Selected Customer Info -->
+<div id="selectedCustomer" class="mt-3 relative p-3 bg-emerald-50 rounded-lg border border-emerald-200" style="display:none">
+<button onclick="clearCustomer()" class="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+</button>
+<p class="text-sm font-semibold text-slate-800" id="custName">Sarah Johnson</p>
+<p class="text-xs text-slate-500 mt-0.5">Balance: <span class="font-bold text-red-500" id="custBalance">$0.00</span></p>
+</div>
+</div>
+
+<!-- Payment Details -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5" id="paymentForm" style="display:none">
+<h3 class="font-semibold text-slate-800 text-sm mb-4">Payment Details</h3>
+
+<div class="space-y-4">
+<!-- Invoice Select -->
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Select Invoice *</label>
+<select id="invoiceSelect" class="w-full mt-1.5 px-3 py-2.5 border border-slate-200 rounded-lg text-sm" onchange="onInvoiceSelect()">
+<option value="">-- Select Invoice --</option>
+</select>
+</div>
+
+<!-- Invoice Info -->
+<div id="invoiceInfo" class="p-3 bg-slate-50 rounded-lg border border-slate-200" style="display:none">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-xs text-slate-500">Invoice Amount</p>
+<p class="text-lg font-bold text-slate-800" id="invAmount">$0.00</p>
+</div>
+<div class="text-right">
+<p class="text-xs text-slate-500">Due Amount</p>
+<p class="text-lg font-bold text-red-500" id="invDue">$0.00</p>
+</div>
+</div>
+</div>
+
+<!-- Payment Amount & Less in same row -->
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Payment Amount *</label>
+<div class="relative mt-1.5">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+<input type="number" id="payAmount" placeholder="0.00" class="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm font-semibold" oninput="validateForm()">
+</div>
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Less / Discount</label>
+<div class="relative mt-1.5">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+<input type="number" id="lessAmount" placeholder="0.00" class="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm" oninput="calculatePayable()">
+</div>
+</div>
+</div>
+
+<!-- Method & Date -->
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Method *</label>
+<select id="payMethod" class="w-full mt-1.5 px-3 py-2.5 border border-slate-200 rounded-lg text-sm" onchange="toggleRefField()">
+<option value="Cash">Cash</option>
+<option value="Bank Transfer">Bank Transfer</option>
+<option value="Card">Card</option>
+<option value="Mobile Payment">Mobile Payment</option>
+<option value="Cheque">Cheque</option>
+</select>
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Date *</label>
+<input type="date" id="payDate" class="w-full mt-1.5 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+</div>
+</div>
+
+<!-- Reference / Cheque No (hidden for Cash) -->
+<div id="refField" style="display:none">
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider" id="refLabel">Reference No.</label>
+<input type="text" id="payRef" placeholder="e.g., TXN-123456" class="w-full mt-1.5 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+</div>
+
+<!-- Note -->
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Note</label>
+<textarea id="payNote" rows="2" placeholder="Optional note..." class="w-full mt-1.5 px-3 py-2.5 border border-slate-200 rounded-lg text-sm resize-none"></textarea>
+</div>
+
+<!-- SMS Option -->
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Send SMS Receipt</label>
+<div class="flex items-center gap-6 mt-2">
+<label class="flex items-center gap-2 cursor-pointer">
+<input type="radio" name="sms" value="yes" class="w-4 h-4 text-emerald-600 border-slate-300 focus:ring-emerald-500">
+<span class="text-sm text-slate-700">Yes</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input type="radio" name="sms" value="no" checked class="w-4 h-4 text-emerald-600 border-slate-300 focus:ring-emerald-500">
+<span class="text-sm text-slate-700">No</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Actions -->
+<div class="flex gap-3" id="actionBtns" style="display:none">
+<button onclick="savePayment()" id="saveBtn" class="flex-1 px-4 py-3 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-medium shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled>
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+Save Payment
+</button>
+<button onclick="saveAndPrint()" class="px-4 py-3 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+Print
+</button>
+</div>
+</div>
+
+<!-- Right Column -->
+<div class="space-y-4">
+
+<!-- Recent Payments -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<h3 class="font-semibold text-slate-800 text-sm mb-3">Recent Payments</h3>
+<div class="space-y-2" id="recentPayments">
+<p class="text-xs text-slate-400 text-center py-4">No recent payments</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2 toast" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Payment saved successfully</span>
+</div>
+
+<script>
+const customers = [
+{id:1,name:"Sarah Johnson",phone:"+880 1711 234567",balance:1250,lastPay:"Jan 15, 2025"},
+{id:2,name:"Michael Chen",phone:"+880 1812 345678",balance:0,lastPay:"Jan 10, 2025"},
+{id:3,name:"Emma Williams",phone:"+880 1912 456789",balance:520,lastPay:"Dec 22, 2024"},
+{id:4,name:"James Rodriguez",phone:"+880 1612 567890",balance:3200,lastPay:"Jan 08, 2025"},
+{id:5,name:"Aisha Rahman",phone:"+880 1512 678901",balance:890,lastPay:"Jan 05, 2025"},
+{id:6,name:"David Kim",phone:"+880 1812 789012",balance:1750,lastPay:"Dec 28, 2024"},
+];
+
+const invoicesData = {
+1:[{id:"INV-0012",date:"2025-01-15",amount:850,paid:500,due:350,status:"Partial"},{id:"INV-0009",date:"2025-01-08",amount:900,paid:0,due:900,status:"Unpaid"}],
+3:[{id:"INV-0007",date:"2024-12-20",amount:520,paid:0,due:520,status:"Unpaid"}],
+4:[{id:"INV-0011",date:"2025-01-10",amount:1800,paid:0,due:1800,status:"Unpaid"},{id:"INV-0008",date:"2024-12-15",amount:1400,paid:0,due:1400,status:"Unpaid"}],
+5:[{id:"INV-0010",date:"2025-01-05",amount:890,paid:0,due:890,status:"Unpaid"}],
+6:[{id:"INV-0006",date:"2024-12-10",amount:1000,paid:250,due:750,status:"Partial"},{id:"INV-0004",date:"2024-11-28",amount:1000,paid:0,due:1000,status:"Unpaid"}],
+};
+
+let selectedCustomer = null;
+let customerInvoices = [];
+let selectedInvoice = null;
+let recentPayments = [];
+
+const fmt = n => '$' + n.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+const fmtDate = d => new Date(d).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+
+function showToast(msg) {
+const t = document.getElementById('toast');
+document.getElementById('toastMsg').textContent = msg;
+t.style.display = 'flex';
+setTimeout(() => t.style.display = 'none', 3000);
+}
+
+function showDropdown() {
+filterCustomers();
+document.getElementById('customerDropdown').style.display = 'block';
+}
+
+function filterCustomers() {
+const search = document.getElementById('customerSearch').value.toLowerCase();
+const filtered = customers.filter(c => 
+  c.name.toLowerCase().includes(search) || 
+  c.phone.includes(search) || 
+  String(c.id).includes(search)
+);
+document.getElementById('customerList').innerHTML = filtered.length ? filtered.map(c => {
+  const initials = c.name.split(' ').map(n=>n[0]).join('').slice(0,2);
+  const idStr = String(c.id).padStart(4,'0');
+  const balClass = c.balance > 0 ? 'text-red-500' : 'text-emerald-500';
+  const balText = c.balance > 0 ? fmt(c.balance) : 'Paid';
+  return '<div onclick="selectCustomer('+c.id+')" class="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"><div class="flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-xs">'+initials+'</div><div><p class="text-sm font-medium text-slate-800">'+c.name+'</p><p class="text-xs text-slate-400">#'+idStr+' - '+c.phone+'</p></div></div><p class="text-sm font-semibold '+balClass+'">'+balText+'</p></div></div>';
+}).join('') : '<p class="px-4 py-6 text-center text-sm text-slate-400">No customers found</p>';
+}
+
+function selectCustomer(id) {
+selectedCustomer = customers.find(c => c.id === id);
+if (!selectedCustomer) return;
+
+document.getElementById('customerSearch').value = selectedCustomer.name;
+document.getElementById('customerDropdown').style.display = 'none';
+
+document.getElementById('custName').textContent = selectedCustomer.name;
+document.getElementById('custBalance').textContent = fmt(selectedCustomer.balance);
+
+customerInvoices = invoicesData[id] || [];
+
+document.getElementById('selectedCustomer').style.display = 'block';
+document.getElementById('paymentForm').style.display = 'block';
+document.getElementById('actionBtns').style.display = 'flex';
+
+// Populate invoice dropdown
+const select = document.getElementById('invoiceSelect');
+select.innerHTML = '<option value="">-- Select Invoice --</option>';
+select.innerHTML += '<option value="all">All Outstanding (' + fmt(selectedCustomer.balance) + ')</option>';
+customerInvoices.forEach(function(inv) {
+  select.innerHTML += '<option value="' + inv.id + '">' + inv.id + ' - ' + fmtDate(inv.date) + ' (Due: ' + fmt(inv.due) + ')</option>';
+});
+
+selectedInvoice = null;
+resetPaymentFields();
+}
+
+function clearCustomer() {
+selectedCustomer = null;
+customerInvoices = [];
+selectedInvoice = null;
+document.getElementById('customerSearch').value = '';
+document.getElementById('selectedCustomer').style.display = 'none';
+document.getElementById('paymentForm').style.display = 'none';
+document.getElementById('actionBtns').style.display = 'none';
+}
+
+function onInvoiceSelect() {
+const val = document.getElementById('invoiceSelect').value;
+let due = 0;
+
+if (val === 'all') {
+  due = selectedCustomer.balance;
+  selectedInvoice = 'all';
+  document.getElementById('invoiceInfo').style.display = 'none';
+} else if (val) {
+  const inv = customerInvoices.find(i => i.id === val);
+  if (inv) {
+    due = inv.due;
+    selectedInvoice = inv;
+    document.getElementById('invAmount').textContent = fmt(inv.amount);
+    document.getElementById('invDue').textContent = fmt(inv.due);
+    document.getElementById('invoiceInfo').style.display = 'block';
+  }
+} else {
+  selectedInvoice = null;
+  document.getElementById('invoiceInfo').style.display = 'none';
+}
+
+document.getElementById('lessAmount').value = '';
+document.getElementById('payAmount').value = due > 0 ? due.toFixed(2) : '';
+validateForm();
+}
+
+function calculatePayable() {
+let due = 0;
+if (selectedInvoice === 'all') {
+  due = selectedCustomer.balance;
+} else if (selectedInvoice) {
+  due = selectedInvoice.due;
+}
+
+const less = parseFloat(document.getElementById('lessAmount').value) || 0;
+const payable = Math.max(0, due - less);
+
+document.getElementById('payAmount').value = payable > 0 ? payable.toFixed(2) : '';
+validateForm();
+}
+
+function toggleRefField() {
+const method = document.getElementById('payMethod').value;
+const refField = document.getElementById('refField');
+const refLabel = document.getElementById('refLabel');
+
+if (method === 'Cash') {
+  refField.style.display = 'none';
+} else {
+  refField.style.display = 'block';
+  if (method === 'Cheque') {
+    refLabel.textContent = 'Cheque No.';
+    document.getElementById('payRef').placeholder = 'e.g., CHQ-123456';
+  } else if (method === 'Bank Transfer') {
+    refLabel.textContent = 'Transaction ID';
+    document.getElementById('payRef').placeholder = 'e.g., TXN-123456';
+  } else if (method === 'Card') {
+    refLabel.textContent = 'Card Last 4 Digits';
+    document.getElementById('payRef').placeholder = 'e.g., 4242';
+  } else {
+    refLabel.textContent = 'Reference No.';
+    document.getElementById('payRef').placeholder = 'e.g., REF-123456';
+  }
+}
+}
+
+function validateForm() {
+const amount = parseFloat(document.getElementById('payAmount').value) || 0;
+const invoice = document.getElementById('invoiceSelect').value;
+const canSave = selectedCustomer && amount > 0 && invoice;
+document.getElementById('saveBtn').disabled = !canSave;
+}
+
+function resetPaymentFields() {
+document.getElementById('invoiceSelect').value = '';
+document.getElementById('invoiceInfo').style.display = 'none';
+document.getElementById('lessAmount').value = '';
+document.getElementById('payAmount').value = '';
+document.getElementById('payMethod').value = 'Cash';
+document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
+document.getElementById('payRef').value = '';
+document.getElementById('payNote').value = '';
+document.getElementById('refField').style.display = 'none';
+document.querySelector('input[name="sms"][value="no"]').checked = true;
+validateForm();
+}
+
+function savePayment() {
+const amount = parseFloat(document.getElementById('payAmount').value);
+if (!selectedCustomer || amount <= 0) return;
+
+const sendSms = document.querySelector('input[name="sms"]:checked').value === 'yes';
+const less = parseFloat(document.getElementById('lessAmount').value) || 0;
+
+const payment = {
+  id: 'RCP-' + String(Date.now()).slice(-6),
+  customer: selectedCustomer.name,
+  amount: amount,
+  less: less,
+  method: document.getElementById('payMethod').value,
+  date: document.getElementById('payDate').value,
+  sms: sendSms
+};
+
+recentPayments.unshift(payment);
+renderRecentPayments();
+
+let msg = 'Payment of ' + fmt(amount) + ' saved!';
+if (sendSms) msg += ' SMS sent.';
+showToast(msg);
+resetForm();
+}
+
+function saveAndPrint() {
+savePayment();
+showToast('Receipt sent to printer...');
+}
+
+function renderRecentPayments() {
+if (!recentPayments.length) {
+  document.getElementById('recentPayments').innerHTML = '<p class="text-xs text-slate-400 text-center py-4">No recent payments</p>';
+  return;
+}
+document.getElementById('recentPayments').innerHTML = recentPayments.slice(0, 5).map(function(p) {
+  var smsText = p.sms ? ' - SMS sent' : '';
+  return '<div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><div><p class="text-xs font-semibold text-slate-700">'+p.customer+'</p><p class="text-[10px] text-slate-400">'+p.id+' - '+p.method+smsText+'</p></div><p class="text-sm font-bold text-emerald-600">'+fmt(p.amount)+'</p></div>';
+}).join('');
+}
+
+function resetForm() {
+clearCustomer();
+}
+
+function viewHistory() {
+showToast('Opening payment history...');
+}
+
+// Init
+document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
+document.addEventListener('click', e => {
+if (!e.target.closest('#customerSearch') && !e.target.closest('#customerDropdown')) {
+  document.getElementById('customerDropdown').style.display = 'none';
+}
+});
+</script>
+</body>
+</html>

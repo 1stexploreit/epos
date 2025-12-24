@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Employee - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Header -->
+<div class="bg-white border-b border-slate-200">
+<div class="max-w-3xl mx-auto px-6 py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<button onclick="goBack()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+</button>
+<div>
+<h1 class="text-slate-800 font-semibold">Add Employee</h1>
+<p class="text-xs text-slate-400">Enter employee information</p>
+</div>
+</div>
+<button onclick="saveEmployee()" class="px-5 py-2 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm hover:shadow flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Save Employee
+</button>
+</div>
+</div>
+
+<main class="max-w-3xl mx-auto px-6 py-6 space-y-5">
+
+<!-- Photo & Basic Info -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-6">
+<h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">1</span>
+Basic Information
+</h2>
+<div class="flex gap-6">
+<!-- Photo Upload -->
+<div class="flex-shrink-0">
+<div class="w-28 h-28 rounded-xl bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/50 transition-colors relative overflow-hidden" onclick="document.getElementById('photoInput').click()">
+<img id="photoPreview" class="absolute inset-0 w-full h-full object-cover" style="display:none">
+<svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/></svg>
+<span class="text-[10px] text-slate-400 mt-1">Upload Photo</span>
+</div>
+<input type="file" id="photoInput" class="hidden" accept="image/*" onchange="previewPhoto(this)">
+</div>
+<!-- Basic Fields -->
+<div class="flex-1 grid grid-cols-2 gap-4">
+<div class="col-span-2">
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Full Name <span class="text-red-400">*</span></label>
+<input type="text" id="inpName" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="Enter full name">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Position <span class="text-red-400">*</span></label>
+<input type="text" id="inpPosition" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="e.g., Manager">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Department</label>
+<select id="inpDepartment" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm">
+<option value="">Select Department</option>
+<option>Management</option>
+<option>Sales</option>
+<option>Accounts</option>
+<option>Warehouse</option>
+<option>Delivery</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Contact Information -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-6">
+<h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">2</span>
+Contact Information
+</h2>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Primary Phone <span class="text-red-400">*</span></label>
+<input type="tel" id="inpPhone" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="+880 1XXX XXXXXX">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Secondary Phone</label>
+<input type="tel" id="inpPhone2" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="+880 1XXX XXXXXX">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Email</label>
+<input type="email" id="inpEmail" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="email@example.com">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">NID Number</label>
+<input type="text" id="inpNID" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="National ID Number">
+</div>
+<div class="col-span-2">
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Address</label>
+<textarea id="inpAddress" rows="2" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm resize-none" placeholder="Full address"></textarea>
+</div>
+</div>
+</div>
+
+<!-- Employment Details -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-6">
+<h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">3</span>
+Employment Details
+</h2>
+<div class="grid grid-cols-3 gap-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Joining Date <span class="text-red-400">*</span></label>
+<input type="date" id="inpJoinDate" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Employee ID</label>
+<input type="text" id="inpEmpID" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50" placeholder="Auto generated" readonly>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Status</label>
+<select id="inpStatus" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm">
+<option value="Active">Active</option>
+<option value="Inactive">Inactive</option>
+<option value="Probation">Probation</option>
+</select>
+</div>
+</div>
+</div>
+
+<!-- Salary Information -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-6">
+<h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">4</span>
+Salary Information
+</h2>
+<div class="grid grid-cols-3 gap-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Basic Salary <span class="text-red-400">*</span></label>
+<div class="relative mt-1.5">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">৳</span>
+<input type="number" id="inpSalary" class="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="0">
+</div>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Working Days/Month</label>
+<input type="number" id="inpWorkDays" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="26" value="26">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">OT Rate (per hour)</label>
+<div class="relative mt-1.5">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">৳</span>
+<input type="number" id="inpOTRate" class="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50" placeholder="Auto" readonly>
+</div>
+</div>
+</div>
+<div class="mt-4 p-4 bg-slate-50 rounded-lg">
+<div class="flex items-center justify-between text-sm">
+<span class="text-slate-500">Per Day Salary:</span>
+<span class="font-semibold text-slate-700" id="calcDayRate">৳0</span>
+</div>
+<div class="flex items-center justify-between text-sm mt-2">
+<span class="text-slate-500">Per Hour Rate (8hrs/day):</span>
+<span class="font-semibold text-slate-700" id="calcHourRate">৳0</span>
+</div>
+</div>
+</div>
+
+<!-- Bank Details -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-6">
+<h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">5</span>
+Bank Details
+<span class="text-xs text-slate-400 font-normal">(Optional)</span>
+</h2>
+<div class="grid grid-cols-3 gap-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Bank Name</label>
+<input type="text" id="inpBankName" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="Bank name">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Account Number</label>
+<input type="text" id="inpAccountNo" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="Account number">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Branch</label>
+<input type="text" id="inpBranch" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="Branch name">
+</div>
+</div>
+</div>
+
+<!-- Emergency Contact -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-6">
+<h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">6</span>
+Emergency Contact
+<span class="text-xs text-slate-400 font-normal">(Optional)</span>
+</h2>
+<div class="grid grid-cols-3 gap-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Contact Name</label>
+<input type="text" id="inpEmergencyName" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="Contact person name">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Relationship</label>
+<input type="text" id="inpRelation" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="e.g., Father, Spouse">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Phone Number</label>
+<input type="tel" id="inpEmergencyPhone" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="+880 1XXX XXXXXX">
+</div>
+</div>
+</div>
+
+<!-- Action Buttons -->
+<div class="flex items-center justify-between pt-2">
+<button onclick="clearForm()" class="px-5 py-2.5 text-sm text-slate-600 hover:text-slate-800 font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+Clear Form
+</button>
+<div class="flex items-center gap-3">
+<button onclick="goBack()" class="px-5 py-2.5 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="saveEmployee()" class="px-6 py-2.5 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm hover:shadow flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+Save Employee
+</button>
+</div>
+</div>
+
+</main>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Saved</span>
+</div>
+
+<script>
+const fmt=n=>'৳'+Math.round(n).toLocaleString('en-BD');
+
+function init(){
+document.getElementById('inpJoinDate').value=new Date().toISOString().split('T')[0];
+document.getElementById('inpEmpID').value='EMP-'+String(Date.now()).slice(-6);
+document.getElementById('inpSalary').addEventListener('input',calcRates);
+document.getElementById('inpWorkDays').addEventListener('input',calcRates);
+}
+
+function calcRates(){
+const salary=parseFloat(document.getElementById('inpSalary').value)||0;
+const days=parseFloat(document.getElementById('inpWorkDays').value)||26;
+const dayRate=salary/days;
+const hourRate=dayRate/8;
+document.getElementById('calcDayRate').textContent=fmt(dayRate);
+document.getElementById('calcHourRate').textContent=fmt(hourRate);
+document.getElementById('inpOTRate').value=Math.round(hourRate);
+}
+
+function previewPhoto(input){
+if(input.files&&input.files[0]){
+const reader=new FileReader();
+reader.onload=function(e){
+const img=document.getElementById('photoPreview');
+img.src=e.target.result;
+img.style.display='block';
+};
+reader.readAsDataURL(input.files[0]);
+}
+}
+
+function showToast(msg,success=true){
+const t=document.getElementById('toast');
+document.getElementById('toastMsg').textContent=msg;
+t.querySelector('svg').className=`w-5 h-5 ${success?'text-emerald-400':'text-red-400'}`;
+t.style.display='flex';
+setTimeout(()=>t.style.display='none',3000);
+}
+
+function validateForm(){
+const name=document.getElementById('inpName').value.trim();
+const position=document.getElementById('inpPosition').value.trim();
+const phone=document.getElementById('inpPhone').value.trim();
+const joinDate=document.getElementById('inpJoinDate').value;
+const salary=document.getElementById('inpSalary').value;
+
+if(!name){showToast('Please enter employee name',false);return false;}
+if(!position){showToast('Please enter position',false);return false;}
+if(!phone){showToast('Please enter phone number',false);return false;}
+if(!joinDate){showToast('Please select joining date',false);return false;}
+if(!salary){showToast('Please enter basic salary',false);return false;}
+return true;
+}
+
+function saveEmployee(){
+if(!validateForm())return;
+
+const employee={
+id:document.getElementById('inpEmpID').value,
+name:document.getElementById('inpName').value.trim(),
+position:document.getElementById('inpPosition').value.trim(),
+department:document.getElementById('inpDepartment').value,
+phone:document.getElementById('inpPhone').value.trim(),
+phone2:document.getElementById('inpPhone2').value.trim(),
+email:document.getElementById('inpEmail').value.trim(),
+nid:document.getElementById('inpNID').value.trim(),
+address:document.getElementById('inpAddress').value.trim(),
+joinDate:document.getElementById('inpJoinDate').value,
+status:document.getElementById('inpStatus').value,
+salary:parseFloat(document.getElementById('inpSalary').value)||0,
+workDays:parseFloat(document.getElementById('inpWorkDays').value)||26,
+bank:{
+name:document.getElementById('inpBankName').value.trim(),
+account:document.getElementById('inpAccountNo').value.trim(),
+branch:document.getElementById('inpBranch').value.trim()
+},
+emergency:{
+name:document.getElementById('inpEmergencyName').value.trim(),
+relation:document.getElementById('inpRelation').value.trim(),
+phone:document.getElementById('inpEmergencyPhone').value.trim()
+}
+};
+
+console.log('Employee saved:',employee);
+showToast('Employee saved successfully!');
+
+// Reset for new entry
+setTimeout(()=>{
+if(confirm('Employee saved! Add another employee?')){
+clearForm();
+}else{
+goBack();
+}
+},500);
+}
+
+function clearForm(){
+['inpName','inpPosition','inpPhone','inpPhone2','inpEmail','inpNID','inpAddress','inpSalary','inpBankName','inpAccountNo','inpBranch','inpEmergencyName','inpRelation','inpEmergencyPhone'].forEach(id=>document.getElementById(id).value='');
+document.getElementById('inpDepartment').value='';
+document.getElementById('inpStatus').value='Active';
+document.getElementById('inpWorkDays').value='26';
+document.getElementById('inpJoinDate').value=new Date().toISOString().split('T')[0];
+document.getElementById('inpEmpID').value='EMP-'+String(Date.now()).slice(-6);
+document.getElementById('photoPreview').style.display='none';
+document.getElementById('calcDayRate').textContent='৳0';
+document.getElementById('calcHourRate').textContent='৳0';
+document.getElementById('inpOTRate').value='';
+}
+
+function goBack(){
+showToast('Navigating back...');
+}
+
+init();
+</script>
+</body>
+</html>

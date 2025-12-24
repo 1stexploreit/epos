@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Report - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus{outline:none;border-color:#10b981}
+@media print{
+  .no-print{display:none!important}
+  body{background:#fff!important;padding:0!important;margin:0!important}
+  .print-area{box-shadow:none!important;border:none!important;margin:0!important;padding:20px!important}
+}
+@page{size:A4;margin:10mm}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Filter Bar -->
+<div class="no-print bg-white border-b border-slate-200 sticky top-0 z-10">
+<div class="max-w-4xl mx-auto px-6 py-3">
+<div class="flex flex-wrap items-center justify-between gap-3">
+<div class="flex items-center gap-2">
+<a href="reports.html" class="p-2 rounded-lg hover:bg-slate-100 text-slate-400">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+</a>
+<span class="text-sm font-semibold text-slate-700">Sales Report</span>
+</div>
+<div class="flex items-center gap-2">
+<input type="date" id="startDate" class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg" onchange="generateReport()">
+<span class="text-slate-300">—</span>
+<input type="date" id="endDate" class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg" onchange="generateReport()">
+<select id="status" class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg" onchange="generateReport()">
+<option value="all">All Status</option>
+<option value="paid">Paid Only</option>
+<option value="due">Due Only</option>
+</select>
+<button onclick="generateReport()" class="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700">Generate</button>
+</div>
+<div class="flex items-center gap-1">
+<button onclick="printReport()" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg" title="Print">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+</button>
+<button onclick="exportPDF()" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg" title="Export PDF">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+</button>
+<button onclick="exportExcel()" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg" title="Export Excel">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+</button>
+<button onclick="sendEmail()" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg" title="Send Email">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Printable Report -->
+<div class="max-w-4xl mx-auto p-6">
+<div class="print-area bg-white shadow-sm border border-slate-200 rounded-lg p-8" id="reportContent">
+
+<!-- Header -->
+<div class="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">
+<div>
+<h1 class="text-2xl font-bold text-slate-800">FreshMart</h1>
+<p class="text-xs text-slate-500 mt-1">123 Business Avenue, Portland, OR 97201</p>
+<p class="text-xs text-slate-500">Phone: (555) 123-4567 | Email: info@freshmart.com</p>
+</div>
+<div class="text-right">
+<h2 class="text-lg font-bold text-slate-800 uppercase tracking-wide">Sales Report</h2>
+<p class="text-xs text-slate-500 mt-1">Report No: <span class="font-medium text-slate-700">RPT-2025-0124</span></p>
+<p class="text-xs text-slate-500">Generated: <span class="font-medium text-slate-700" id="generatedDate">Jan 24, 2025</span></p>
+</div>
+</div>
+
+<!-- Report Period -->
+<div class="flex justify-between text-[11px] mb-4 pb-3 border-b border-slate-200">
+<div>
+<span class="text-slate-400">Period:</span>
+<span class="font-medium text-slate-700" id="periodFrom">Jan 15, 2025</span>
+<span class="text-slate-400 mx-1">to</span>
+<span class="font-medium text-slate-700" id="periodTo">Jan 24, 2025</span>
+</div>
+<div>
+<span class="text-slate-400">Filter:</span>
+<span class="font-medium text-slate-700" id="statusFilter">All Transactions</span>
+</div>
+</div>
+
+<!-- Summary -->
+<div class="flex justify-between text-[11px] mb-6 py-2 px-4 bg-slate-50 border border-slate-200 rounded">
+<div><span class="text-slate-400">Total Sales:</span> <span class="font-semibold text-slate-800" id="sumSales">$0.00</span></div>
+<div><span class="text-slate-400">Invoices:</span> <span class="font-semibold text-slate-800" id="sumInvoices">0</span></div>
+<div><span class="text-slate-400">Received:</span> <span class="font-semibold text-emerald-600" id="sumReceived">$0.00</span></div>
+<div><span class="text-slate-400">Due:</span> <span class="font-semibold text-red-600" id="sumDue">$0.00</span></div>
+</div>
+
+<!-- Data Table -->
+<table class="w-full mb-6">
+<thead>
+<tr class="border-y-2 border-slate-800">
+<th class="py-2 text-left text-[11px] font-bold text-slate-800 uppercase">Date</th>
+<th class="py-2 text-left text-[11px] font-bold text-slate-800 uppercase">Invoice</th>
+<th class="py-2 text-left text-[11px] font-bold text-slate-800 uppercase">Customer</th>
+<th class="py-2 text-right text-[11px] font-bold text-slate-800 uppercase">Amount</th>
+<th class="py-2 text-right text-[11px] font-bold text-slate-800 uppercase">Received</th>
+<th class="py-2 text-right text-[11px] font-bold text-slate-800 uppercase">Due</th>
+<th class="py-2 text-center text-[11px] font-bold text-slate-800 uppercase">Status</th>
+</tr>
+</thead>
+<tbody id="reportTable">
+</tbody>
+<tfoot>
+<tr class="border-t-2 border-slate-800">
+<td colspan="3" class="py-2 text-[11px] font-bold text-slate-800 uppercase">Total</td>
+<td class="py-2 text-right text-[11px] font-bold text-slate-800" id="footAmount">$0.00</td>
+<td class="py-2 text-right text-[11px] font-bold text-emerald-600" id="footReceived">$0.00</td>
+<td class="py-2 text-right text-[11px] font-bold text-red-600" id="footDue">$0.00</td>
+<td></td>
+</tr>
+</tfoot>
+</table>
+
+<!-- Notes -->
+<div class="border-t border-slate-200 pt-4 mb-6">
+<p class="text-xs font-semibold text-slate-700 mb-1">Notes:</p>
+<p class="text-xs text-slate-500">1. This report reflects sales transactions for the specified period only.</p>
+<p class="text-xs text-slate-500">2. "Due" amounts represent outstanding balances pending collection.</p>
+<p class="text-xs text-slate-500">3. For discrepancies, please contact the accounts department.</p>
+</div>
+
+<!-- Footer -->
+<div class="border-t-2 border-slate-800 pt-4 flex justify-between items-end">
+<div>
+<p class="text-xs text-slate-500">Prepared by: <span class="font-medium text-slate-700">System Generated</span></p>
+<p class="text-xs text-slate-500 mt-4">Authorized by: ___________________________</p>
+</div>
+<div class="text-right">
+<p class="text-xs text-slate-400">Page 1 of 1</p>
+<p class="text-[10px] text-slate-400 mt-1">FreshMart POS System v2.0</p>
+</div>
+</div>
+
+</div>
+</div>
+
+<script>
+var salesData = [
+  {date:'2025-01-24', invoice:'INV-0045', customer:'Sarah Johnson', amount:850, received:850, status:'Paid'},
+  {date:'2025-01-24', invoice:'INV-0044', customer:'James Rodriguez', amount:1200, received:800, status:'Partial'},
+  {date:'2025-01-23', invoice:'INV-0043', customer:'Emma Williams', amount:520, received:520, status:'Paid'},
+  {date:'2025-01-23', invoice:'INV-0042', customer:'Michael Chen', amount:1450, received:0, status:'Unpaid'},
+  {date:'2025-01-22', invoice:'INV-0041', customer:'Aisha Rahman', amount:680, received:680, status:'Paid'},
+  {date:'2025-01-22', invoice:'INV-0040', customer:'David Kim', amount:920, received:500, status:'Partial'},
+  {date:'2025-01-21', invoice:'INV-0039', customer:'Sarah Johnson', amount:1100, received:1100, status:'Paid'},
+  {date:'2025-01-20', invoice:'INV-0038', customer:'Emma Williams', amount:750, received:750, status:'Paid'},
+  {date:'2025-01-19', invoice:'INV-0037', customer:'James Rodriguez', amount:1800, received:0, status:'Unpaid'},
+  {date:'2025-01-18', invoice:'INV-0036', customer:'Michael Chen', amount:430, received:430, status:'Paid'},
+  {date:'2025-01-17', invoice:'INV-0035', customer:'Aisha Rahman', amount:1250, received:1250, status:'Paid'},
+  {date:'2025-01-16', invoice:'INV-0034', customer:'David Kim', amount:890, received:890, status:'Paid'},
+  {date:'2025-01-15', invoice:'INV-0033', customer:'Sarah Johnson', amount:2100, received:1500, status:'Partial'},
+];
+
+var today = new Date();
+var tenDaysAgo = new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000);
+document.getElementById('startDate').value = tenDaysAgo.toISOString().split('T')[0];
+document.getElementById('endDate').value = today.toISOString().split('T')[0];
+
+function fmt(n) { return '$' + n.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,'); }
+function fmtDate(d) { return new Date(d).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}); }
+function fmtDateShort(d) { return new Date(d).toLocaleDateString('en-US', {month:'2-digit', day:'2-digit', year:'2-digit'}); }
+
+function generateReport() {
+  var start = document.getElementById('startDate').value;
+  var end = document.getElementById('endDate').value;
+  var status = document.getElementById('status').value;
+  
+  document.getElementById('periodFrom').textContent = fmtDate(start);
+  document.getElementById('periodTo').textContent = fmtDate(end);
+  document.getElementById('generatedDate').textContent = fmtDate(new Date());
+  document.getElementById('statusFilter').textContent = status === 'all' ? 'All Transactions' : status === 'paid' ? 'Paid Only' : 'Due Only';
+  
+  var filtered = salesData.filter(function(row) {
+    var inRange = row.date >= start && row.date <= end;
+    var matchStatus = status === 'all' || 
+                      (status === 'paid' && row.status === 'Paid') || 
+                      (status === 'due' && row.status !== 'Paid');
+    return inRange && matchStatus;
+  });
+  
+  var totals = {amount:0, received:0, due:0};
+  var html = '';
+  
+  filtered.forEach(function(row, i) {
+    var due = row.amount - row.received;
+    totals.amount += row.amount;
+    totals.received += row.received;
+    totals.due += due;
+    
+    var bg = i % 2 === 0 ? '' : 'bg-slate-50';
+    
+    html += '<tr class="' + bg + ' border-b border-slate-100">';
+    html += '<td class="py-1.5 text-[11px] text-slate-600">' + fmtDateShort(row.date) + '</td>';
+    html += '<td class="py-1.5 text-[11px] text-slate-800 font-medium">' + row.invoice + '</td>';
+    html += '<td class="py-1.5 text-[11px] text-slate-600">' + row.customer + '</td>';
+    html += '<td class="py-1.5 text-[11px] text-right text-slate-800">' + fmt(row.amount) + '</td>';
+    html += '<td class="py-1.5 text-[11px] text-right text-slate-600">' + fmt(row.received) + '</td>';
+    html += '<td class="py-1.5 text-[11px] text-right ' + (due > 0 ? 'text-red-600' : 'text-slate-400') + '">' + fmt(due) + '</td>';
+    html += '<td class="py-1.5 text-[11px] text-center text-slate-500">' + row.status + '</td>';
+    html += '</tr>';
+  });
+  
+  if (!filtered.length) {
+    html = '<tr><td colspan="7" class="py-6 text-center text-[11px] text-slate-400">No transactions found</td></tr>';
+  }
+  
+  document.getElementById('reportTable').innerHTML = html;
+  
+  document.getElementById('sumSales').textContent = fmt(totals.amount);
+  document.getElementById('sumInvoices').textContent = filtered.length;
+  document.getElementById('sumReceived').textContent = fmt(totals.received);
+  document.getElementById('sumDue').textContent = fmt(totals.due);
+  
+  document.getElementById('footAmount').textContent = fmt(totals.amount);
+  document.getElementById('footReceived').textContent = fmt(totals.received);
+  document.getElementById('footDue').textContent = fmt(totals.due);
+}
+
+function printReport() { window.print(); }
+
+function exportPDF() {
+  alert('exportPDF()\n\nUse: jsPDF, TCPDF, or FPDF');
+}
+
+function exportExcel() {
+  alert('exportExcel()\n\nUse: SheetJS (xlsx)');
+}
+
+function sendEmail() {
+  alert('sendEmail()\n\nServer-side email dispatch');
+}
+
+generateReport();
+</script>
+</body>
+</html>

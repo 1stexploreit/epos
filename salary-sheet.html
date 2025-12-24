@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Salary Sheet - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+@keyframes slideIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.animate-modal{animation:slideIn 0.2s ease-out}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Header -->
+<div class="bg-white border-b border-slate-200">
+<div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-slate-800 font-semibold">Create Salary Sheet</h1>
+<p class="text-xs text-slate-400">Configure and generate monthly salary sheet</p>
+</div>
+<div class="flex items-center gap-2">
+<select id="selMonth" class="px-3 py-2 text-sm border border-slate-200 rounded-lg" onchange="loadMonthData()"></select>
+<button onclick="openBulkBonusModal()" class="px-3 py-2 text-sm text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>Bulk Bonus
+</button>
+<button onclick="generateSheet()" class="px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm hover:shadow flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Generate Sheet
+</button>
+</div>
+</div>
+</div>
+
+<main class="max-w-7xl mx-auto px-6 py-5 space-y-4">
+
+<!-- Salary Table -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+<div class="flex items-center gap-3">
+<input type="checkbox" id="selectAll" class="w-4 h-4 rounded border-slate-300 text-emerald-600" onchange="toggleSelectAll()">
+<label for="selectAll" class="text-sm font-medium text-slate-600">Select All</label>
+<span class="text-xs text-slate-400 ml-2">(<span id="selectedCount">0</span> selected)</span>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="toggleOvertimeSelected(true)" class="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg">Include OT</button>
+<button onclick="toggleOvertimeSelected(false)" class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg">Exclude OT</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full">
+<thead class="bg-slate-50 border-b border-slate-200">
+<tr class="text-[10px] text-slate-500 uppercase tracking-wider">
+<th class="px-3 py-3 text-center font-semibold w-10"></th>
+<th class="px-3 py-3 text-left font-semibold">Employee</th>
+<th class="px-3 py-3 text-right font-semibold">Basic</th>
+<th class="px-3 py-3 text-right font-semibold">Bonus</th>
+<th class="px-3 py-3 text-center font-semibold">OT Hrs</th>
+<th class="px-3 py-3 text-right font-semibold">OT Amount</th>
+<th class="px-3 py-3 text-center font-semibold">Include OT</th>
+<th class="px-3 py-3 text-center font-semibold">Absent</th>
+<th class="px-3 py-3 text-right font-semibold">Absent Ded.</th>
+<th class="px-3 py-3 text-right font-semibold">Advance</th>
+<th class="px-3 py-3 text-right font-semibold">Net Payable</th>
+<th class="px-3 py-3 text-right font-semibold">Actions</th>
+</tr>
+</thead>
+<tbody id="tableBody" class="divide-y divide-slate-100 text-[13px]"></tbody>
+<tfoot class="bg-slate-50 border-t-2 border-slate-200 font-semibold text-sm">
+<tr>
+<td class="px-3 py-3"></td>
+<td class="px-3 py-3">Total</td>
+<td class="px-3 py-3 text-right text-slate-700" id="footBasic">৳0</td>
+<td class="px-3 py-3 text-right text-emerald-600" id="footBonus">৳0</td>
+<td class="px-3 py-3 text-center text-blue-600" id="footOTHrs">0</td>
+<td class="px-3 py-3 text-right text-blue-600" id="footOT">৳0</td>
+<td class="px-3 py-3"></td>
+<td class="px-3 py-3 text-center text-slate-600" id="footAbsentDays">0</td>
+<td class="px-3 py-3 text-right text-orange-500" id="footAbsent">৳0</td>
+<td class="px-3 py-3 text-right text-amber-600" id="footAdvance">৳0</td>
+<td class="px-3 py-3 text-right text-slate-800" id="footTotal">৳0</td>
+<td class="px-3 py-3"></td>
+</tr>
+</tfoot>
+</table>
+</div>
+</div>
+</main>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg id="toastIcon" class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Saved</span>
+</div>
+
+<!-- Bulk Bonus Modal -->
+<div id="bulkBonusModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeBulkBonusModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md animate-modal">
+<div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+<div>
+<h2 class="font-semibold text-slate-800">Bulk Bonus</h2>
+<p class="text-xs text-slate-400">Apply % of basic as bonus</p>
+</div>
+<button onclick="closeBulkBonusModal()" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+<div class="p-6 space-y-4">
+<div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+<svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>
+</div>
+<div>
+<p class="font-semibold text-amber-800">Selected: <span id="bonusSelectedCount">0</span> employees</p>
+<p class="text-xs text-amber-600">Bonus = Basic × Percentage</p>
+</div>
+</div>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Bonus Percentage (%)</label>
+<div class="flex items-center gap-3 mt-1.5">
+<input type="number" id="bonusPercent" class="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg text-sm text-lg font-semibold" placeholder="e.g., 10" min="0" max="100" oninput="previewBonus()">
+<span class="text-xl font-bold text-slate-400">%</span>
+</div>
+</div>
+<div class="bg-slate-50 rounded-lg p-4">
+<p class="text-xs text-slate-400 uppercase tracking-wider font-medium mb-2">Preview</p>
+<div id="bonusPreview" class="space-y-2 max-h-40 overflow-y-auto"></div>
+<div class="border-t border-slate-200 mt-3 pt-3 flex justify-between">
+<span class="font-medium text-slate-600">Total Bonus:</span>
+<span class="font-bold text-emerald-600" id="bonusTotalPreview">৳0</span>
+</div>
+</div>
+</div>
+<div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50">
+<button onclick="closeBulkBonusModal()" class="px-5 py-2.5 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="applyBulkBonus()" class="px-5 py-2.5 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium shadow-sm">Apply Bonus</button>
+</div>
+</div>
+</div>
+
+<!-- Edit Employee Modal -->
+<div id="editModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeEditModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg animate-modal">
+<div class="px-6 py-4 border-b border-slate-200">
+<h2 class="font-semibold text-slate-800">Edit - <span id="editEmpName"></span></h2>
+<p class="text-xs text-slate-400 mt-0.5" id="editMonth"></p>
+</div>
+<div class="p-6 space-y-4">
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-slate-50 rounded-lg p-3">
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Basic Salary</p>
+<p class="text-lg font-bold text-slate-800" id="editBasic">৳0</p>
+</div>
+<div class="bg-slate-50 rounded-lg p-3">
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Per Day / Per Hour</p>
+<p class="text-lg font-bold text-slate-800" id="editRates">৳0 / ৳0</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Bonus</label><input type="number" id="inpBonus" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="0" oninput="calcEdit()"></div>
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Overtime Hours</label><input type="number" id="inpOTHrs" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50" readonly></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Absent Days</label><input type="number" id="inpAbsent" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="0" oninput="calcEdit()"></div>
+<div><label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Advance</label><input type="number" id="inpAdvance" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50" readonly></div>
+</div>
+<div class="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+<input type="checkbox" id="inpIncludeOT" class="w-4 h-4 rounded border-slate-300 text-blue-600" onchange="calcEdit()">
+<label for="inpIncludeOT" class="text-sm text-blue-700 font-medium">Include Overtime in Salary</label>
+</div>
+<div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg p-4 text-white">
+<div class="grid grid-cols-2 gap-4 text-sm mb-3">
+<div><span class="text-slate-400">OT Amount:</span> <span class="font-semibold" id="editOTAmt">৳0</span></div>
+<div><span class="text-slate-400">Absent Ded.:</span> <span class="font-semibold" id="editAbsentAmt">৳0</span></div>
+</div>
+<div class="flex items-center justify-between pt-3 border-t border-slate-700">
+<span class="text-slate-400">Net Payable</span>
+<span class="text-2xl font-bold" id="editTotal">৳0</span>
+</div>
+</div>
+</div>
+<div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50">
+<button onclick="closeEditModal()" class="px-5 py-2.5 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="saveEdit()" class="px-5 py-2.5 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm">Save</button>
+</div>
+</div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeSuccessModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 animate-modal text-center">
+<div class="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+<svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+</div>
+<h3 class="text-lg font-semibold text-slate-800 mb-2">Sheet Generated!</h3>
+<p class="text-sm text-slate-500 mb-2" id="successMonth"></p>
+<div class="bg-slate-50 rounded-lg p-4 text-left mb-6">
+<div class="flex justify-between text-sm mb-2"><span class="text-slate-500">Employees:</span><span class="font-semibold text-slate-700" id="successEmpCount">0</span></div>
+<div class="flex justify-between text-sm mb-2"><span class="text-slate-500">Total Basic:</span><span class="font-semibold text-slate-700" id="successBasic">৳0</span></div>
+<div class="flex justify-between text-sm"><span class="text-slate-500">Net Payable:</span><span class="font-bold text-emerald-600" id="successTotal">৳0</span></div>
+</div>
+<button onclick="closeSuccessModal()" class="w-full px-5 py-2.5 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm">Done</button>
+</div>
+</div>
+
+<script>
+const fmt=n=>'৳'+Math.round(n).toLocaleString('en-BD');
+const WORK_DAYS=26;
+const WORK_HOURS=8;
+
+let employees=[
+{id:1,name:"Rahim Ahmed",position:"Manager",basic:25000,workDays:26},
+{id:2,name:"Karim Hossain",position:"Cashier",basic:15000,workDays:26},
+{id:3,name:"Fatima Begum",position:"Sales",basic:12000,workDays:26},
+{id:4,name:"Jamal Uddin",position:"Delivery",basic:10000,workDays:26},
+{id:5,name:"Nasreen Akter",position:"Accountant",basic:18000,workDays:26},
+];
+
+// Simulated attendance data (overtime hours per employee per month)
+let attendanceData={
+'1':{otHours:12},'2':{otHours:8},'3':{otHours:15},'4':{otHours:20},'5':{otHours:5}
+};
+
+// Simulated advance data (from advance module)
+let advanceData={
+'1':{amount:2000},'2':{amount:0},'3':{amount:1500},'4':{amount:500},'5':{amount:0}
+};
+
+// Generated salary sheets storage
+let generatedSheets={};
+let salarySheet={};
+let currentMonth='';
+let editEmpId=null;
+
+function initMonths(){
+const sel=document.getElementById('selMonth');
+const now=new Date();
+for(let i=0;i<12;i++){
+const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+const val=d.toISOString().slice(0,7);
+const label=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+sel.innerHTML+=`<option value="${val}">${label}</option>`;
+}
+currentMonth=sel.value;
+}
+
+function getDayRate(e){return e.basic/(e.workDays||WORK_DAYS);}
+function getHourRate(e){return getDayRate(e)/WORK_HOURS;}
+
+function loadMonthData(){
+currentMonth=document.getElementById('selMonth').value;
+
+// Initialize salary sheet data for each employee
+employees.forEach(e=>{
+const key=`${e.id}-${currentMonth}`;
+if(!salarySheet[key]){
+const att=attendanceData[e.id]||{otHours:0};
+const adv=advanceData[e.id]||{amount:0};
+salarySheet[key]={
+bonus:0,
+otHours:att.otHours,
+includeOT:true,
+absent:0,
+advance:adv.amount
+};
+}
+});
+render();
+}
+
+function getData(empId){
+const key=`${empId}-${currentMonth}`;
+return salarySheet[key]||{bonus:0,otHours:0,includeOT:true,absent:0,advance:0};
+}
+
+function setData(empId,data){
+const key=`${empId}-${currentMonth}`;
+salarySheet[key]=data;
+}
+
+function calcTotal(e,data){
+const otAmt=data.includeOT?data.otHours*getHourRate(e):0;
+const absentDed=data.absent*getDayRate(e);
+return e.basic+data.bonus+otAmt-absentDed-data.advance;
+}
+
+function showToast(msg,success=true){
+const t=document.getElementById('toast');
+document.getElementById('toastMsg').textContent=msg;
+document.getElementById('toastIcon').className=`w-5 h-5 ${success?'text-emerald-400':'text-amber-400'}`;
+t.style.display='flex';
+setTimeout(()=>t.style.display='none',3000);
+}
+
+function render(){
+let tBasic=0,tBonus=0,tOTHrs=0,tOT=0,tAbsentDays=0,tAbsent=0,tAdvance=0,tTotal=0;
+
+document.getElementById('tableBody').innerHTML=employees.map(e=>{
+const data=getData(e.id);
+const otAmt=data.includeOT?data.otHours*getHourRate(e):0;
+const absentDed=data.absent*getDayRate(e);
+const total=calcTotal(e,data);
+
+tBasic+=e.basic;tBonus+=data.bonus;tOTHrs+=data.otHours;tOT+=otAmt;tAbsentDays+=data.absent;tAbsent+=absentDed;tAdvance+=data.advance;tTotal+=total;
+
+return`<tr class="hover:bg-slate-50/80">
+<td class="px-3 py-3 text-center"><input type="checkbox" class="emp-check w-4 h-4 rounded border-slate-300 text-emerald-600" data-id="${e.id}" onchange="updateSelectedCount()"></td>
+<td class="px-3 py-3"><div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-xs">${e.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+<div><p class="font-semibold text-slate-800">${e.name}</p><p class="text-[10px] text-slate-400">${e.position}</p></div>
+</div></td>
+<td class="px-3 py-3 text-right font-medium text-slate-700">${fmt(e.basic)}</td>
+<td class="px-3 py-3 text-right ${data.bonus?'text-emerald-600 font-medium':'text-slate-300'}">${data.bonus?'+'+fmt(data.bonus):'—'}</td>
+<td class="px-3 py-3 text-center text-blue-600 font-medium">${data.otHours}h</td>
+<td class="px-3 py-3 text-right ${data.includeOT&&otAmt?'text-blue-600 font-medium':'text-slate-300'}">${data.includeOT&&otAmt?'+'+fmt(otAmt):'—'}</td>
+<td class="px-3 py-3 text-center"><button onclick="toggleOT(${e.id})" class="px-2 py-1 text-[10px] font-semibold rounded-full ${data.includeOT?'bg-blue-100 text-blue-700':'bg-slate-100 text-slate-500'}">${data.includeOT?'Yes':'No'}</button></td>
+<td class="px-3 py-3 text-center"><span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${data.absent?'bg-orange-50 text-orange-600':'bg-slate-100 text-slate-400'}">${data.absent}</span></td>
+<td class="px-3 py-3 text-right ${absentDed?'text-orange-500 font-medium':'text-slate-300'}">${absentDed?'-'+fmt(absentDed):'—'}</td>
+<td class="px-3 py-3 text-right ${data.advance?'text-amber-600 font-medium':'text-slate-300'}">${data.advance?'-'+fmt(data.advance):'—'}</td>
+<td class="px-3 py-3 text-right font-bold text-slate-800">${fmt(total)}</td>
+<td class="px-3 py-3 text-right"><button onclick="openEditModal(${e.id})" class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button></td>
+</tr>`;}).join('');
+
+document.getElementById('footBasic').textContent=fmt(tBasic);
+document.getElementById('footBonus').textContent=fmt(tBonus);
+document.getElementById('footOTHrs').textContent=tOTHrs+'h';
+document.getElementById('footOT').textContent=fmt(tOT);
+document.getElementById('footAbsentDays').textContent=tAbsentDays;
+document.getElementById('footAbsent').textContent=fmt(tAbsent);
+document.getElementById('footAdvance').textContent=fmt(tAdvance);
+document.getElementById('footTotal').textContent=fmt(tTotal);
+
+updateSelectedCount();
+}
+
+function toggleSelectAll(){
+const checked=document.getElementById('selectAll').checked;
+document.querySelectorAll('.emp-check').forEach(cb=>cb.checked=checked);
+updateSelectedCount();
+}
+
+function updateSelectedCount(){
+const count=document.querySelectorAll('.emp-check:checked').length;
+document.getElementById('selectedCount').textContent=count;
+}
+
+function getSelectedIds(){
+return Array.from(document.querySelectorAll('.emp-check:checked')).map(cb=>parseInt(cb.dataset.id));
+}
+
+function toggleOT(empId){
+const data=getData(empId);
+data.includeOT=!data.includeOT;
+setData(empId,data);
+render();
+}
+
+function toggleOvertimeSelected(include){
+const ids=getSelectedIds();
+if(!ids.length){showToast('Select employees first',false);return;}
+ids.forEach(id=>{
+const data=getData(id);
+data.includeOT=include;
+setData(id,data);
+});
+render();
+showToast(`Overtime ${include?'included':'excluded'} for ${ids.length} employee(s)`);
+}
+
+// Bulk Bonus Modal
+function openBulkBonusModal(){
+const ids=getSelectedIds();
+if(!ids.length){showToast('Select employees first',false);return;}
+document.getElementById('bonusSelectedCount').textContent=ids.length;
+document.getElementById('bonusPercent').value='';
+previewBonus();
+document.getElementById('bulkBonusModal').style.display='flex';
+}
+function closeBulkBonusModal(){document.getElementById('bulkBonusModal').style.display='none';}
+
+function previewBonus(){
+const percent=parseFloat(document.getElementById('bonusPercent').value)||0;
+const ids=getSelectedIds();
+let total=0;
+document.getElementById('bonusPreview').innerHTML=ids.map(id=>{
+const e=employees.find(x=>x.id===id);
+const bonus=Math.round(e.basic*percent/100);
+total+=bonus;
+return`<div class="flex justify-between text-sm"><span class="text-slate-600">${e.name}</span><span class="font-medium text-emerald-600">${fmt(bonus)}</span></div>`;
+}).join('');
+document.getElementById('bonusTotalPreview').textContent=fmt(total);
+}
+
+function applyBulkBonus(){
+const percent=parseFloat(document.getElementById('bonusPercent').value)||0;
+if(!percent){alert('Enter bonus percentage');return;}
+const ids=getSelectedIds();
+ids.forEach(id=>{
+const e=employees.find(x=>x.id===id);
+const data=getData(id);
+data.bonus=Math.round(e.basic*percent/100);
+setData(id,data);
+});
+closeBulkBonusModal();
+render();
+showToast(`${percent}% bonus applied to ${ids.length} employee(s)`);
+}
+
+// Edit Modal
+function openEditModal(id){
+editEmpId=id;
+const e=employees.find(x=>x.id===id);
+const data=getData(id);
+const d=new Date(currentMonth+'-01');
+
+document.getElementById('editEmpName').textContent=e.name;
+document.getElementById('editMonth').textContent=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+document.getElementById('editBasic').textContent=fmt(e.basic);
+document.getElementById('editRates').textContent=`${fmt(getDayRate(e))} / ${fmt(getHourRate(e))}`;
+
+document.getElementById('inpBonus').value=data.bonus||'';
+document.getElementById('inpOTHrs').value=data.otHours||0;
+document.getElementById('inpAbsent').value=data.absent||'';
+document.getElementById('inpAdvance').value=data.advance||0;
+document.getElementById('inpIncludeOT').checked=data.includeOT;
+
+calcEdit();
+document.getElementById('editModal').style.display='flex';
+}
+function closeEditModal(){document.getElementById('editModal').style.display='none';}
+
+function calcEdit(){
+const e=employees.find(x=>x.id===editEmpId);
+if(!e)return;
+const bonus=parseFloat(document.getElementById('inpBonus').value)||0;
+const otHrs=parseFloat(document.getElementById('inpOTHrs').value)||0;
+const absent=parseFloat(document.getElementById('inpAbsent').value)||0;
+const advance=parseFloat(document.getElementById('inpAdvance').value)||0;
+const includeOT=document.getElementById('inpIncludeOT').checked;
+
+const otAmt=includeOT?otHrs*getHourRate(e):0;
+const absentDed=absent*getDayRate(e);
+const total=e.basic+bonus+otAmt-absentDed-advance;
+
+document.getElementById('editOTAmt').textContent=fmt(otAmt);
+document.getElementById('editAbsentAmt').textContent=fmt(absentDed);
+document.getElementById('editTotal').textContent=fmt(total);
+}
+
+function saveEdit(){
+const e=employees.find(x=>x.id===editEmpId);
+const data=getData(editEmpId);
+data.bonus=parseFloat(document.getElementById('inpBonus').value)||0;
+data.absent=parseFloat(document.getElementById('inpAbsent').value)||0;
+data.includeOT=document.getElementById('inpIncludeOT').checked;
+setData(editEmpId,data);
+closeEditModal();
+render();
+showToast('Saved');
+}
+
+// Generate Sheet
+function generateSheet(){
+const d=new Date(currentMonth+'-01');
+const monthLabel=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+let tBasic=0,tTotal=0;
+
+// Build sheet data
+const sheetData=employees.map(e=>{
+const data=getData(e.id);
+const otAmt=data.includeOT?data.otHours*getHourRate(e):0;
+const absentDed=data.absent*getDayRate(e);
+const total=calcTotal(e,data);
+tBasic+=e.basic;
+tTotal+=total;
+return{
+empId:e.id,
+name:e.name,
+position:e.position,
+basic:e.basic,
+bonus:data.bonus,
+otHours:data.otHours,
+otAmount:otAmt,
+includeOT:data.includeOT,
+absent:data.absent,
+absentDed:absentDed,
+advance:data.advance,
+total:total
+};
+});
+
+// Save generated sheet
+generatedSheets[currentMonth]={
+month:currentMonth,
+monthLabel:monthLabel,
+createdAt:new Date().toISOString(),
+employees:sheetData,
+totals:{basic:tBasic,total:tTotal}
+};
+
+// Show success modal
+document.getElementById('successMonth').textContent=monthLabel;
+document.getElementById('successEmpCount').textContent=employees.length;
+document.getElementById('successBasic').textContent=fmt(tBasic);
+document.getElementById('successTotal').textContent=fmt(tTotal);
+document.getElementById('successModal').style.display='flex';
+}
+
+function closeSuccessModal(){
+document.getElementById('successModal').style.display='none';
+}
+
+initMonths();
+loadMonthData();
+</script>
+</body>
+</html>

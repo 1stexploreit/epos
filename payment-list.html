@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payments - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.toast{animation:fadeIn 0.3s ease-out}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Top Action Bar -->
+<div class="bg-white border-b border-slate-200">
+<div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-slate-800 font-semibold">Payments</h1>
+<p class="text-xs text-slate-400">View all payment transactions</p>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="exportData()" class="px-3 py-2 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium flex items-center gap-1.5">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+Export
+</button>
+<a href="payment.html" class="px-4 py-2 text-xs bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium shadow-sm hover:shadow flex items-center gap-1.5">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+Receive Payment
+</a>
+</div>
+</div>
+</div>
+
+<main class="max-w-7xl mx-auto px-6 py-5 space-y-4">
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Total Collection</p>
+<p class="text-xl font-bold text-slate-800 mt-1" id="statTotal">$0.00</p>
+</div>
+<div class="w-10 h-10 rounded-md bg-slate-100 flex items-center justify-center">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Today</p>
+<p class="text-xl font-bold text-emerald-600 mt-1" id="statToday">$0.00</p>
+</div>
+<div class="w-10 h-10 rounded-md bg-emerald-50 flex items-center justify-center">
+<svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">This Week</p>
+<p class="text-xl font-bold text-blue-600 mt-1" id="statWeek">$0.00</p>
+</div>
+<div class="w-10 h-10 rounded-md bg-blue-50 flex items-center justify-center">
+<svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">This Month</p>
+<p class="text-xl font-bold text-amber-500 mt-1" id="statMonth">$0.00</p>
+</div>
+<div class="w-10 h-10 rounded-md bg-amber-50 flex items-center justify-center">
+<svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="bg-white rounded-lg shadow-sm border border-slate-100 p-3">
+<div class="flex flex-col md:flex-row gap-2">
+<div class="flex-1 relative">
+<svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<input type="text" id="search" placeholder="Search by receipt, customer, or invoice..." class="w-full pl-9 pr-4 py-2 border border-slate-100 rounded-md text-xs" oninput="renderTable()">
+</div>
+<div class="flex gap-2">
+<input type="date" id="filterDate" class="px-3 py-2 border border-slate-100 rounded-md text-xs text-slate-600" onchange="renderTable()">
+<select id="filterMethod" class="px-3 py-2 border border-slate-100 rounded-md text-xs text-slate-600 min-w-[110px]" onchange="renderTable()">
+<option value="">All Methods</option>
+<option value="Cash">Cash</option>
+<option value="Bank Transfer">Bank Transfer</option>
+<option value="Card">Card</option>
+<option value="Mobile Payment">Mobile</option>
+<option value="Cheque">Cheque</option>
+</select>
+<select id="filterSort" class="px-3 py-2 border border-slate-100 rounded-md text-xs text-slate-600 min-w-[120px]" onchange="renderTable()">
+<option value="newest">Newest First</option>
+<option value="oldest">Oldest First</option>
+<option value="highest">Highest Amount</option>
+<option value="lowest">Lowest Amount</option>
+</select>
+</div>
+</div>
+</div>
+
+<!-- Payment Table -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+<table class="w-full">
+<thead class="bg-slate-50">
+<tr class="text-[10px] text-slate-500 uppercase tracking-wider border-b border-slate-100">
+<th class="px-5 py-3 text-left font-semibold">Receipt</th>
+<th class="px-5 py-3 text-left font-semibold">Date</th>
+<th class="px-5 py-3 text-left font-semibold">Customer</th>
+<th class="px-5 py-3 text-left font-semibold">Invoice</th>
+<th class="px-5 py-3 text-left font-semibold">Method</th>
+<th class="px-5 py-3 text-right font-semibold">Amount</th>
+<th class="px-5 py-3 text-right font-semibold">Actions</th>
+</tr>
+</thead>
+<tbody id="tableBody" class="divide-y divide-slate-50"></tbody>
+</table>
+<div id="emptyState" class="p-12 text-center" style="display:none">
+<div class="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
+<svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"/></svg>
+</div>
+<p class="text-slate-600 font-medium">No payments found</p>
+<p class="text-sm text-slate-400 mt-1">Try adjusting your search or filters</p>
+</div>
+<!-- Pagination -->
+<div class="px-5 py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2">
+<span class="text-xs text-slate-500">Show</span>
+<select id="perPage" class="px-2 py-1 border border-slate-100 rounded text-xs text-slate-600" onchange="changePerPage()">
+<option value="10">10</option>
+<option value="25">25</option>
+<option value="50">50</option>
+<option value="100">100</option>
+</select>
+</div>
+<p class="text-xs text-slate-500">Showing <span id="showCount" class="font-medium text-slate-700">0</span> of <span id="totalCount" class="font-medium text-slate-700">0</span></p>
+</div>
+<div class="flex items-center gap-1">
+<button onclick="changePage(-1)" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg disabled:opacity-40" id="prevBtn"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
+<span class="px-2 py-1 text-xs text-slate-600" id="pageInfo">1 / 1</span>
+<button onclick="changePage(1)" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg disabled:opacity-40" id="nextBtn"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+</div>
+</div>
+</div>
+</main>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2 toast" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Success</span>
+</div>
+
+<script>
+var payments = [
+{id:"RCP-0021",date:"2025-01-24",customer:"Sarah Johnson",custId:1,invoice:"INV-0012",method:"Cash",amount:850,sms:true},
+{id:"RCP-0020",date:"2025-01-24",customer:"James Rodriguez",custId:4,invoice:"INV-0011",method:"Bank Transfer",amount:1800,ref:"TXN-445566",sms:false},
+{id:"RCP-0019",date:"2025-01-23",customer:"Aisha Rahman",custId:5,invoice:"INV-0010",method:"Mobile Payment",amount:500,ref:"MP-7890",sms:true},
+{id:"RCP-0018",date:"2025-01-22",customer:"David Kim",custId:6,invoice:"INV-0006",method:"Card",amount:750,ref:"4242",sms:false},
+{id:"RCP-0017",date:"2025-01-21",customer:"Sarah Johnson",custId:1,invoice:"INV-0009",method:"Cash",amount:400,sms:false},
+{id:"RCP-0016",date:"2025-01-20",customer:"Emma Williams",custId:3,invoice:"INV-0007",method:"Cheque",amount:520,ref:"CHQ-1122",sms:true},
+{id:"RCP-0015",date:"2025-01-18",customer:"Michael Chen",custId:2,invoice:"INV-0005",method:"Bank Transfer",amount:1200,ref:"TXN-334455",sms:false},
+{id:"RCP-0014",date:"2025-01-15",customer:"James Rodriguez",custId:4,invoice:"INV-0008",method:"Cash",amount:1400,sms:true},
+{id:"RCP-0013",date:"2025-01-12",customer:"David Kim",custId:6,invoice:"INV-0004",method:"Mobile Payment",amount:1000,ref:"MP-5566",sms:false},
+{id:"RCP-0012",date:"2025-01-10",customer:"Aisha Rahman",custId:5,invoice:"All",method:"Cash",amount:390,sms:false},
+];
+
+var currentPage = 1, perPage = 10;
+
+function fmt(n) { return '$' + n.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,'); }
+function fmtDate(d) { return new Date(d).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}); }
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.style.display = 'flex';
+  setTimeout(function() { t.style.display = 'none'; }, 3000);
+}
+
+function updateStats() {
+  var total = 0, today = 0, week = 0, month = 0;
+  var now = new Date();
+  var todayStr = now.toISOString().split('T')[0];
+  var weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  payments.forEach(function(p) {
+    total += p.amount;
+    var pDate = new Date(p.date);
+    if (p.date === todayStr) today += p.amount;
+    if (pDate >= weekAgo) week += p.amount;
+    if (pDate >= monthStart) month += p.amount;
+  });
+
+  document.getElementById('statTotal').textContent = fmt(total);
+  document.getElementById('statToday').textContent = fmt(today);
+  document.getElementById('statWeek').textContent = fmt(week);
+  document.getElementById('statMonth').textContent = fmt(month);
+}
+
+function getFiltered() {
+  var search = document.getElementById('search').value.toLowerCase();
+  var dateFilter = document.getElementById('filterDate').value;
+  var method = document.getElementById('filterMethod').value;
+  var sort = document.getElementById('filterSort').value;
+
+  var list = payments.filter(function(p) {
+    var matchSearch = p.id.toLowerCase().includes(search) || p.customer.toLowerCase().includes(search) || p.invoice.toLowerCase().includes(search);
+    var matchDate = !dateFilter || p.date === dateFilter;
+    var matchMethod = !method || p.method === method;
+    return matchSearch && matchDate && matchMethod;
+  });
+
+  if (sort === 'newest') list.sort(function(a,b) { return new Date(b.date) - new Date(a.date); });
+  else if (sort === 'oldest') list.sort(function(a,b) { return new Date(a.date) - new Date(b.date); });
+  else if (sort === 'highest') list.sort(function(a,b) { return b.amount - a.amount; });
+  else if (sort === 'lowest') list.sort(function(a,b) { return a.amount - b.amount; });
+
+  return list;
+}
+
+function getMethodDot(method) {
+  if (method === 'Cash') return 'bg-emerald-500';
+  if (method === 'Bank Transfer') return 'bg-blue-500';
+  if (method === 'Card') return 'bg-purple-500';
+  if (method === 'Mobile Payment') return 'bg-amber-500';
+  if (method === 'Cheque') return 'bg-slate-500';
+  return 'bg-slate-400';
+}
+
+function renderTable() {
+  var filtered = getFiltered();
+  var totalPages = Math.ceil(filtered.length / perPage) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+  var start = (currentPage - 1) * perPage;
+  var paged = filtered.slice(start, start + perPage);
+
+  document.getElementById('totalCount').textContent = filtered.length;
+  document.getElementById('showCount').textContent = paged.length;
+  document.getElementById('pageInfo').textContent = currentPage + ' / ' + totalPages;
+  document.getElementById('prevBtn').disabled = currentPage === 1;
+  document.getElementById('nextBtn').disabled = currentPage === totalPages;
+
+  if (!filtered.length) {
+    document.getElementById('tableBody').innerHTML = '';
+    document.getElementById('emptyState').style.display = 'block';
+    return;
+  }
+  document.getElementById('emptyState').style.display = 'none';
+
+  var html = '';
+  paged.forEach(function(p, index) {
+    var rowBg = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50';
+    html += '<tr class="' + rowBg + ' hover:bg-emerald-50/50 text-[13px]">';
+    html += '<td class="px-5 py-3 font-semibold text-slate-800">' + p.id + '</td>';
+    html += '<td class="px-5 py-3 text-slate-500">' + fmtDate(p.date) + '</td>';
+    html += '<td class="px-5 py-3 text-slate-700">' + p.customer + '</td>';
+    html += '<td class="px-5 py-3 text-slate-500">' + p.invoice + '</td>';
+    html += '<td class="px-5 py-3"><span class="inline-flex items-center gap-1.5 text-slate-600"><span class="w-2 h-2 rounded-full ' + getMethodDot(p.method) + '"></span>' + p.method + '</span></td>';
+    html += '<td class="px-5 py-3 text-right font-semibold text-emerald-600">' + fmt(p.amount) + '</td>';
+    html += '<td class="px-5 py-3"><div class="flex justify-end relative">';
+    html += '<button onclick="toggleMenu(\'' + p.id + '\')" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg flex items-center gap-1 text-xs">';
+    html += '<span class="text-slate-500">Options</span>';
+    html += '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>';
+    html += '</button>';
+    html += '<div id="menu-' + p.id + '" class="absolute right-0 top-8 z-20 bg-white border border-slate-100 rounded-lg shadow-lg py-1 min-w-[140px]" style="display:none">';
+    html += '<button onclick="viewReceipt(\'' + p.id + '\');closeMenus()" class="w-full px-3 py-2 text-left text-xs text-slate-600 hover:bg-slate-50 flex items-center gap-2"><svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>View Receipt</button>';
+    html += '<button onclick="printReceipt(\'' + p.id + '\');closeMenus()" class="w-full px-3 py-2 text-left text-xs text-slate-600 hover:bg-slate-50 flex items-center gap-2"><svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>Print</button>';
+    html += '<button onclick="sendSMS(\'' + p.id + '\');closeMenus()" class="w-full px-3 py-2 text-left text-xs text-slate-600 hover:bg-slate-50 flex items-center gap-2"><svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>Send SMS</button>';
+    html += '<div class="border-t border-slate-50 my-1"></div>';
+    html += '<button onclick="deletePayment(\'' + p.id + '\');closeMenus()" class="w-full px-3 py-2 text-left text-xs text-red-500 hover:bg-red-50 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>Delete</button>';
+    html += '</div></div></td></tr>';
+  });
+  document.getElementById('tableBody').innerHTML = html;
+}
+
+function changePage(dir) {
+  currentPage += dir;
+  renderTable();
+}
+
+function changePerPage() {
+  perPage = parseInt(document.getElementById('perPage').value);
+  currentPage = 1;
+  renderTable();
+}
+
+function toggleMenu(id) {
+  closeMenus();
+  document.getElementById('menu-' + id).style.display = 'block';
+}
+
+function closeMenus() {
+  var menus = document.querySelectorAll('[id^="menu-"]');
+  menus.forEach(function(m) { m.style.display = 'none'; });
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('[onclick^="toggleMenu"]') && !e.target.closest('[id^="menu-"]')) {
+    closeMenus();
+  }
+});
+
+function viewReceipt(id) { showToast('Opening receipt ' + id + '...'); }
+function printReceipt(id) { showToast('Printing receipt ' + id + '...'); }
+function sendSMS(id) { showToast('SMS sent for ' + id); }
+function deletePayment(id) {
+  if (confirm('Delete payment ' + id + '?')) {
+    payments = payments.filter(function(p) { return p.id !== id; });
+    updateStats();
+    renderTable();
+    showToast('Payment deleted');
+  }
+}
+function exportData() { showToast('Exporting payments...'); }
+
+updateStats();
+renderTable();
+</script>
+</body>
+</html>

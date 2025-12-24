@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>New Sale - FreshMart POS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    *{font-family:'Inter',sans-serif;box-sizing:border-box;}
+    body{background:#f8fafc;min-height:100vh;padding-bottom:90px;}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+    .input-light{background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b;border-radius:10px;}
+    .input-light:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1);}
+    .input-light::placeholder{color:#94a3b8;}
+    .btn-primary{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;font-weight:600;}
+    .btn-primary:hover{background:linear-gradient(135deg,#34d399 0%,#10b981 100%);}
+    .modal{display:none;}.modal.active{display:flex;}
+    .item-row{animation:fadeIn .25s ease;}
+    @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+    .emerald-glow{box-shadow:0 0 30px rgba(16,185,129,0.1);}
+    ::-webkit-scrollbar{width:6px;height:6px;}
+    ::-webkit-scrollbar-track{background:#f1f5f9;}
+    ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px;}
+    .tag{font-size:10px;padding:4px 8px;border-radius:6px;font-weight:600;text-transform:uppercase;}
+    .scanner-line{animation:scan 2s linear infinite;}
+    @keyframes scan{0%,100%{top:10%;}50%{top:80%;}}
+  </style>
+</head>
+<body class="text-slate-700">
+  
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-[1400px] mx-auto px-4 py-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <button onclick="window.history.back()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="tag bg-emerald-100 text-emerald-700">Sales Invoice</span>
+              <span id="invoiceNum" class="text-xl font-bold text-slate-800">INV-0005</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">Create new sales invoice</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="warehouse" class="bg-transparent text-slate-600 text-sm font-medium px-2 py-2 rounded-lg hover:bg-slate-100 focus:outline-none cursor-pointer">
+            <option value="main">Main Warehouse</option>
+            <option value="branch1">Branch 1</option>
+          </select>
+          <span class="text-slate-300">|</span>
+          <select id="invoiceStatus" class="bg-transparent text-sm font-medium px-2 py-2 rounded-lg hover:bg-slate-100 focus:outline-none cursor-pointer text-emerald-600">
+            <option value="pending">⏳ Pending</option>
+            <option value="confirmed">✅ Confirmed</option>
+            <option value="delivered">📦 Delivered</option>
+            <option value="onhold">⏸️ On Hold</option>
+            <option value="cancelled">❌ Cancelled</option>
+          </select>
+          <button onclick="saveSale('save')" class="btn-primary px-5 py-2.5 rounded-xl text-sm hidden md:flex items-center gap-2 ml-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Save Invoice
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-[1400px] mx-auto p-4 md:p-6">
+    
+    <!-- Customer & Order Details -->
+    <div class="card p-5 mb-6">
+      <div class="flex flex-wrap items-center gap-3 mb-4">
+        <div class="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center">
+          <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        </div>
+        <div>
+          <h2 class="font-semibold text-slate-800">Customer & Order Information</h2>
+          <p class="text-xs text-slate-400">Select customer and enter order details</p>
+        </div>
+        <button onclick="openCustomerModal()" class="ml-auto px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-semibold hover:bg-emerald-200 transition">+ NEW CUSTOMER</button>
+      </div>
+      
+      <div class="grid grid-cols-12 gap-3">
+        <div class="col-span-6 md:col-span-2">
+          <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Order Type</label>
+          <select id="orderType" class="w-full input-light px-3 py-2.5 text-sm">
+            <option value="sales">Sales</option>
+            <option value="order">Order</option>
+          </select>
+        </div>
+        <div class="col-span-6 md:col-span-2">
+          <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Date</label>
+          <input type="date" id="saleDate" class="w-full input-light px-3 py-2.5 text-sm">
+        </div>
+        <div class="col-span-6 md:col-span-2">
+          <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Due Date</label>
+          <input type="date" id="saleDueDate" class="w-full input-light px-3 py-2.5 text-sm">
+        </div>
+        <div class="col-span-6 md:col-span-6 relative">
+          <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Customer</label>
+          <input type="text" id="customerSearch" class="w-full input-light px-4 py-2.5 text-sm" placeholder="Search customer..." oninput="searchCustomers()" onfocus="showCustomerDropdown()">
+          <svg class="w-4 h-4 text-slate-400 absolute right-3 bottom-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <div id="customerDropdown" class="hidden absolute top-full left-0 right-0 mt-1 card shadow-xl z-30 max-h-48 overflow-y-auto"></div>
+        </div>
+      </div>
+      
+      <div id="customerDetailsRow" class="grid grid-cols-12 gap-3 mt-3 hidden">
+        <div class="col-span-12 md:col-span-3">
+          <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Name</label>
+          <input type="text" id="custName" class="w-full input-light px-3 py-2.5 text-sm" placeholder="Customer name">
+        </div>
+        <div class="col-span-6 md:col-span-2">
+          <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Mobile</label>
+          <input type="text" id="custMobile" class="w-full input-light px-3 py-2.5 text-sm" placeholder="Mobile">
+        </div>
+        <div class="col-span-6 md:col-span-7">
+          <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Address</label>
+          <input type="text" id="custAddress" class="w-full input-light px-3 py-2.5 text-sm" placeholder="Address">
+        </div>
+      </div>
+      <input type="hidden" id="selectedCustomerId" value="">
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      
+      <!-- Products Section -->
+      <div class="xl:col-span-9">
+        
+        <!-- Search & Barcode Section -->
+        <div class="card p-3 mb-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-100">
+          <div class="flex flex-wrap gap-2 items-center">
+            <div class="flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-3 py-2 shadow-sm">
+              <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h.01M7 12h.01M7 16h.01M11 8h2M11 12h2M11 16h2M17 8h.01M17 12h.01M17 16h.01"/></svg>
+              <input type="text" id="barcodeInput" placeholder="Barcode / SKU" class="bg-transparent border-0 text-sm w-28 focus:outline-none" onkeypress="if(event.key==='Enter')scanBarcode()" onfocus="window.scrollTo({top:0,behavior:'smooth'})">
+              <button onclick="scanBarcode()" class="text-emerald-600 hover:text-emerald-700 font-medium text-sm">⏎</button>
+              <button onclick="toggleCamera()" class="text-emerald-400 hover:text-emerald-600 text-sm">📷</button>
+            </div>
+            <select id="categoryFilter" onchange="onCategoryChange()" class="bg-white border border-emerald-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 shadow-sm">
+              <option value="">All Categories</option>
+              <option value="fruits">🍎 Fruits</option>
+              <option value="dairy">🥛 Dairy</option>
+              <option value="bakery">🍞 Bakery</option>
+              <option value="meat">🥩 Meat</option>
+              <option value="vegetables">🥕 Vegetables</option>
+            </select>
+            <select id="subCategoryFilter" onchange="searchProducts()" class="bg-white border border-emerald-200 rounded-lg px-3 py-2 text-sm hidden focus:outline-none focus:border-emerald-500 shadow-sm">
+              <option value="">All</option>
+            </select>
+            <div class="flex-1 min-w-[180px] relative">
+              <input type="text" id="productSearch" class="w-full bg-white border border-emerald-200 rounded-lg px-3 py-2 pl-9 text-sm focus:outline-none focus:border-emerald-500 shadow-sm" placeholder="Search products..." oninput="searchProducts()" onfocus="showDropdown()">
+              <svg class="w-4 h-4 text-emerald-500 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <div id="productDropdown" class="hidden absolute top-full left-0 right-0 mt-2 card shadow-xl z-20 max-h-80 overflow-y-auto"></div>
+            </div>
+            <select id="globalPriceType" onchange="renderItems()" class="bg-white border border-emerald-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 shadow-sm">
+              <option value="retail">Retail</option>
+              <option value="wholesale">Wholesale</option>
+            </select>
+          </div>
+          <div id="cameraView" class="hidden relative h-28 bg-emerald-100 rounded-lg overflow-hidden mt-3">
+            <div class="absolute inset-0 flex items-center justify-center text-emerald-600 text-sm">Camera Scanner Active</div>
+            <div class="scanner-line absolute left-0 right-0 h-0.5 bg-emerald-500"></div>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="card overflow-hidden" style="min-height: 415px;">
+          <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="font-semibold text-slate-800 flex items-center gap-2 text-sm">
+              <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              Sale Items
+              <span id="itemCount" class="tag bg-emerald-100 text-emerald-700 ml-1">0</span>
+            </h3>
+          </div>
+          
+          <div class="overflow-x-auto" style="max-height: 345px; overflow-y: auto;">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-slate-50">
+                  <th class="text-left p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-12">#</th>
+                  <th class="text-left p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Product</th>
+                  <th class="text-center p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Bulk</th>
+                  <th class="text-center p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Unit</th>
+                  <th class="text-center p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Qty</th>
+                  <th class="text-right p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Price</th>
+                  <th class="text-center p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Disc%</th>
+                  <th class="text-right p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Total</th>
+                  <th class="w-12"></th>
+                </tr>
+              </thead>
+              <tbody id="itemsBody"></tbody>
+            </table>
+          </div>
+          
+          <div id="emptyItems" class="p-6 text-center" style="min-height: 300px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
+              <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </div>
+            <p class="text-slate-500 font-medium text-sm">No items added</p>
+            <p class="text-slate-400 text-xs mt-1">Search products or scan barcode</p>
+          </div>
+        </div>
+
+        <!-- Notes & Shipping -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div class="card p-5">
+            <label class="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Internal Notes</label>
+            <textarea id="internalNotes" rows="2" class="w-full input-light px-4 py-3 text-sm resize-none" placeholder="Staff notes..."></textarea>
+            <label class="text-xs text-slate-500 uppercase tracking-wider mb-2 mt-3 block">Customer Notes</label>
+            <textarea id="customerNotes" rows="2" class="w-full input-light px-4 py-3 text-sm resize-none" placeholder="Notes on invoice..."></textarea>
+          </div>
+          <div class="card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <label class="text-xs text-slate-500 uppercase tracking-wider">Shipping Details</label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="hasShipping" onchange="toggleShipping()" class="w-4 h-4 rounded accent-emerald-500">
+                <span class="text-xs text-slate-500">Enable</span>
+              </label>
+            </div>
+            <div id="shippingFields" class="hidden space-y-3">
+              <textarea id="shipAddress" rows="2" class="w-full input-light px-4 py-3 text-sm resize-none" placeholder="Shipping address..."></textarea>
+              <div class="grid grid-cols-2 gap-3">
+                <select id="shipMethod" class="input-light px-3 py-2.5 text-sm">
+                  <option value="">Method</option>
+                  <option value="standard">Standard</option>
+                  <option value="express">Express</option>
+                  <option value="pickup">Pickup</option>
+                </select>
+                <input type="date" id="deliveryDate" class="input-light px-3 py-2.5 text-sm">
+              </div>
+              <input type="text" id="trackingNum" class="w-full input-light px-3 py-2.5 text-sm" placeholder="Tracking number...">
+            </div>
+            <div class="mt-3">
+              <label class="text-xs text-slate-500 uppercase tracking-wider mb-2 block">PO / Reference</label>
+              <input type="text" id="saleRef" class="w-full input-light px-4 py-2.5 text-sm" placeholder="PO Number / Reference">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="xl:col-span-3 space-y-4">
+        
+        <!-- Summary -->
+        <div class="card p-4">
+          <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2 text-sm">
+            <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            Summary
+          </h3>
+          <div class="space-y-2.5">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500 text-sm">Subtotal</span>
+              <span id="subtotal" class="text-slate-800 font-semibold">$0.00</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500 text-sm">Item Disc</span>
+              <span id="itemDiscounts" class="text-orange-500 font-medium">-$0.00</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500 text-sm">Order Disc</span>
+              <input type="number" id="orderDiscount" class="w-20 input-light px-2 py-1.5 text-sm text-right" value="0" oninput="calculate()">
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500 text-sm">VAT %</span>
+              <input type="number" id="taxPercent" class="w-20 input-light px-2 py-1.5 text-sm text-right" value="0" oninput="calculate()">
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500 text-sm">Shipping</span>
+              <input type="number" id="shippingCost" class="w-20 input-light px-2 py-1.5 text-sm text-right" value="0" oninput="calculate()">
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500 text-sm">Labour</span>
+              <input type="number" id="labourCost" class="w-20 input-light px-2 py-1.5 text-sm text-right" value="0" oninput="calculate()">
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-red-500 text-sm">Less Amt</span>
+              <input type="number" id="lessAmount" class="w-20 input-light px-2 py-1.5 text-sm text-right border-red-200" value="0" oninput="calculate()">
+            </div>
+            <div class="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-3 text-center mt-3">
+              <p class="text-emerald-100 text-[10px] font-medium mb-0.5">GRAND TOTAL</p>
+              <p id="grandTotal" class="text-xl font-extrabold text-white">$0.00</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment -->
+        <div class="card p-4">
+          <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2 text-sm">
+            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Payment
+          </h3>
+          <div class="space-y-2">
+            <div>
+              <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Amount Paid</label>
+              <input type="number" step="0.01" id="paidAmount" class="w-full input-light px-3 py-2.5 text-base font-bold text-center" placeholder="0.00" oninput="updateBalance()">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Method</label>
+              <select id="payMethod" class="w-full input-light px-3 py-2 text-sm">
+                <option value="cash">💵 Cash</option>
+                <option value="card">💳 Card</option>
+                <option value="bank">🏦 Bank Transfer</option>
+                <option value="mobile">📱 Mobile Payment</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Reference</label>
+              <input type="text" id="payRef" class="w-full input-light px-3 py-2 text-sm" placeholder="Transaction ID">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Sales Person</label>
+              <select id="salesPerson" class="w-full input-light px-3 py-2 text-sm">
+                <option value="1">John Doe</option>
+                <option value="2">Sarah Smith</option>
+              </select>
+            </div>
+            <div id="balanceBox" class="hidden p-2.5 rounded-lg bg-red-50 border border-red-200">
+              <div class="flex justify-between items-center">
+                <span class="text-red-600 text-xs font-medium">Balance Due</span>
+                <span id="balanceDue" class="text-base font-bold text-red-600">$0.00</span>
+              </div>
+            </div>
+            <div id="changeBox" class="hidden p-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
+              <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                  <span class="text-emerald-600 text-xs font-medium">Change</span>
+                  <span id="changeAmount" class="text-base font-bold text-emerald-600">$0.00</span>
+                </div>
+                <label class="flex items-center gap-1 cursor-pointer">
+                  <input type="checkbox" id="allowOverpay" class="w-3 h-3 rounded accent-amber-500" onchange="updateBalance()">
+                  <span class="text-[10px] text-amber-600">Overpay</span>
+                </label>
+              </div>
+            </div>
+            <label class="flex items-center gap-2 p-2.5 rounded-lg bg-blue-50 border border-blue-200 cursor-pointer">
+              <input type="checkbox" id="smsNotify" class="w-3.5 h-3.5 rounded accent-blue-500" checked>
+              <span class="text-xs text-blue-700 font-medium">Send SMS notification</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40">
+    <div class="max-w-[1400px] mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-6 text-sm">
+        <span class="text-slate-500">Items: <strong id="footerItems" class="text-slate-800">0</strong></span>
+        <span class="text-slate-500">Total: <strong id="footerTotal" class="text-emerald-600">$0.00</strong></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="window.history.back()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm font-medium transition">Cancel</button>
+        <button onclick="saveSale('draft')" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm font-medium transition">Draft</button>
+        <button onclick="saveSale('save')" class="px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition">Save</button>
+        <button onclick="saveSale('print')" class="btn-primary px-6 py-2.5 rounded-xl text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          Print
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Customer Modal -->
+  <div id="customerModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50 p-4">
+    <div class="card p-6 w-full max-w-md">
+      <h3 class="text-lg font-bold text-slate-800 mb-4">Add New Customer</h3>
+      <div class="space-y-3">
+        <input type="text" id="newCustName" class="w-full input-light px-4 py-3 text-sm" placeholder="Customer Name *">
+        <input type="text" id="newCustMobile" class="w-full input-light px-4 py-3 text-sm" placeholder="Mobile Number *">
+        <input type="email" id="newCustEmail" class="w-full input-light px-4 py-3 text-sm" placeholder="Email">
+        <textarea id="newCustAddress" rows="2" class="w-full input-light px-4 py-3 text-sm resize-none" placeholder="Address"></textarea>
+      </div>
+      <div class="flex gap-3 mt-5">
+        <button onclick="closeCustomerModal()" class="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 font-medium transition">Cancel</button>
+        <button onclick="saveNewCustomer()" class="flex-1 py-3 btn-primary rounded-xl">Save Customer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div id="successModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50 p-4">
+    <div class="card p-6 w-full max-w-sm text-center">
+      <div class="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <h3 class="text-xl font-bold text-slate-800 mb-1">Sale Created!</h3>
+      <p id="successInvoice" class="text-lg font-bold text-emerald-600 mb-1">INV-0005</p>
+      <p id="successInfo" class="text-sm text-slate-500 mb-5">Total: $0.00</p>
+      <div class="flex gap-3">
+        <button onclick="newSale()" class="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 font-medium transition">New Sale</button>
+        <button onclick="document.getElementById('successModal').classList.remove('active')" class="flex-1 py-3 btn-primary rounded-xl">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var cameraActive = false;
+    var products = [
+      { id: 1, name: 'Organic Apples', sku: '1001', barcode: '8901234567890', retailPrice: 4.99, wholesalePrice: 3.99, pcsPerBulk: 12, bulkUnit: 'Carton', stock: 45, emoji: '🍎', category: 'fruits', subCategory: 'fresh', unit: 'kg' },
+      { id: 2, name: 'Fresh Bananas', sku: '1002', barcode: '8901234567891', retailPrice: 2.49, wholesalePrice: 1.99, pcsPerBulk: 12, bulkUnit: 'Box', stock: 60, emoji: '🍌', category: 'fruits', subCategory: 'tropical', unit: 'kg' },
+      { id: 3, name: 'Sweet Oranges', sku: '1003', barcode: '8901234567892', retailPrice: 3.99, wholesalePrice: 3.29, pcsPerBulk: 10, bulkUnit: 'Carton', stock: 38, emoji: '🍊', category: 'fruits', subCategory: 'citrus', unit: 'kg' },
+      { id: 4, name: 'Whole Milk 1L', sku: '2001', barcode: '8901234567893', retailPrice: 3.29, wholesalePrice: 2.79, pcsPerBulk: 12, bulkUnit: 'Case', stock: 30, emoji: '🥛', category: 'dairy', subCategory: 'milk', unit: 'ltr' },
+      { id: 5, name: 'Greek Yogurt', sku: '2002', barcode: '8901234567894', retailPrice: 5.49, wholesalePrice: 4.49, pcsPerBulk: 10, bulkUnit: 'Pack', stock: 25, emoji: '🫙', category: 'dairy', subCategory: 'yogurt', unit: 'pcs' },
+      { id: 6, name: 'Cheddar Cheese', sku: '2003', barcode: '8901234567895', retailPrice: 6.99, wholesalePrice: 5.99, pcsPerBulk: 10, bulkUnit: 'Box', stock: 5, emoji: '🧀', category: 'dairy', subCategory: 'cheese', unit: 'pcs' },
+      { id: 7, name: 'Sourdough Bread', sku: '3001', barcode: '8901234567896', retailPrice: 4.99, wholesalePrice: 3.99, pcsPerBulk: 10, bulkUnit: 'Bundle', stock: 15, emoji: '🍞', category: 'bakery', subCategory: 'bread', unit: 'pcs' },
+      { id: 8, name: 'Croissants', sku: '3002', barcode: '8901234567897', retailPrice: 6.99, wholesalePrice: 5.49, pcsPerBulk: 12, bulkUnit: 'Dozen', stock: 20, emoji: '🥐', category: 'bakery', subCategory: 'pastry', unit: 'pcs' },
+      { id: 9, name: 'Chicken Breast', sku: '4001', barcode: '8901234567898', retailPrice: 12.99, wholesalePrice: 10.99, pcsPerBulk: 10, bulkUnit: 'Carton', stock: 18, emoji: '🍗', category: 'meat', subCategory: 'poultry', unit: 'kg' },
+      { id: 10, name: 'Ground Beef', sku: '4002', barcode: '8901234567899', retailPrice: 9.99, wholesalePrice: 8.49, pcsPerBulk: 10, bulkUnit: 'Box', stock: 22, emoji: '🥩', category: 'meat', subCategory: 'beef', unit: 'kg' },
+      { id: 11, name: 'Fresh Carrots', sku: '5001', barcode: '8901234567900', retailPrice: 2.99, wholesalePrice: 2.29, pcsPerBulk: 10, bulkUnit: 'Bundle', stock: 40, emoji: '🥕', category: 'vegetables', subCategory: 'root', unit: 'kg' },
+      { id: 12, name: 'Broccoli', sku: '5002', barcode: '8901234567901', retailPrice: 3.49, wholesalePrice: 2.79, pcsPerBulk: 10, bulkUnit: 'Case', stock: 35, emoji: '🥦', category: 'vegetables', subCategory: 'green', unit: 'kg' }
+    ];
+    var customers = [
+      { id: '1', name: 'John Smith', code: 'C001', mobile: '555-1234', address: '123 Main St' },
+      { id: '2', name: 'Emma Wilson', code: 'C002', mobile: '555-5678', address: '456 Oak Ave' },
+      { id: '3', name: 'Michael Brown', code: 'C003', mobile: '555-9012', address: '789 Pine Rd' }
+    ];
+    var subCategories = {
+      fruits: [{ value: 'fresh', label: 'Fresh' }, { value: 'tropical', label: 'Tropical' }, { value: 'citrus', label: 'Citrus' }],
+      dairy: [{ value: 'milk', label: 'Milk' }, { value: 'cheese', label: 'Cheese' }, { value: 'yogurt', label: 'Yogurt' }],
+      bakery: [{ value: 'bread', label: 'Bread' }, { value: 'pastry', label: 'Pastry' }],
+      meat: [{ value: 'poultry', label: 'Poultry' }, { value: 'beef', label: 'Beef' }],
+      vegetables: [{ value: 'green', label: 'Green' }, { value: 'root', label: 'Root' }]
+    };
+    var items = [];
+    var invoiceNum = 5;
+
+    var today = new Date();
+    document.getElementById('saleDate').value = today.toISOString().split('T')[0];
+    document.getElementById('saleDueDate').value = new Date(today.getTime() + 7*24*60*60*1000).toISOString().split('T')[0];
+
+    function toggleCamera() { cameraActive = !cameraActive; document.getElementById('cameraView').classList.toggle('hidden', !cameraActive); }
+
+    function searchCustomers() {
+      var q = document.getElementById('customerSearch').value.toLowerCase();
+      var dd = document.getElementById('customerDropdown');
+      dd.classList.remove('hidden');
+      var html = '<div onclick="selectCustomer(\'walk-in\',\'\',\'\',\'\')" class="p-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-100 text-emerald-600 font-medium">+ Walk-in Customer</div>';
+      for (var i = 0; i < customers.length; i++) {
+        var c = customers[i];
+        if (c.name.toLowerCase().indexOf(q) !== -1 || c.mobile.indexOf(q) !== -1 || c.code.toLowerCase().indexOf(q) !== -1) {
+          html += '<div onclick="selectCustomer(\'' + c.id + '\',\'' + c.name + '\',\'' + c.mobile + '\',\'' + c.address + '\')" class="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100"><p class="font-medium text-slate-800">' + c.name + ' <span class="text-xs text-slate-400">(' + c.code + ')</span></p><p class="text-xs text-slate-400">' + c.mobile + '</p></div>';
+        }
+      }
+      dd.innerHTML = html;
+    }
+    function showCustomerDropdown() { searchCustomers(); }
+    function selectCustomer(id, name, mobile, address) {
+      document.getElementById('selectedCustomerId').value = id;
+      document.getElementById('customerSearch').value = name || 'Walk-in';
+      document.getElementById('custName').value = name;
+      document.getElementById('custMobile').value = mobile;
+      document.getElementById('custAddress').value = address;
+      document.getElementById('customerDropdown').classList.add('hidden');
+      // Show/hide customer details based on walk-in
+      var detailsRow = document.getElementById('customerDetailsRow');
+      if (id === 'walk-in' || !name) {
+        detailsRow.classList.add('hidden');
+      } else {
+        detailsRow.classList.remove('hidden');
+      }
+    }
+    function openCustomerModal() { document.getElementById('customerModal').classList.add('active'); }
+    function closeCustomerModal() { document.getElementById('customerModal').classList.remove('active'); }
+    function saveNewCustomer() {
+      var name = document.getElementById('newCustName').value;
+      var mobile = document.getElementById('newCustMobile').value;
+      if (!name || !mobile) { alert('Name and Mobile required'); return; }
+      var newId = 'C' + String(customers.length + 1).padStart(3, '0');
+      customers.push({ id: String(customers.length + 1), name: name, code: newId, mobile: mobile, address: document.getElementById('newCustAddress').value });
+      selectCustomer(String(customers.length), name, mobile, document.getElementById('newCustAddress').value);
+      closeCustomerModal();
+      document.getElementById('newCustName').value = '';
+      document.getElementById('newCustMobile').value = '';
+      document.getElementById('newCustEmail').value = '';
+      document.getElementById('newCustAddress').value = '';
+    }
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#customerSearch, #customerDropdown')) document.getElementById('customerDropdown').classList.add('hidden');
+      if (!e.target.closest('#productSearch, #productDropdown, #categoryFilter, #subCategoryFilter')) document.getElementById('productDropdown').classList.add('hidden');
+    });
+
+    function toggleShipping() { document.getElementById('shippingFields').classList.toggle('hidden', !document.getElementById('hasShipping').checked); }
+
+    function scanBarcode() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      var code = document.getElementById('barcodeInput').value.trim();
+      if (!code) return;
+      var p = null;
+      for (var i = 0; i < products.length; i++) { if (products[i].barcode === code || products[i].sku === code) { p = products[i]; break; } }
+      if (p) { addItem(p.id); document.getElementById('barcodeInput').value = ''; }
+      else { alert('Product not found'); }
+    }
+
+    function onCategoryChange() {
+      var cat = document.getElementById('categoryFilter').value;
+      var subSel = document.getElementById('subCategoryFilter');
+      if (cat && subCategories[cat]) {
+        subSel.classList.remove('hidden');
+        var opts = '<option value="">All</option>';
+        for (var i = 0; i < subCategories[cat].length; i++) { opts += '<option value="' + subCategories[cat][i].value + '">' + subCategories[cat][i].label + '</option>'; }
+        subSel.innerHTML = opts;
+      } else { subSel.classList.add('hidden'); subSel.value = ''; }
+      searchProducts();
+    }
+
+    function searchProducts() {
+      var q = document.getElementById('productSearch').value.toLowerCase();
+      var cat = document.getElementById('categoryFilter').value;
+      var subCat = document.getElementById('subCategoryFilter').value;
+      var dd = document.getElementById('productDropdown');
+      var filtered = [];
+      for (var i = 0; i < products.length; i++) {
+        var p = products[i];
+        if (cat && p.category !== cat) continue;
+        if (subCat && p.subCategory !== subCat) continue;
+        if (q && p.name.toLowerCase().indexOf(q) === -1 && p.sku.indexOf(q) === -1) continue;
+        filtered.push(p);
+        if (filtered.length >= 8) break;
+      }
+      if (!q && !cat && !subCat) { dd.classList.add('hidden'); return; }
+      dd.classList.remove('hidden');
+      var html = '';
+      if (filtered.length) {
+        for (var i = 0; i < filtered.length; i++) {
+          var p = filtered[i];
+          html += '<div onclick="addItem(' + p.id + ')" class="flex items-center gap-3 p-4 hover:bg-emerald-50 cursor-pointer border-b border-slate-100 transition"><span class="text-2xl">' + p.emoji + '</span><div class="flex-1"><p class="font-medium text-slate-800">' + p.name + '</p><p class="text-xs text-slate-400">' + p.sku + ' • ' + p.bulkUnit + ': ' + p.pcsPerBulk + ' ' + p.unit + '</p></div><div class="text-right"><p class="font-bold text-emerald-600">$' + p.retailPrice.toFixed(2) + '</p></div></div>';
+        }
+      } else { html = '<p class="p-4 text-center text-slate-400">No products found</p>'; }
+      dd.innerHTML = html;
+    }
+    function showDropdown() { if (document.getElementById('productSearch').value || document.getElementById('categoryFilter').value) searchProducts(); }
+
+    function addItem(id) {
+      var p = null;
+      for (var i = 0; i < products.length; i++) { if (products[i].id === id) { p = products[i]; break; } }
+      if (!p) return;
+      var existing = null;
+      for (var i = 0; i < items.length; i++) { if (items[i].id === id) { existing = items[i]; break; } }
+      if (existing) { existing.unitQty += 1; }
+      else { items.push({ id: p.id, name: p.name, sku: p.sku, emoji: p.emoji, unit: p.unit, pcsPerBulk: p.pcsPerBulk, bulkUnit: p.bulkUnit, retailPrice: p.retailPrice, wholesalePrice: p.wholesalePrice, bulkQty: 0, unitQty: 1, price: p.retailPrice, discount: 0 }); }
+      document.getElementById('productSearch').value = '';
+      document.getElementById('productDropdown').classList.add('hidden');
+      renderItems();
+    }
+
+    function renderItems() {
+      var tbody = document.getElementById('itemsBody');
+      var empty = document.getElementById('emptyItems');
+      var priceType = document.getElementById('globalPriceType').value;
+      document.getElementById('itemCount').textContent = items.length;
+      document.getElementById('footerItems').textContent = items.length;
+      if (!items.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); calculate(); return; }
+      empty.classList.add('hidden');
+      var html = '';
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        var totalQty = (item.bulkQty * item.pcsPerBulk) + item.unitQty;
+        var basePrice = priceType === 'wholesale' ? item.wholesalePrice : item.retailPrice;
+        var unitPrice = item.price !== undefined ? item.price : basePrice;
+        var subtotal = unitPrice * totalQty;
+        var discAmt = subtotal * item.discount / 100;
+        var total = subtotal - discAmt;
+        html += '<tr class="item-row border-b border-slate-100 hover:bg-slate-50 transition">';
+        html += '<td class="p-4 text-slate-400">' + (i + 1) + '</td>';
+        html += '<td class="p-4"><div class="flex items-center gap-3"><span class="text-2xl">' + item.emoji + '</span><div><p class="font-medium text-slate-800">' + item.name + '</p><p class="text-xs text-slate-400">' + item.sku + ' • ' + item.bulkUnit + ': ' + item.pcsPerBulk + ' ' + item.unit + '</p></div></div></td>';
+        html += '<td class="p-3"><div class="flex items-center justify-center gap-1"><button onclick="changeBulk(' + i + ',-1)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-100 text-slate-500 hover:text-emerald-600 transition">-</button><input type="number" value="' + item.bulkQty + '" min="0" onchange="setBulk(' + i + ',this.value)" class="w-14 text-center input-light py-1.5 text-sm"><button onclick="changeBulk(' + i + ',1)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-100 text-slate-500 hover:text-emerald-600 transition">+</button></div></td>';
+        html += '<td class="p-3"><div class="flex items-center justify-center gap-1"><button onclick="changeUnit(' + i + ',-0.5)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-100 text-slate-500 hover:text-emerald-600 transition">-</button><input type="number" step="0.01" value="' + item.unitQty + '" min="0" onchange="setUnit(' + i + ',this.value)" class="w-14 text-center input-light py-1.5 text-sm"><button onclick="changeUnit(' + i + ',0.5)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-100 text-slate-500 hover:text-emerald-600 transition">+</button></div></td>';
+        html += '<td class="p-4 text-center"><span class="tag bg-blue-100 text-blue-700">' + totalQty.toFixed(2) + '</span></td>';
+        html += '<td class="p-3 text-right"><input type="number" step="0.01" value="' + unitPrice.toFixed(2) + '" min="0" onchange="setPrice(' + i + ',this.value)" class="w-24 input-light py-1.5 px-3 text-sm text-right"></td>';
+        html += '<td class="p-3 text-center"><input type="number" value="' + item.discount + '" min="0" max="100" onchange="setItemDisc(' + i + ',this.value)" class="w-16 input-light py-1.5 text-sm text-center"></td>';
+        html += '<td class="p-4 text-right font-bold text-emerald-600">$' + total.toFixed(2) + '</td>';
+        html += '<td class="p-3"><button onclick="removeItem(' + i + ')" class="w-8 h-8 rounded-lg hover:bg-red-100 text-slate-400 hover:text-red-500 flex items-center justify-center transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></td>';
+        html += '</tr>';
+      }
+      tbody.innerHTML = html;
+      calculate();
+    }
+
+    function changeBulk(i, d) { items[i].bulkQty = Math.max(0, items[i].bulkQty + d); renderItems(); }
+    function setBulk(i, v) { items[i].bulkQty = Math.max(0, parseInt(v) || 0); renderItems(); }
+    function changeUnit(i, d) { items[i].unitQty = Math.max(0, parseFloat((items[i].unitQty + d).toFixed(2))); renderItems(); }
+    function setUnit(i, v) { items[i].unitQty = Math.max(0, parseFloat(v) || 0); renderItems(); }
+    function setPrice(i, v) { items[i].price = Math.max(0, parseFloat(v) || 0); renderItems(); }
+    function setItemDisc(i, v) { items[i].discount = Math.min(100, Math.max(0, parseFloat(v) || 0)); renderItems(); }
+    function removeItem(i) { items.splice(i, 1); renderItems(); }
+
+    function calculate() {
+      var priceType = document.getElementById('globalPriceType').value;
+      var subtotal = 0, totalItemDisc = 0;
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        var totalQty = (item.bulkQty * item.pcsPerBulk) + item.unitQty;
+        var basePrice = priceType === 'wholesale' ? item.wholesalePrice : item.retailPrice;
+        var unitPrice = item.price !== undefined ? item.price : basePrice;
+        var itemSubtotal = unitPrice * totalQty;
+        var discAmt = itemSubtotal * item.discount / 100;
+        subtotal += itemSubtotal;
+        totalItemDisc += discAmt;
+      }
+      var orderDiscount = parseFloat(document.getElementById('orderDiscount').value) || 0;
+      var netAmount = Math.max(0, subtotal - totalItemDisc - orderDiscount);
+      var taxPercent = parseFloat(document.getElementById('taxPercent').value) || 0;
+      var taxAmount = netAmount * taxPercent / 100;
+      var shipping = parseFloat(document.getElementById('shippingCost').value) || 0;
+      var labour = parseFloat(document.getElementById('labourCost').value) || 0;
+      var lessAmt = parseFloat(document.getElementById('lessAmount').value) || 0;
+      var grand = netAmount + taxAmount + shipping + labour - lessAmt;
+      document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+      document.getElementById('itemDiscounts').textContent = '-$' + totalItemDisc.toFixed(2);
+      document.getElementById('grandTotal').textContent = '$' + grand.toFixed(2);
+      document.getElementById('footerTotal').textContent = '$' + grand.toFixed(2);
+      updateBalance();
+    }
+
+    function updateBalance() {
+      var total = parseFloat(document.getElementById('grandTotal').textContent.replace('$', '')) || 0;
+      var paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+      var allowOverpay = document.getElementById('allowOverpay').checked;
+      document.getElementById('balanceBox').classList.add('hidden');
+      document.getElementById('changeBox').classList.add('hidden');
+      if (paid > 0) {
+        if (paid < total) {
+          document.getElementById('balanceBox').classList.remove('hidden');
+          document.getElementById('balanceDue').textContent = '$' + (total - paid).toFixed(2);
+        } else if (paid > total) {
+          document.getElementById('changeBox').classList.remove('hidden');
+          document.getElementById('changeAmount').textContent = '$' + (paid - total).toFixed(2) + (allowOverpay ? ' (Credit)' : '');
+        }
+      }
+    }
+
+    function saveSale(action) {
+      if (!items.length) { alert('Add products'); return; }
+      if (!document.getElementById('selectedCustomerId').value && !document.getElementById('custName').value) { alert('Select customer'); return; }
+      var sms = document.getElementById('smsNotify').checked;
+      document.getElementById('successInvoice').textContent = document.getElementById('invoiceNum').textContent;
+      document.getElementById('successInfo').textContent = 'Total: ' + document.getElementById('grandTotal').textContent + (sms ? ' • SMS' : '');
+      document.getElementById('successModal').classList.add('active');
+      if (action === 'print') setTimeout(function() { alert('Printing...'); }, 300);
+    }
+
+    function newSale() {
+      document.getElementById('successModal').classList.remove('active');
+      invoiceNum++;
+      document.getElementById('invoiceNum').textContent = 'INV-' + String(invoiceNum).padStart(4, '0');
+      items = [];
+      document.getElementById('selectedCustomerId').value = '';
+      document.getElementById('customerSearch').value = '';
+      document.getElementById('custName').value = '';
+      document.getElementById('custMobile').value = '';
+      document.getElementById('custAddress').value = '';
+      document.getElementById('customerDetailsRow').classList.add('hidden');
+      document.getElementById('orderDiscount').value = 0;
+      document.getElementById('taxPercent').value = 0;
+      document.getElementById('shippingCost').value = 0;
+      document.getElementById('labourCost').value = 0;
+      document.getElementById('lessAmount').value = 0;
+      document.getElementById('paidAmount').value = '';
+      document.getElementById('payRef').value = '';
+      document.getElementById('balanceBox').classList.add('hidden');
+      document.getElementById('changeBox').classList.add('hidden');
+      document.getElementById('allowOverpay').checked = false;
+      document.getElementById('globalPriceType').value = 'retail';
+      document.getElementById('invoiceStatus').value = 'pending';
+      document.getElementById('saleRef').value = '';
+      document.getElementById('internalNotes').value = '';
+      document.getElementById('customerNotes').value = '';
+      document.getElementById('categoryFilter').value = '';
+      document.getElementById('subCategoryFilter').value = '';
+      document.getElementById('subCategoryFilter').classList.add('hidden');
+      document.getElementById('hasShipping').checked = false;
+      document.getElementById('shippingFields').classList.add('hidden');
+      cameraActive = false;
+      document.getElementById('cameraView').classList.add('hidden');
+      renderItems();
+    }
+
+    renderItems();
+  </script>
+</body>
+</html>

@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreshMart POS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    :root {
+      --theme-main: #10b981;
+      --theme-light: #ecfdf5;
+      --theme-hover: #34d399;
+      --theme-dark: #059669;
+    }
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+    .scrollbar-thin::-webkit-scrollbar { width: 5px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #f1f5f9; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .modal { display: none; }
+    .modal.active { display: flex; }
+    .resize-handle { cursor: ew-resize; }
+    .resize-handle:hover { background: rgba(16,185,129, 0.2); }
+    #categoryCarousel::-webkit-scrollbar { display: none; }
+    #categoryCarousel { -ms-overflow-style: none; scrollbar-width: none; }
+    .barcode-display { font-family: 'Courier New', monospace; letter-spacing: 2px; background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 100%); }
+    .theme-bg { background-color: var(--theme-main); }
+    .theme-bg-light { background-color: var(--theme-light); }
+    .theme-bg-gradient { background: linear-gradient(to right, var(--theme-main), var(--theme-dark)); }
+    .theme-bg-gradient-br { background: linear-gradient(to bottom right, var(--theme-main), var(--theme-dark)); }
+    .theme-text { color: var(--theme-main); }
+    .theme-border { border-color: var(--theme-main); }
+    .theme-shadow { box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--theme-main) 30%, transparent); }
+    .theme-ring:focus { --tw-ring-color: color-mix(in srgb, var(--theme-main) 20%, transparent); border-color: var(--theme-main); }
+    .theme-btn { background-color: var(--theme-main); }
+    .theme-btn:hover { background-color: var(--theme-hover); }
+    .nav-active { background-color: var(--theme-light); color: var(--theme-main); }
+    .cat-active { background-color: var(--theme-main); color: white; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen overflow-hidden">
+  <div class="flex h-screen">
+    <div class="w-20 bg-white flex flex-col items-center py-6 border-r border-slate-200 shadow-sm flex-shrink-0">
+      <div id="sidebarLogo" class="w-12 h-12 theme-bg-gradient-br rounded-xl flex items-center justify-center mb-6 theme-shadow">
+        <span class="text-xl font-bold text-white">FM</span>
+      </div>
+      <nav class="flex-1 flex flex-col gap-3">
+        <button onclick="showSection('pos')" id="navPos" class="nav-btn w-12 h-12 nav-active rounded-xl flex items-center justify-center hover:bg-slate-100 transition-all" title="POS">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+        </button>
+        <button onclick="showSection('orders')" id="navOrders" class="nav-btn w-12 h-12 text-slate-400 rounded-xl flex items-center justify-center hover:bg-slate-100 hover:text-slate-600 transition-all" title="Recent Orders">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        </button>
+        <button onclick="showSection('held')" id="navHeld" class="nav-btn w-12 h-12 text-slate-400 rounded-xl flex items-center justify-center hover:bg-slate-100 hover:text-slate-600 transition-all relative" title="Held Orders">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="heldBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs rounded-full hidden items-center justify-center">0</span>
+        </button>
+        <button onclick="showSection('customers')" id="navCustomers" class="nav-btn w-12 h-12 text-slate-400 rounded-xl flex items-center justify-center hover:bg-slate-100 hover:text-slate-600 transition-all" title="Customers">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </button>
+        <div class="w-12 bg-gradient-to-b from-slate-50 to-slate-100 rounded-xl p-1.5 text-center border border-slate-200" title="Today Summary">
+          <p class="text-[8px] text-slate-400 uppercase font-medium">Today</p>
+          <p id="todaySales" class="text-[10px] font-bold theme-text">$159</p>
+          <p id="todayOrders" class="text-[8px] text-slate-500">3 sales</p>
+        </div>
+      </nav>
+      <button onclick="openSettingsModal()" class="w-12 h-12 text-slate-400 rounded-xl flex items-center justify-center hover:bg-slate-100 hover:text-slate-600 transition-all mb-4" title="Settings">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+
+    <div class="flex-1 flex overflow-hidden">
+      <div id="posSection" class="flex-1 flex flex-col p-6 overflow-hidden">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <div class="flex items-center gap-3">
+              <h1 class="text-2xl font-bold text-slate-800">Point of Sale</h1>
+              <span class="text-xs bg-slate-200 text-slate-600 px-3 py-1 rounded-lg font-medium">Terminal: POS-01</span>
+            </div>
+            <p class="text-slate-500 text-sm">Welcome back, Sarah</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <input type="text" id="barcodeInput" placeholder="Scan barcode..." class="w-48 bg-white border-2 border-slate-300 rounded-xl px-4 py-3 pl-10 text-sm font-mono focus:outline-none theme-ring focus:ring-2 shadow-sm" onkeypress="handleBarcode(event)" autofocus>
+              <svg class="w-5 h-5 theme-text absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 5v14M7 5v14M10 5v14M14 5v14M18 5v14M21 5v14" stroke-width="2"/></svg>
+            </div>
+            <div class="relative">
+              <input type="text" id="searchInput" placeholder="Search products..." class="w-56 bg-white border border-slate-200 rounded-xl px-4 py-2.5 pl-10 text-sm focus:outline-none theme-ring focus:ring-2 shadow-sm">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </div>
+            <div class="flex bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
+              <button onclick="setView('grid')" id="gridBtn" class="view-btn p-2 rounded-lg theme-bg text-white transition-all" title="Grid View">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              </button>
+              <button onclick="setView('list')" id="listBtn" class="view-btn p-2 rounded-lg text-slate-400 hover:text-slate-600 transition-all" title="List View">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+              </button>
+              <button onclick="setView('multicol')" id="multicolBtn" class="view-btn p-2 rounded-lg text-slate-400 hover:text-slate-600 transition-all" title="Multi Column">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 mb-5 flex-shrink-0">
+          <select id="categoryDropdown" onchange="filterCategory(this.value)" class="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-sm font-medium text-slate-700 focus:outline-none theme-ring shadow-sm cursor-pointer">
+            <option value="all">All Items</option>
+            <option value="fruits">Fruits</option>
+            <option value="vegetables">Vegetables</option>
+            <option value="dairy">Dairy</option>
+            <option value="bakery">Bakery</option>
+            <option value="meat">Meat</option>
+            <option value="beverages">Beverages</option>
+            <option value="snacks">Snacks</option>
+          </select>
+          <button onclick="scrollCategories(-1)" class="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-50 shadow-sm flex-shrink-0">
+            <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <div id="categoryCarousel" class="flex gap-2 overflow-hidden flex-1">
+            <button onclick="filterCategory('all')" class="category-btn px-5 py-2.5 cat-active rounded-xl text-sm font-medium whitespace-nowrap transition-all shadow-sm flex-shrink-0" data-cat="all">All Items</button>
+            <button onclick="filterCategory('fruits')" class="category-btn px-5 py-2.5 bg-white text-slate-600 rounded-xl text-sm font-medium whitespace-nowrap transition-all hover:bg-slate-50 border border-slate-200 shadow-sm flex-shrink-0" data-cat="fruits">Fruits</button>
+            <button onclick="filterCategory('vegetables')" class="category-btn px-5 py-2.5 bg-white text-slate-600 rounded-xl text-sm font-medium whitespace-nowrap transition-all hover:bg-slate-50 border border-slate-200 shadow-sm flex-shrink-0" data-cat="vegetables">Vegetables</button>
+            <button onclick="filterCategory('dairy')" class="category-btn px-5 py-2.5 bg-white text-slate-600 rounded-xl text-sm font-medium whitespace-nowrap transition-all hover:bg-slate-50 border border-slate-200 shadow-sm flex-shrink-0" data-cat="dairy">Dairy</button>
+            <button onclick="filterCategory('bakery')" class="category-btn px-5 py-2.5 bg-white text-slate-600 rounded-xl text-sm font-medium whitespace-nowrap transition-all hover:bg-slate-50 border border-slate-200 shadow-sm flex-shrink-0" data-cat="bakery">Bakery</button>
+            <button onclick="filterCategory('meat')" class="category-btn px-5 py-2.5 bg-white text-slate-600 rounded-xl text-sm font-medium whitespace-nowrap transition-all hover:bg-slate-50 border border-slate-200 shadow-sm flex-shrink-0" data-cat="meat">Meat</button>
+            <button onclick="filterCategory('beverages')" class="category-btn px-5 py-2.5 bg-white text-slate-600 rounded-xl text-sm font-medium whitespace-nowrap transition-all hover:bg-slate-50 border border-slate-200 shadow-sm flex-shrink-0" data-cat="beverages">Beverages</button>
+            <button onclick="filterCategory('snacks')" class="category-btn px-5 py-2.5 bg-white text-slate-600 rounded-xl text-sm font-medium whitespace-nowrap transition-all hover:bg-slate-50 border border-slate-200 shadow-sm flex-shrink-0" data-cat="snacks">Snacks</button>
+          </div>
+          <button onclick="scrollCategories(1)" class="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-50 shadow-sm flex-shrink-0">
+            <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <div id="productsGrid" class="overflow-y-auto scrollbar-thin flex-1 pr-2"></div>
+        <div id="loadMoreContainer" class="text-center py-3 hidden">
+          <button onclick="loadMoreProducts()" class="px-6 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50">Load More Products</button>
+        </div>
+      </div>
+
+      <div id="ordersSection" class="flex-1 flex-col p-6 overflow-hidden hidden">
+        <div class="flex items-center justify-between mb-5">
+          <div><h1 class="text-2xl font-bold text-slate-800">Recent Orders</h1><p class="text-slate-500 text-sm">View and manage past transactions</p></div>
+        </div>
+        <div id="ordersList" class="flex-1 overflow-y-auto space-y-1.5 pr-2"></div>
+      </div>
+
+      <div id="heldSection" class="flex-1 flex-col p-6 overflow-hidden hidden">
+        <div class="flex items-center justify-between mb-5">
+          <div><h1 class="text-2xl font-bold text-slate-800">Held Orders</h1><p class="text-slate-500 text-sm">Orders waiting to be completed</p></div>
+          <span id="heldCount" class="text-sm bg-blue-100 text-blue-700 px-3 py-1.5 rounded-xl font-medium">0 orders</span>
+        </div>
+        <div id="heldList" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
+      </div>
+
+      <div id="customersSection" class="flex-1 flex-col p-6 overflow-hidden hidden">
+        <div class="flex items-center justify-between mb-5">
+          <div><h1 class="text-2xl font-bold text-slate-800">Customers</h1><p class="text-slate-500 text-sm">Manage customer accounts</p></div>
+          <button onclick="openAddCustomerModal()" class="px-4 py-2 theme-btn text-white rounded-xl text-sm font-medium flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>
+            Add Customer
+          </button>
+        </div>
+        <div class="mb-4">
+          <input type="text" id="customerPageSearch" placeholder="Search by name, code, or mobile..." class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none theme-ring" oninput="renderCustomersPage()">
+        </div>
+        <div id="customersListFull" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
+      </div>
+
+      <div id="resizeHandle" class="resize-handle w-3 bg-slate-200 hover:bg-emerald-200 flex-shrink-0 flex items-center justify-center transition-all">
+        <div class="w-1 h-12 bg-slate-400 rounded-full"></div>
+      </div>
+
+      <div id="cartPanel" class="bg-white border-l border-slate-200 flex flex-col shadow-xl flex-shrink-0" style="width: 380px; min-width: 320px; max-width: 500px;">
+        <div class="p-4 border-b border-slate-100 flex-shrink-0">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs text-slate-400">Order #<span id="orderNum">2847</span></span>
+            <div class="flex items-center gap-2 theme-bg-light px-2 py-1 rounded-lg">
+              <div class="w-1.5 h-1.5 theme-bg rounded-full animate-pulse"></div>
+              <span class="text-xs theme-text">Online</span>
+            </div>
+          </div>
+          <div onclick="openCustomerModal()" class="flex items-center gap-3 bg-gradient-to-r from-slate-50 to-slate-100 p-3 rounded-xl border border-slate-200 cursor-pointer hover:border-emerald-300 transition-all">
+            <div id="customerAvatar" class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-md">
+              <span class="text-sm font-medium text-white">WC</span>
+            </div>
+            <div class="flex-1">
+              <p id="customerName" class="text-sm font-medium text-slate-700">Walk-in Customer</p>
+              <p id="customerBalance" class="text-xs text-slate-400">Click to select customer</p>
+            </div>
+            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+          </div>
+        </div>
+
+        <div id="cartItems" class="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1.5">
+          <div class="text-center text-slate-400 py-12">
+            <svg class="w-16 h-16 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+            <p class="font-medium">Cart is empty</p>
+            <p class="text-sm">Scan barcode or add products</p>
+          </div>
+        </div>
+
+        <div class="p-4 border-t border-slate-100 space-y-3 bg-gradient-to-t from-slate-50 to-white flex-shrink-0">
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-sm"><span class="text-slate-500">Subtotal</span><span class="text-slate-700 font-medium" id="subtotal">$0.00</span></div>
+            <div class="flex justify-between text-sm"><span class="text-slate-500">Discounts</span><span class="text-orange-500" id="itemDiscounts">-$0.00</span></div>
+            <div class="flex justify-between text-sm"><span class="text-slate-500">Tax (8%)</span><span class="text-slate-700" id="tax">$0.00</span></div>
+            <div class="h-px bg-slate-200 my-2"></div>
+            <div class="flex justify-between text-xl font-bold"><span class="text-slate-800">Total</span><span id="total" class="theme-text">$0.00</span></div>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="holdOrder()" class="flex-1 py-2 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700 font-medium hover:bg-blue-100">Hold</button>
+            <button onclick="clearCart()" class="flex-1 py-2 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium hover:bg-red-100">Clear</button>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="saveOrder()" class="flex-1 py-3.5 bg-slate-200 hover:bg-slate-300 rounded-xl text-slate-700 font-semibold text-base">Save</button>
+            <button onclick="openPaymentModal()" class="pay-now-btn flex-1 py-3.5 theme-bg-gradient rounded-xl text-white font-semibold text-base theme-shadow">Pay Now</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="customerModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 w-[480px] shadow-2xl max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-slate-800">Select Customer</h3>
+        <button onclick="closeCustomerModal()" class="p-2 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <input type="text" id="customerSearch" placeholder="Search by name, code, or mobile..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm mb-4 focus:outline-none theme-ring" oninput="filterCustomers()">
+      <div id="customerList" class="flex-1 overflow-y-auto space-y-2 mb-4"></div>
+      <div class="flex gap-2">
+        <button onclick="selectCustomer(null)" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium text-slate-600">Walk-in Customer</button>
+        <button onclick="closeCustomerModal();openAddCustomerModal()" class="flex-1 py-3 theme-btn text-white rounded-xl font-medium flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>
+          Add New
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="addCustomerModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 w-96 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-slate-800">Add New Customer</h3>
+        <button onclick="closeAddCustomerModal()" class="p-2 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <div class="space-y-3">
+        <div><label class="text-xs text-slate-500 mb-1 block">Customer Code</label><input type="text" id="newCustCode" placeholder="C001" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none theme-ring"></div>
+        <div><label class="text-xs text-slate-500 mb-1 block">Full Name *</label><input type="text" id="newCustName" placeholder="John Smith" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none theme-ring"></div>
+        <div><label class="text-xs text-slate-500 mb-1 block">Mobile *</label><input type="text" id="newCustMobile" placeholder="555-0101" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none theme-ring"></div>
+        <div><label class="text-xs text-slate-500 mb-1 block">Email</label><input type="email" id="newCustEmail" placeholder="john@email.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none theme-ring"></div>
+      </div>
+      <div class="flex gap-3 mt-5">
+        <button onclick="closeAddCustomerModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium text-slate-600">Cancel</button>
+        <button onclick="saveNewCustomer()" class="flex-1 py-3 theme-btn text-white rounded-xl font-medium">Save Customer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="itemEditModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 w-96 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-slate-800">Edit Item</h3>
+        <button onclick="closeItemEditModal()" class="p-2 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <p id="itemEditName" class="text-slate-500 mb-4 text-center font-medium"></p>
+      <div class="mb-4">
+        <label class="text-sm text-slate-500 mb-2 block">Custom Price</label>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg">$</span>
+          <input type="number" step="0.01" id="itemEditPrice" placeholder="0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-xl font-bold text-center focus:outline-none theme-ring">
+        </div>
+        <p class="text-xs text-slate-400 mt-1">Original: <span id="itemEditOriginalPrice">$0.00</span></p>
+      </div>
+      <div class="mb-4">
+        <label class="text-sm text-slate-500 mb-2 block">Item Discount %</label>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg">%</span>
+          <input type="number" id="itemEditDiscount" placeholder="0" min="0" max="100" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-xl font-bold text-center focus:outline-none focus:border-orange-500">
+        </div>
+        <div class="grid grid-cols-4 gap-2 mt-2">
+          <button onclick="document.getElementById('itemEditDiscount').value=5" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">5%</button>
+          <button onclick="document.getElementById('itemEditDiscount').value=10" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">10%</button>
+          <button onclick="document.getElementById('itemEditDiscount').value=15" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">15%</button>
+          <button onclick="document.getElementById('itemEditDiscount').value=20" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">20%</button>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="resetItemEdit()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-medium">Reset</button>
+        <button onclick="saveItemEdit()" class="flex-1 py-3 theme-btn text-white rounded-xl font-medium theme-shadow">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="paymentModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-4 w-[420px] shadow-2xl">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-bold text-slate-800">Payment</h3>
+        <button onclick="closePaymentModal()" class="p-1.5 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <div class="theme-bg-gradient-br rounded-xl px-4 py-2.5 mb-3 text-center text-white theme-shadow">
+        <p class="text-[10px] opacity-80">Total</p>
+        <p id="paymentTotal" class="text-2xl font-bold">$0.00</p>
+      </div>
+      <div id="walkingCustomerInfo" class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3">
+        <p class="text-xs font-medium text-amber-700 mb-2">Walking Customer Info (Optional)</p>
+        <div class="flex gap-2">
+          <input type="text" id="walkingCustName" placeholder="Name" class="flex-1 px-3 py-1.5 text-sm border border-amber-200 rounded-lg focus:outline-none focus:border-amber-400">
+          <input type="text" id="walkingCustMobile" placeholder="Mobile" class="w-28 px-3 py-1.5 text-sm border border-amber-200 rounded-lg focus:outline-none focus:border-amber-400">
+        </div>
+      </div>
+      <div class="space-y-1.5 mb-3">
+        <div class="pay-method-option flex items-center gap-2 p-3 theme-bg-light border-2 rounded-xl cursor-pointer" style="border-color: var(--theme-main);" onclick="selectPayMethod('cash')">
+          <input type="radio" name="payMethod" id="payCash" value="cash" checked class="w-4 h-4" style="accent-color: var(--theme-main);">
+          <label for="payCash" class="flex-1 text-sm font-semibold cursor-pointer">Cash</label>
+          <input type="number" id="cashAmount" class="w-28 px-2 py-2 text-sm font-semibold border-2 rounded-lg text-right focus:outline-none" style="border-color: var(--theme-main);" placeholder="0.00" oninput="calculateChange()">
+        </div>
+        <div class="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer" onclick="selectPayMethod('card')">
+          <input type="radio" name="payMethod" id="payCard" value="card" class="w-4 h-4" style="accent-color: var(--theme-main);">
+          <label for="payCard" class="flex-1 text-sm font-medium cursor-pointer">Card</label>
+          <input type="number" id="cardAmount" class="w-24 px-2 py-1.5 text-sm border rounded-lg text-right focus:outline-none theme-ring" placeholder="0.00" oninput="calculateChange()">
+        </div>
+        <div class="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer" onclick="selectPayMethod('mobile')">
+          <input type="radio" name="payMethod" id="payMobile" value="mobile" class="w-4 h-4" style="accent-color: var(--theme-main);">
+          <label for="payMobile" class="flex-1 text-sm font-medium cursor-pointer">Mobile</label>
+          <input type="number" id="mobileAmount" class="w-24 px-2 py-1.5 text-sm border rounded-lg text-right focus:outline-none theme-ring" placeholder="0.00" oninput="calculateChange()">
+        </div>
+      </div>
+      <div id="changeSection" class="bg-slate-50 rounded-xl p-2.5 mb-3 hidden">
+        <div class="flex justify-between items-center">
+          <span id="changeLabel" class="text-slate-500 text-sm">Change</span>
+          <span id="changeAmount" class="text-lg font-bold theme-text">$0.00</span>
+        </div>
+      </div>
+      <div class="border border-slate-200 rounded-xl p-2.5 mb-3">
+        <p class="text-xs font-medium text-slate-500 mb-1.5">Discount</p>
+        <div class="flex gap-2 items-center">
+          <input type="number" id="discountVal" placeholder="0" class="w-16 px-2 py-1.5 text-sm border rounded-lg focus:outline-none theme-ring" oninput="applyDiscount()">
+          <select id="discountType" class="px-2 py-1.5 text-sm border rounded-lg focus:outline-none" onchange="applyDiscount()">
+            <option value="percent">%</option>
+            <option value="amount">$</option>
+          </select>
+          <button onclick="setQuickDisc(5)" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium">5%</button>
+          <button onclick="setQuickDisc(10)" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium">10%</button>
+        </div>
+      </div>
+      <input type="text" id="paymentRemark" placeholder="Add remark..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none theme-ring mb-3">
+      <div class="flex gap-2">
+        <button onclick="printReceipt()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium text-sm flex items-center justify-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+          Print
+        </button>
+        <button onclick="saveAndClose()" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-400 text-white rounded-xl font-medium text-sm">Save</button>
+        <button onclick="completePayment()" id="completePayBtn" class="flex-1 py-2.5 theme-btn text-white rounded-xl font-semibold text-sm theme-shadow">Complete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 w-96 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-slate-800">Settings</h3>
+        <button onclick="closeSettingsModal()" class="p-2 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm text-slate-500 mb-2 block">Theme Color</label>
+          <div class="flex gap-2">
+            <button onclick="setTheme('emerald')" class="theme-color-btn w-10 h-10 rounded-xl bg-emerald-500 hover:ring-2 ring-offset-2 ring-emerald-500 transition-all"></button>
+            <button onclick="setTheme('blue')" class="theme-color-btn w-10 h-10 rounded-xl bg-blue-500 hover:ring-2 ring-offset-2 ring-blue-500 transition-all"></button>
+            <button onclick="setTheme('violet')" class="theme-color-btn w-10 h-10 rounded-xl bg-violet-500 hover:ring-2 ring-offset-2 ring-violet-500 transition-all"></button>
+            <button onclick="setTheme('amber')" class="theme-color-btn w-10 h-10 rounded-xl bg-amber-500 hover:ring-2 ring-offset-2 ring-amber-500 transition-all"></button>
+            <button onclick="setTheme('red')" class="theme-color-btn w-10 h-10 rounded-xl bg-red-500 hover:ring-2 ring-offset-2 ring-red-500 transition-all"></button>
+            <button onclick="setTheme('pink')" class="theme-color-btn w-10 h-10 rounded-xl bg-pink-500 hover:ring-2 ring-offset-2 ring-pink-500 transition-all"></button>
+          </div>
+        </div>
+        <div>
+          <label class="text-sm text-slate-500 mb-2 block">Default View</label>
+          <select id="defaultView" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl" onchange="saveSettings()">
+            <option value="grid">Grid View</option>
+            <option value="list">List View</option>
+            <option value="multicol">Multi Column</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm text-slate-500 mb-2 block">Products Per Page</label>
+          <select id="productsPerPage" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl" onchange="saveSettings()">
+            <option value="21">21</option>
+            <option value="35">35</option>
+            <option value="49">49</option>
+            <option value="all">All</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="closeSettingsModal()" class="mt-6 w-full py-3 theme-btn text-white rounded-xl font-medium">Done</button>
+    </div>
+  </div>
+
+  <div id="successModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-8 w-96 shadow-2xl text-center">
+      <div class="w-20 h-20 theme-bg-light rounded-full flex items-center justify-center mx-auto mb-5">
+        <svg class="w-10 h-10 theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <h3 class="text-2xl font-bold text-slate-800 mb-2">Payment Successful!</h3>
+      <p class="text-3xl font-bold theme-text mb-1" id="successTotal">$0.00</p>
+      <p class="text-sm text-slate-500 mb-6" id="successMethod">Paid via Cash</p>
+      <div class="flex gap-3">
+        <button onclick="printReceipt()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium">Print</button>
+        <button onclick="newOrder()" class="flex-1 py-3 theme-btn text-white rounded-xl font-medium theme-shadow">New Order</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const products = [
+      { id: 1, name: 'Organic Apples', price: 4.99, category: 'fruits', emoji: '🍎', stock: 45, barcode: '1001' },
+      { id: 2, name: 'Fresh Bananas', price: 2.49, category: 'fruits', emoji: '🍌', stock: 60, barcode: '1002' },
+      { id: 3, name: 'Sweet Oranges', price: 3.99, category: 'fruits', emoji: '🍊', stock: 38, barcode: '1003' },
+      { id: 4, name: 'Whole Milk 1L', price: 3.29, category: 'dairy', emoji: '🥛', stock: 30, barcode: '2001' },
+      { id: 5, name: 'Greek Yogurt', price: 5.49, category: 'dairy', emoji: '🫙', stock: 25, barcode: '2002' },
+      { id: 6, name: 'Cheddar Cheese', price: 6.99, category: 'dairy', emoji: '🧀', stock: 20, barcode: '2003' },
+      { id: 7, name: 'Sourdough Bread', price: 4.99, category: 'bakery', emoji: '🍞', stock: 15, barcode: '3001' },
+      { id: 8, name: 'Croissants (4)', price: 6.99, category: 'bakery', emoji: '🥐', stock: 20, barcode: '3002' },
+      { id: 9, name: 'Chicken Breast', price: 12.99, category: 'meat', emoji: '🍗', stock: 18, barcode: '4001' },
+      { id: 10, name: 'Ground Beef', price: 9.99, category: 'meat', emoji: '🥩', stock: 22, barcode: '4002' },
+      { id: 11, name: 'Fresh Carrots', price: 2.99, category: 'vegetables', emoji: '🥕', stock: 40, barcode: '5001' },
+      { id: 12, name: 'Broccoli', price: 3.49, category: 'vegetables', emoji: '🥦', stock: 35, barcode: '5002' },
+      { id: 13, name: 'Spinach Bunch', price: 2.99, category: 'vegetables', emoji: '🥬', stock: 28, barcode: '5003' },
+      { id: 14, name: 'Orange Juice', price: 4.99, category: 'beverages', emoji: '🧃', stock: 28, barcode: '6001' },
+      { id: 15, name: 'Mineral Water', price: 1.49, category: 'beverages', emoji: '💧', stock: 100, barcode: '6002' },
+      { id: 16, name: 'Potato Chips', price: 3.99, category: 'snacks', emoji: '🥔', stock: 55, barcode: '7001' },
+      { id: 17, name: 'Green Grapes', price: 5.99, category: 'fruits', emoji: '🍇', stock: 30, barcode: '1004' },
+      { id: 18, name: 'Butter', price: 4.49, category: 'dairy', emoji: '🧈', stock: 40, barcode: '2004' },
+      { id: 19, name: 'Bagels (6)', price: 5.99, category: 'bakery', emoji: '🥯', stock: 25, barcode: '3003' },
+      { id: 20, name: 'Salmon Fillet', price: 15.99, category: 'meat', emoji: '🐟', stock: 12, barcode: '4003' },
+      { id: 21, name: 'Tomatoes', price: 3.29, category: 'vegetables', emoji: '🍅', stock: 45, barcode: '5004' }
+    ];
+
+    let customers = [
+      { id: 1, code: 'C001', name: 'John Smith', email: 'john@email.com', phone: '555-0101', balance: 125.50, initials: 'JS', color: 'from-blue-400 to-blue-600' },
+      { id: 2, code: 'C002', name: 'Emma Wilson', email: 'emma@email.com', phone: '555-0102', balance: 0, initials: 'EW', color: 'from-pink-400 to-pink-600' },
+      { id: 3, code: 'C003', name: 'Michael Brown', email: 'michael@email.com', phone: '555-0103', balance: 45.00, initials: 'MB', color: 'from-purple-400 to-purple-600' }
+    ];
+
+    let recentOrders = [
+      { id: 2846, customer: 'John Smith', items: 5, total: 45.67, time: '10:30 AM', method: 'Card' },
+      { id: 2845, customer: 'Walk-in', items: 3, total: 23.45, time: '10:15 AM', method: 'Cash' },
+      { id: 2844, customer: 'Emma Wilson', items: 8, total: 89.99, time: '09:45 AM', method: 'Mobile' }
+    ];
+
+    let heldOrders = [];
+    let cart = [], selectedCustomer = null, viewMode = 'grid', currentOrderNum = 2847;
+    let discountValue = 0, discountType = 'percent', editingItemId = null;
+    let displayedProducts = 21, productsPerPage = 21;
+    let todaySales = 159.11, todayOrderCount = 3;
+    let currentTheme = 'emerald';
+
+    const themeColors = {
+      emerald: { main: '#10b981', light: '#ecfdf5', hover: '#34d399', dark: '#059669' },
+      blue: { main: '#3b82f6', light: '#eff6ff', hover: '#60a5fa', dark: '#2563eb' },
+      violet: { main: '#8b5cf6', light: '#f5f3ff', hover: '#a78bfa', dark: '#7c3aed' },
+      amber: { main: '#f59e0b', light: '#fffbeb', hover: '#fbbf24', dark: '#d97706' },
+      red: { main: '#ef4444', light: '#fef2f2', hover: '#f87171', dark: '#dc2626' },
+      pink: { main: '#ec4899', light: '#fdf2f8', hover: '#f472b6', dark: '#db2777' }
+    };
+
+    function setTheme(theme) {
+      currentTheme = theme;
+      const colors = themeColors[theme];
+      document.documentElement.style.setProperty('--theme-main', colors.main);
+      document.documentElement.style.setProperty('--theme-light', colors.light);
+      document.documentElement.style.setProperty('--theme-hover', colors.hover);
+      document.documentElement.style.setProperty('--theme-dark', colors.dark);
+      renderProducts();
+      renderCart();
+      saveSettings();
+    }
+
+    function updateTodaySummary() {
+      document.getElementById('todaySales').textContent = '$' + todaySales.toFixed(0);
+      document.getElementById('todayOrders').textContent = todayOrderCount + ' sales';
+    }
+
+    function loadSettings() { updateTodaySummary(); renderProducts(); }
+    function saveSettings() {
+      productsPerPage = document.getElementById('productsPerPage').value;
+      displayedProducts = productsPerPage === 'all' ? 999 : parseInt(productsPerPage);
+      renderProducts();
+    }
+
+    const resizeHandle = document.getElementById('resizeHandle');
+    const cartPanel = document.getElementById('cartPanel');
+    let isResizing = false, startX, startWidth;
+    resizeHandle.addEventListener('mousedown', function(e) { isResizing = true; startX = e.clientX; startWidth = cartPanel.offsetWidth; document.body.style.cursor = 'ew-resize'; document.body.style.userSelect = 'none'; });
+    document.addEventListener('mousemove', function(e) { if (!isResizing) return; const w = Math.min(500, Math.max(320, startWidth + (startX - e.clientX))); cartPanel.style.width = w + 'px'; });
+    document.addEventListener('mouseup', function() { if (isResizing) { isResizing = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; } });
+
+    function updateHeldBadge() {
+      const badge = document.getElementById('heldBadge');
+      if (heldOrders.length > 0) { badge.classList.remove('hidden'); badge.classList.add('flex'); badge.textContent = heldOrders.length; }
+      else { badge.classList.add('hidden'); badge.classList.remove('flex'); }
+    }
+
+    function showSection(section) {
+      ['pos', 'orders', 'held', 'customers'].forEach(function(s) {
+        document.getElementById(s + 'Section').classList.toggle('hidden', s !== section);
+        document.getElementById(s + 'Section').classList.toggle('flex', s === section);
+        const nav = document.getElementById('nav' + s.charAt(0).toUpperCase() + s.slice(1));
+        if (nav) { nav.classList.toggle('nav-active', s === section); nav.classList.toggle('text-slate-400', s !== section); }
+      });
+      if (section === 'orders') renderOrders();
+      if (section === 'held') renderHeldOrders();
+      if (section === 'customers') renderCustomersPage();
+    }
+
+    function renderOrders() {
+      document.getElementById('ordersList').innerHTML = recentOrders.map(function(o) {
+        return '<div class="bg-white border border-slate-200 rounded-lg px-3 py-2 flex items-center justify-between hover:shadow-sm"><div class="flex items-center gap-3"><span class="text-sm font-semibold text-slate-700">#' + o.id + '</span><span class="text-sm text-slate-600">' + o.customer + '</span><span class="text-xs text-slate-400">' + o.items + ' items</span></div><div class="flex items-center gap-4"><span class="text-xs text-slate-400">' + o.time + '</span><span class="text-sm font-bold theme-text">$' + o.total.toFixed(2) + '</span><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">' + o.method + '</span></div></div>';
+      }).join('');
+    }
+
+    function renderHeldOrders() {
+      document.getElementById('heldCount').textContent = heldOrders.length + ' orders';
+      if (heldOrders.length === 0) { document.getElementById('heldList').innerHTML = '<div class="text-center text-slate-400 py-12"><p class="font-medium">No held orders</p></div>'; return; }
+      document.getElementById('heldList').innerHTML = heldOrders.map(function(o, i) {
+        return '<div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between hover:shadow-md"><div><div class="flex items-center gap-2 mb-1"><span class="font-semibold text-slate-700">#ORD-' + o.id + '</span><span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">On Hold</span></div><p class="text-sm text-slate-500">' + o.customer + ' - ' + o.items + ' items</p></div><div class="flex items-center gap-3"><span class="text-lg font-bold text-blue-600">$' + o.total.toFixed(2) + '</span><button onclick="restoreHeld(' + i + ')" class="px-4 py-2 theme-bg-light theme-text rounded-lg text-sm font-medium hover:opacity-80">Restore</button><button onclick="deleteHeld(' + i + ')" class="px-4 py-2 bg-red-100 text-red-600 rounded-lg text-sm font-medium hover:bg-red-200">Delete</button></div></div>';
+      }).join('');
+    }
+
+    function renderCustomersPage() {
+      const search = (document.getElementById('customerPageSearch') ? document.getElementById('customerPageSearch').value : '').toLowerCase();
+      const filtered = customers.filter(function(c) { return c.name.toLowerCase().includes(search) || c.code.toLowerCase().includes(search) || c.phone.includes(search); });
+      document.getElementById('customersListFull').innerHTML = filtered.map(function(c) {
+        return '<div class="bg-white border border-slate-200 rounded-xl p-3 flex items-center gap-3 hover:shadow-md"><div class="w-10 h-10 bg-gradient-to-br ' + c.color + ' rounded-full flex items-center justify-center shadow-md flex-shrink-0"><span class="text-sm font-medium text-white">' + c.initials + '</span></div><div class="flex-1 min-w-0"><div class="flex items-center gap-2"><p class="font-semibold text-slate-700 text-sm">' + c.name + '</p><span class="text-xs text-slate-400">' + c.code + '</span></div><p class="text-xs text-slate-400 truncate">' + c.phone + ' - ' + c.email + '</p></div><div class="text-right flex-shrink-0"><p class="text-sm font-bold ' + (c.balance > 0 ? 'text-red-500' : 'theme-text') + '">$' + c.balance.toFixed(2) + '</p><p class="text-[10px] text-slate-400">' + (c.balance > 0 ? 'Due' : 'Clear') + '</p></div></div>';
+      }).join('');
+    }
+
+    function holdOrder() {
+      if (cart.length === 0) return;
+      var total = 0;
+      cart.forEach(function(item) { var price = item.customPrice !== null ? item.customPrice : item.price; var lineGross = price * item.qty; var disc = item.itemDiscount > 0 ? lineGross * item.itemDiscount / 100 : 0; total += lineGross - disc; });
+      heldOrders.push({ id: currentOrderNum, customer: selectedCustomer ? selectedCustomer.name : 'Walk-in', items: cart.reduce(function(s, i) { return s + i.qty; }, 0), total: total, cart: cart.map(function(c) { return Object.assign({}, c); }) });
+      currentOrderNum++; document.getElementById('orderNum').textContent = currentOrderNum;
+      clearCart(); updateHeldBadge(); alert('Order held!');
+    }
+
+    function restoreHeld(idx) { cart = heldOrders[idx].cart.map(function(c) { return Object.assign({}, c); }); heldOrders.splice(idx, 1); renderCart(); renderHeldOrders(); updateHeldBadge(); showSection('pos'); }
+    function deleteHeld(idx) { heldOrders.splice(idx, 1); renderHeldOrders(); updateHeldBadge(); }
+
+    function handleBarcode(e) { if (e.key === 'Enter') { var p = products.find(function(x) { return x.barcode === e.target.value.trim(); }); if (p) { addToCart(p.id); e.target.value = ''; } else { alert('Product not found!'); } } }
+
+    function setView(mode) {
+      viewMode = mode;
+      document.querySelectorAll('.view-btn').forEach(function(b) { b.classList.remove('theme-bg', 'text-white'); b.classList.add('text-slate-400'); });
+      var activeBtn = document.getElementById(mode + 'Btn');
+      if (activeBtn) { activeBtn.classList.add('theme-bg', 'text-white'); activeBtn.classList.remove('text-slate-400'); }
+      renderProducts();
+    }
+
+    function loadMoreProducts() { displayedProducts += productsPerPage === 'all' ? 999 : parseInt(productsPerPage); renderProducts(); }
+
+    function renderProducts() {
+      var grid = document.getElementById('productsGrid');
+      var search = document.getElementById('searchInput').value.toLowerCase();
+      var catBtn = document.querySelector('.category-btn.cat-active');
+      var cat = catBtn ? catBtn.dataset.cat : 'all';
+      var filtered = products.filter(function(p) { return (cat === 'all' || p.category === cat) && p.name.toLowerCase().includes(search); });
+      var hasMore = filtered.length > displayedProducts;
+      filtered = filtered.slice(0, displayedProducts);
+      document.getElementById('loadMoreContainer').classList.toggle('hidden', !hasMore);
+
+      if (viewMode === 'grid') {
+        grid.className = 'grid grid-cols-7 gap-2 overflow-y-auto scrollbar-thin flex-1 pr-2 auto-rows-min content-start';
+        grid.innerHTML = filtered.map(function(p) {
+          return '<div onclick="addToCart(' + p.id + ')" class="bg-white border border-slate-200 rounded-xl p-2.5 cursor-pointer hover:shadow-md transition-all text-center h-fit product-card" style="--hover-border: var(--theme-main);"><div class="text-3xl leading-none mb-1">' + p.emoji + '</div><h3 class="font-semibold text-xs text-slate-700 truncate">' + p.name + '</h3><p class="theme-text font-bold text-sm">$' + p.price.toFixed(2) + '</p><div class="barcode-display text-[9px] text-slate-500 mt-1 py-0.5 px-1 rounded">' + p.barcode + '</div></div>';
+        }).join('');
+      } else if (viewMode === 'list') {
+        grid.className = 'flex flex-col gap-1 overflow-y-auto scrollbar-thin flex-1 pr-2';
+        grid.innerHTML = filtered.map(function(p) {
+          return '<div onclick="addToCart(' + p.id + ')" class="bg-white border border-slate-200 rounded-lg px-3 py-2 cursor-pointer hover:shadow-sm transition-all flex items-center gap-3 product-card"><div class="text-2xl w-8 text-center flex-shrink-0">' + p.emoji + '</div><div class="flex-1 min-w-0"><h3 class="font-medium text-sm text-slate-700 truncate">' + p.name + '</h3><p class="text-xs text-slate-400">' + p.stock + ' in stock</p></div><div class="barcode-display text-xs text-slate-500 px-2 py-1 rounded">' + p.barcode + '</div><p class="theme-text font-bold text-sm flex-shrink-0">$' + p.price.toFixed(2) + '</p><button class="w-7 h-7 theme-bg-light theme-text rounded-lg flex items-center justify-center font-bold flex-shrink-0">+</button></div>';
+        }).join('');
+      } else {
+        grid.className = 'grid grid-cols-3 gap-2 overflow-y-auto scrollbar-thin flex-1 pr-2 content-start auto-rows-min';
+        grid.innerHTML = filtered.map(function(p) {
+          return '<div onclick="addToCart(' + p.id + ')" class="bg-white border border-slate-200 rounded-lg p-2 cursor-pointer hover:shadow-sm transition-all flex items-center gap-2 product-card"><span class="text-xl flex-shrink-0">' + p.emoji + '</span><div class="flex-1 min-w-0"><p class="text-xs font-medium text-slate-700 truncate">' + p.name + '</p><div class="flex items-center gap-2 mt-0.5"><span class="barcode-display text-[9px] text-slate-500 px-1 py-0.5 rounded">' + p.barcode + '</span><span class="text-[10px] text-slate-400">' + p.stock + ' stk</span></div></div><span class="text-sm font-bold theme-text flex-shrink-0">$' + p.price.toFixed(2) + '</span></div>';
+        }).join('');
+      }
+    }
+
+    function addToCart(id) { var p = products.find(function(x) { return x.id === id; }); var e = cart.find(function(c) { return c.id === id; }); if (e) e.qty++; else cart.push(Object.assign({}, p, { qty: 1, customPrice: null, itemDiscount: 0 })); renderCart(); }
+    function updateQty(id, d) { var i = cart.find(function(c) { return c.id === id; }); if (i) { i.qty += d; if (i.qty <= 0) cart = cart.filter(function(c) { return c.id !== id; }); } renderCart(); }
+    function removeFromCart(id) { cart = cart.filter(function(c) { return c.id !== id; }); renderCart(); }
+
+    function renderCart() {
+      var container = document.getElementById('cartItems');
+      if (cart.length === 0) {
+        container.innerHTML = '<div class="text-center text-slate-400 py-12"><svg class="w-16 h-16 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg><p class="font-medium">Cart is empty</p><p class="text-sm">Scan barcode or add products</p></div>';
+      } else {
+        container.innerHTML = cart.map(function(item) {
+          var price = item.customPrice !== null ? item.customPrice : item.price;
+          var hasDisc = item.itemDiscount > 0;
+          var discAmt = hasDisc ? price * item.qty * item.itemDiscount / 100 : 0;
+          var lineTotal = price * item.qty - discAmt;
+          var hasCustom = item.customPrice !== null;
+          return '<div class="bg-slate-50 rounded-lg px-2.5 py-2"><div class="flex items-center gap-2"><span class="text-lg flex-shrink-0">' + item.emoji + '</span><div class="flex-1 min-w-0"><p class="font-medium text-xs text-slate-700 truncate">' + item.name + '</p><div class="flex items-center gap-1 text-[11px]"><span class="text-slate-400">$' + price.toFixed(2) + (hasCustom ? ' <span class="text-blue-500">(edited)</span>' : '') + (hasDisc ? ' <span class="text-orange-500">-' + item.itemDiscount + '%</span>' : '') + '</span></div></div><button onclick="event.stopPropagation();openItemEditModal(' + item.id + ')" class="w-6 h-6 bg-amber-100 hover:bg-amber-200 rounded text-amber-600 flex items-center justify-center flex-shrink-0" title="Edit"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><div class="flex items-center gap-1 flex-shrink-0"><button onclick="updateQty(' + item.id + ',-1)" class="w-6 h-6 bg-white border border-slate-200 rounded text-xs font-bold hover:bg-slate-100">-</button><span class="w-6 text-center text-xs font-semibold">' + item.qty + '</span><button onclick="updateQty(' + item.id + ',1)" class="w-6 h-6 bg-white border border-slate-200 rounded text-xs font-bold hover:bg-slate-100">+</button></div><span class="text-sm font-bold theme-text w-14 text-right flex-shrink-0">$' + lineTotal.toFixed(2) + '</span><button onclick="removeFromCart(' + item.id + ')" class="text-red-400 hover:text-red-500 text-lg flex-shrink-0">×</button></div>' + (hasDisc ? '<div class="text-[10px] text-orange-500 mt-1 text-right">Discount: -$' + discAmt.toFixed(2) + '</div>' : '') + '</div>';
+        }).join('');
+      }
+      updateTotals();
+    }
+
+    function openItemEditModal(id) {
+      var item = cart.find(function(c) { return c.id === id; }); editingItemId = id;
+      document.getElementById('itemEditName').textContent = item.emoji + ' ' + item.name;
+      document.getElementById('itemEditOriginalPrice').textContent = '$' + item.price.toFixed(2);
+      document.getElementById('itemEditPrice').value = (item.customPrice !== null ? item.customPrice : item.price).toFixed(2);
+      document.getElementById('itemEditDiscount').value = item.itemDiscount || '';
+      document.getElementById('itemEditModal').classList.add('active');
+    }
+    function closeItemEditModal() { document.getElementById('itemEditModal').classList.remove('active'); editingItemId = null; }
+    function saveItemEdit() {
+      var item = cart.find(function(c) { return c.id === editingItemId; });
+      if (item) { var newPrice = parseFloat(document.getElementById('itemEditPrice').value); var newDiscount = parseFloat(document.getElementById('itemEditDiscount').value) || 0;
+        if (!isNaN(newPrice) && newPrice >= 0) item.customPrice = newPrice; item.itemDiscount = Math.min(100, Math.max(0, newDiscount)); renderCart(); }
+      closeItemEditModal();
+    }
+    function resetItemEdit() { var item = cart.find(function(c) { return c.id === editingItemId; }); if (item) { document.getElementById('itemEditPrice').value = item.price.toFixed(2); document.getElementById('itemEditDiscount').value = ''; } }
+
+    function updateTotals() {
+      var subtotal = 0, totalItemDisc = 0;
+      cart.forEach(function(item) { var price = item.customPrice !== null ? item.customPrice : item.price; var lineGross = price * item.qty; var disc = item.itemDiscount > 0 ? lineGross * item.itemDiscount / 100 : 0; subtotal += lineGross; totalItemDisc += disc; });
+      var afterItemDisc = subtotal - totalItemDisc;
+      var orderDisc = discountType === 'percent' ? afterItemDisc * discountValue / 100 : Math.min(discountValue, afterItemDisc);
+      var afterAllDisc = afterItemDisc - orderDisc;
+      var tax = afterAllDisc * 0.08;
+      var total = afterAllDisc + tax;
+      document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+      document.getElementById('itemDiscounts').textContent = '-$' + (totalItemDisc + orderDisc).toFixed(2);
+      document.getElementById('tax').textContent = '$' + tax.toFixed(2);
+      document.getElementById('total').textContent = '$' + total.toFixed(2);
+    }
+
+    function filterCategory(cat) {
+      document.querySelectorAll('.category-btn').forEach(function(b) { b.classList.remove('cat-active'); b.classList.add('bg-white', 'text-slate-600'); });
+      var a = document.querySelector('[data-cat="' + cat + '"]');
+      if (a) { a.classList.add('cat-active'); a.classList.remove('bg-white', 'text-slate-600'); }
+      document.getElementById('categoryDropdown').value = cat; displayedProducts = productsPerPage === 'all' ? 999 : parseInt(productsPerPage); renderProducts();
+    }
+    function scrollCategories(dir) { document.getElementById('categoryCarousel').scrollLeft += dir * 150; }
+
+    function openCustomerModal() { renderCustomerList(); document.getElementById('customerModal').classList.add('active'); }
+    function closeCustomerModal() { document.getElementById('customerModal').classList.remove('active'); }
+    function renderCustomerList(search) {
+      search = search || '';
+      var filtered = customers.filter(function(c) { return c.name.toLowerCase().includes(search.toLowerCase()) || c.code.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search); });
+      document.getElementById('customerList').innerHTML = filtered.map(function(c) {
+        return '<div onclick="selectCustomer(' + c.id + ')" class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:theme-bg-light"><div class="w-9 h-9 bg-gradient-to-br ' + c.color + ' rounded-full flex items-center justify-center shadow-md"><span class="text-xs font-medium text-white">' + c.initials + '</span></div><div class="flex-1 min-w-0"><div class="flex items-center gap-2"><p class="font-medium text-sm text-slate-700">' + c.name + '</p><span class="text-xs text-slate-400">' + c.code + '</span></div><p class="text-xs text-slate-400">' + c.phone + '</p></div><div class="text-right"><p class="font-semibold text-sm ' + (c.balance > 0 ? 'text-red-500' : 'theme-text') + '">$' + c.balance.toFixed(2) + '</p></div></div>';
+      }).join('');
+    }
+    function filterCustomers() { renderCustomerList(document.getElementById('customerSearch').value); }
+    function selectCustomer(id) {
+      if (id === null) { selectedCustomer = null; document.getElementById('customerName').textContent = 'Walk-in Customer'; document.getElementById('customerBalance').textContent = 'Click to select customer'; document.getElementById('customerBalance').className = 'text-xs text-slate-400'; document.getElementById('customerAvatar').className = 'w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-md'; document.getElementById('customerAvatar').innerHTML = '<span class="text-sm font-medium text-white">WC</span>'; }
+      else { selectedCustomer = customers.find(function(c) { return c.id === id; }); document.getElementById('customerName').textContent = selectedCustomer.name; document.getElementById('customerBalance').textContent = selectedCustomer.balance > 0 ? 'Due: $' + selectedCustomer.balance.toFixed(2) : 'No balance due'; document.getElementById('customerBalance').className = 'text-xs ' + (selectedCustomer.balance > 0 ? 'text-red-500 font-medium' : 'text-slate-400'); document.getElementById('customerAvatar').className = 'w-10 h-10 bg-gradient-to-br ' + selectedCustomer.color + ' rounded-full flex items-center justify-center shadow-md'; document.getElementById('customerAvatar').innerHTML = '<span class="text-sm font-medium text-white">' + selectedCustomer.initials + '</span>'; }
+      closeCustomerModal();
+    }
+
+    function openAddCustomerModal() {
+      document.getElementById('newCustCode').value = 'C' + String(customers.length + 1).padStart(3, '0');
+      document.getElementById('newCustName').value = '';
+      document.getElementById('newCustMobile').value = '';
+      document.getElementById('newCustEmail').value = '';
+      document.getElementById('addCustomerModal').classList.add('active');
+    }
+    function closeAddCustomerModal() { document.getElementById('addCustomerModal').classList.remove('active'); }
+    function saveNewCustomer() {
+      var name = document.getElementById('newCustName').value.trim();
+      var mobile = document.getElementById('newCustMobile').value.trim();
+      if (!name || !mobile) { alert('Please enter name and mobile'); return; }
+      var code = document.getElementById('newCustCode').value.trim();
+      var email = document.getElementById('newCustEmail').value.trim();
+      var initials = name.split(' ').map(function(n) { return n[0]; }).join('').substring(0, 2).toUpperCase();
+      var colors = ['from-blue-400 to-blue-600', 'from-pink-400 to-pink-600', 'from-purple-400 to-purple-600', 'from-amber-400 to-amber-600', 'from-emerald-400 to-emerald-600'];
+      var newCust = { id: customers.length + 1, code: code || 'C' + String(customers.length + 1).padStart(3, '0'), name: name, phone: mobile, email: email || '', balance: 0, initials: initials, color: colors[customers.length % colors.length] };
+      customers.push(newCust);
+      closeAddCustomerModal();
+      selectCustomer(newCust.id);
+      alert('Customer added successfully!');
+    }
+
+    function clearCart() { cart = []; discountValue = 0; renderCart(); }
+    function saveOrder() { if (cart.length > 0) alert('Order saved!'); }
+
+    function openSettingsModal() { document.getElementById('settingsModal').classList.add('active'); }
+    function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('active'); }
+
+    function selectPayMethod(method) { document.getElementById('pay' + method.charAt(0).toUpperCase() + method.slice(1)).checked = true; }
+
+    function openPaymentModal() {
+      if (cart.length === 0) { alert('Cart is empty!'); return; }
+      var total = parseFloat(document.getElementById('total').textContent.replace('$', ''));
+      document.getElementById('paymentTotal').textContent = '$' + total.toFixed(2);
+      document.getElementById('cashAmount').value = total.toFixed(2);
+      document.getElementById('cardAmount').value = '';
+      document.getElementById('mobileAmount').value = '';
+      document.getElementById('discountVal').value = '';
+      document.getElementById('paymentRemark').value = '';
+      document.getElementById('walkingCustName').value = '';
+      document.getElementById('walkingCustMobile').value = '';
+      document.getElementById('payCash').checked = true;
+      document.getElementById('walkingCustomerInfo').classList.toggle('hidden', selectedCustomer !== null);
+      calculateChange();
+      document.getElementById('paymentModal').classList.add('active');
+    }
+    function closePaymentModal() { document.getElementById('paymentModal').classList.remove('active'); }
+
+    function calculateChange() {
+      var total = parseFloat(document.getElementById('paymentTotal').textContent.replace('$', ''));
+      var cash = parseFloat(document.getElementById('cashAmount').value) || 0;
+      var card = parseFloat(document.getElementById('cardAmount').value) || 0;
+      var mobile = parseFloat(document.getElementById('mobileAmount').value) || 0;
+      var paid = cash + card + mobile;
+      var diff = paid - total;
+      var section = document.getElementById('changeSection');
+      section.classList.remove('hidden');
+      if (diff >= 0) { document.getElementById('changeLabel').textContent = 'Change'; document.getElementById('changeAmount').textContent = '$' + diff.toFixed(2); document.getElementById('changeAmount').className = 'text-lg font-bold theme-text'; document.getElementById('completePayBtn').disabled = false; }
+      else { document.getElementById('changeLabel').textContent = 'Due'; document.getElementById('changeAmount').textContent = '$' + Math.abs(diff).toFixed(2); document.getElementById('changeAmount').className = 'text-lg font-bold text-red-500'; document.getElementById('completePayBtn').disabled = true; }
+    }
+
+    function setQuickDisc(val) { document.getElementById('discountVal').value = val; document.getElementById('discountType').value = 'percent'; applyDiscount(); }
+    function applyDiscount() { var val = parseFloat(document.getElementById('discountVal').value) || 0; var type = document.getElementById('discountType').value; discountValue = val; discountType = type; updateTotals(); var total = parseFloat(document.getElementById('total').textContent.replace('$', '')); document.getElementById('paymentTotal').textContent = '$' + total.toFixed(2); document.getElementById('cashAmount').value = total.toFixed(2); calculateChange(); }
+    function saveAndClose() { if (cart.length > 0) { alert('Order saved!'); closePaymentModal(); } }
+
+    function completePayment() {
+      var total = parseFloat(document.getElementById('paymentTotal').textContent.replace('$', ''));
+      var method = 'Cash'; if (document.getElementById('payCard').checked) method = 'Card'; if (document.getElementById('payMobile').checked) method = 'Mobile';
+      var custName = selectedCustomer ? selectedCustomer.name : (document.getElementById('walkingCustName').value || 'Walk-in');
+      recentOrders.unshift({ id: currentOrderNum, customer: custName, items: cart.reduce(function(s, i) { return s + i.qty; }, 0), total: total, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), method: method });
+      todaySales += total; todayOrderCount++;
+      updateTodaySummary();
+      document.getElementById('successTotal').textContent = '$' + total.toFixed(2); document.getElementById('successMethod').textContent = 'Paid via ' + method;
+      closePaymentModal(); document.getElementById('successModal').classList.add('active');
+    }
+
+    function printReceipt() { alert('Receipt sent to printer!'); }
+    function newOrder() { document.getElementById('successModal').classList.remove('active'); currentOrderNum++; document.getElementById('orderNum').textContent = currentOrderNum; clearCart(); selectCustomer(null); }
+
+    document.getElementById('searchInput').addEventListener('input', renderProducts);
+    document.getElementById('barcodeInput').focus();
+    loadSettings();
+  </script>
+</body>
+</html>

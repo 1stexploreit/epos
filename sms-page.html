@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMS Center - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Header -->
+<div class="bg-white border-b border-slate-200">
+<div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-slate-800 font-semibold">SMS Center</h1>
+<p class="text-xs text-slate-400">Send SMS to customers, suppliers & staff</p>
+</div>
+<div class="flex items-center gap-3">
+<!-- SMS Balance -->
+<div class="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-lg border border-emerald-200">
+<svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+<span class="text-xs text-emerald-700">Balance:</span>
+<span class="text-sm font-bold text-emerald-700">1,250 SMS</span>
+</div>
+<!-- Branch Select (Admin) -->
+<select id="branchSelect" class="px-3 py-2 text-sm border border-slate-200 rounded-lg">
+<option value="all">All Branches</option>
+<option value="main">Main Branch</option>
+<option value="branch1">Dhanmondi Branch</option>
+<option value="branch2">Uttara Branch</option>
+</select>
+<!-- SMS Log -->
+<a href="#" onclick="openSMSLog()" class="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+SMS Log
+</a>
+</div>
+</div>
+</div>
+
+<main class="max-w-6xl mx-auto px-6 py-5">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+<!-- Left: SMS Form -->
+<div class="lg:col-span-2 space-y-4">
+
+<!-- Send To & SMS Type Selectors -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Send To</label>
+<select id="sendTo" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" onchange="onSendToChange()">
+<option value="customer">Customer</option>
+<option value="supplier">Supplier</option>
+<option value="staff">Staff</option>
+</select>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">SMS Type</label>
+<select id="smsType" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" onchange="onSMSTypeChange()">
+<option value="static">Static SMS</option>
+<option value="bulk">Bulk SMS</option>
+<option value="due">Due Reminder</option>
+<option value="offer">Offer / Promotional</option>
+<option value="urgent">Urgent Notice</option>
+</select>
+</div>
+</div>
+</div>
+
+<!-- Static SMS -->
+<div id="formStatic" class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<h3 class="text-sm font-semibold text-slate-800 mb-4">Static SMS</h3>
+<div class="space-y-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Phone Number</label>
+<input type="tel" id="staticPhone" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="+880 1XXX XXXXXX">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Message</label>
+<textarea id="staticMsg" rows="4" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm resize-none" placeholder="Type your message here..." oninput="updateCharCount('static')"></textarea>
+<div class="flex justify-between mt-1 text-xs text-slate-400">
+<span id="staticCharCount">0/160 characters</span>
+<span id="staticSMSCount">1 SMS</span>
+</div>
+</div>
+<button onclick="sendStaticSMS()" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium text-sm">Send SMS</button>
+</div>
+</div>
+
+<!-- Bulk SMS -->
+<div id="formBulk" class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5" style="display:none">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-semibold text-slate-800">Bulk SMS</h3>
+<span class="text-xs text-slate-400" id="bulkSelectedCount">0 recipients selected</span>
+</div>
+<div class="space-y-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Select Recipients</label>
+<div class="mt-1.5 border border-slate-200 rounded-lg max-h-40 overflow-y-auto">
+<div class="p-2 border-b border-slate-100 bg-slate-50">
+<label class="flex items-center gap-2 text-sm">
+<input type="checkbox" id="bulkSelectAll" class="w-4 h-4 rounded border-slate-300 text-emerald-600" onchange="toggleBulkAll()">
+<span class="font-medium text-slate-700">Select All</span>
+</label>
+</div>
+<div id="bulkRecipientList" class="divide-y divide-slate-100"></div>
+</div>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Message Template</label>
+<textarea id="bulkMsg" rows="4" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm resize-none" placeholder="Hello {name}, your message here..." oninput="updateCharCount('bulk')"></textarea>
+<div class="flex justify-between mt-1 text-xs text-slate-400">
+<span id="bulkCharCount">0/160 characters</span>
+<span id="bulkSMSCount">1 SMS × 0 = 0 SMS</span>
+</div>
+</div>
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+<p class="text-xs font-semibold text-blue-700 mb-2">Available Variables:</p>
+<div class="flex flex-wrap gap-2">
+<code onclick="insertVar('bulk','{name}')" class="px-2 py-1 bg-white text-blue-600 text-xs rounded cursor-pointer hover:bg-blue-100">{name}</code>
+<code onclick="insertVar('bulk','{phone}')" class="px-2 py-1 bg-white text-blue-600 text-xs rounded cursor-pointer hover:bg-blue-100">{phone}</code>
+<code onclick="insertVar('bulk','{company}')" class="px-2 py-1 bg-white text-blue-600 text-xs rounded cursor-pointer hover:bg-blue-100">{company}</code>
+</div>
+</div>
+<button onclick="sendBulkSMS()" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium text-sm">Send Bulk SMS</button>
+</div>
+</div>
+
+<!-- Due SMS -->
+<div id="formDue" class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5" style="display:none">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-semibold text-slate-800">Due Reminder SMS</h3>
+<span class="text-xs text-amber-600 font-medium" id="dueCount">5 customers with due</span>
+</div>
+<div class="space-y-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Filter by Due Amount</label>
+<div class="flex gap-2 mt-1.5">
+<input type="number" id="dueMinAmount" class="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="Min amount">
+<input type="number" id="dueMaxAmount" class="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="Max amount">
+<button onclick="filterDue()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-600">Filter</button>
+</div>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Due Customers</label>
+<div class="mt-1.5 border border-slate-200 rounded-lg max-h-40 overflow-y-auto">
+<div class="p-2 border-b border-slate-100 bg-slate-50">
+<label class="flex items-center gap-2 text-sm">
+<input type="checkbox" id="dueSelectAll" class="w-4 h-4 rounded border-slate-300 text-emerald-600" onchange="toggleDueAll()" checked>
+<span class="font-medium text-slate-700">Select All</span>
+</label>
+</div>
+<div id="dueCustomerList" class="divide-y divide-slate-100"></div>
+</div>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Message Template</label>
+<textarea id="dueMsg" rows="4" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm resize-none" oninput="updateCharCount('due')">Dear {name}, you have a due balance of {due_amount}. Please pay at your earliest convenience. Thank you - FreshMart</textarea>
+<div class="flex justify-between mt-1 text-xs text-slate-400">
+<span id="dueCharCount">0/160 characters</span>
+<span id="dueSMSCount">1 SMS</span>
+</div>
+</div>
+<div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+<p class="text-xs font-semibold text-amber-700 mb-2">Available Variables:</p>
+<div class="flex flex-wrap gap-2">
+<code onclick="insertVar('due','{name}')" class="px-2 py-1 bg-white text-amber-600 text-xs rounded cursor-pointer hover:bg-amber-100">{name}</code>
+<code onclick="insertVar('due','{due_amount}')" class="px-2 py-1 bg-white text-amber-600 text-xs rounded cursor-pointer hover:bg-amber-100">{due_amount}</code>
+<code onclick="insertVar('due','{last_purchase}')" class="px-2 py-1 bg-white text-amber-600 text-xs rounded cursor-pointer hover:bg-amber-100">{last_purchase}</code>
+</div>
+</div>
+<button onclick="sendDueSMS()" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium text-sm">Send Due Reminder</button>
+</div>
+</div>
+
+<!-- Offer SMS -->
+<div id="formOffer" class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5" style="display:none">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-semibold text-slate-800">Offer / Promotional SMS</h3>
+<span class="text-xs text-slate-400" id="offerSelectedCount">0 recipients selected</span>
+</div>
+<div class="space-y-4">
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Offer Title</label>
+<input type="text" id="offerTitle" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="e.g., Eid Sale" oninput="updateOfferPreview()">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Discount</label>
+<input type="text" id="offerDiscount" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="e.g., 20%" oninput="updateOfferPreview()">
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Valid From</label>
+<input type="date" id="offerFrom" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" onchange="updateOfferPreview()">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Valid Until</label>
+<input type="date" id="offerTo" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" onchange="updateOfferPreview()">
+</div>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Select Recipients</label>
+<div class="flex gap-2 mt-1.5">
+<button onclick="selectOfferGroup('all')" class="flex-1 py-2 text-xs font-medium rounded-lg border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50">All Customers</button>
+<button onclick="selectOfferGroup('active')" class="flex-1 py-2 text-xs font-medium rounded-lg border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50">Active (30 days)</button>
+<button onclick="selectOfferGroup('inactive')" class="flex-1 py-2 text-xs font-medium rounded-lg border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50">Inactive</button>
+</div>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Message Template</label>
+<textarea id="offerMsg" rows="4" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm resize-none" oninput="updateCharCount('offer')">🎉 {offer_title}! Get {discount} OFF on all items. Valid {valid_from} to {valid_until}. Visit FreshMart today!</textarea>
+<div class="flex justify-between mt-1 text-xs text-slate-400">
+<span id="offerCharCount">0/160 characters</span>
+<span id="offerSMSCount">1 SMS</span>
+</div>
+</div>
+<div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+<p class="text-xs font-semibold text-purple-700 mb-2">Available Variables:</p>
+<div class="flex flex-wrap gap-2">
+<code onclick="insertVar('offer','{name}')" class="px-2 py-1 bg-white text-purple-600 text-xs rounded cursor-pointer hover:bg-purple-100">{name}</code>
+<code onclick="insertVar('offer','{offer_title}')" class="px-2 py-1 bg-white text-purple-600 text-xs rounded cursor-pointer hover:bg-purple-100">{offer_title}</code>
+<code onclick="insertVar('offer','{discount}')" class="px-2 py-1 bg-white text-purple-600 text-xs rounded cursor-pointer hover:bg-purple-100">{discount}</code>
+<code onclick="insertVar('offer','{valid_from}')" class="px-2 py-1 bg-white text-purple-600 text-xs rounded cursor-pointer hover:bg-purple-100">{valid_from}</code>
+<code onclick="insertVar('offer','{valid_until}')" class="px-2 py-1 bg-white text-purple-600 text-xs rounded cursor-pointer hover:bg-purple-100">{valid_until}</code>
+</div>
+</div>
+<button onclick="sendOfferSMS()" class="w-full py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium text-sm">Send Offer SMS</button>
+</div>
+</div>
+
+<!-- Urgent Notice (Staff) -->
+<div id="formUrgent" class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5" style="display:none">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+<span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+Urgent Notice for Staff
+</h3>
+<span class="text-xs text-slate-400" id="urgentSelectedCount">0 staff selected</span>
+</div>
+<div class="space-y-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Select Staff</label>
+<div class="mt-1.5 border border-slate-200 rounded-lg max-h-40 overflow-y-auto">
+<div class="p-2 border-b border-slate-100 bg-slate-50">
+<label class="flex items-center gap-2 text-sm">
+<input type="checkbox" id="urgentSelectAll" class="w-4 h-4 rounded border-slate-300 text-emerald-600" onchange="toggleUrgentAll()">
+<span class="font-medium text-slate-700">Select All Staff</span>
+</label>
+</div>
+<div id="urgentStaffList" class="divide-y divide-slate-100"></div>
+</div>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Notice Type</label>
+<select id="urgentType" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" onchange="setUrgentTemplate()">
+<option value="meeting">Meeting</option>
+<option value="emergency">Emergency</option>
+<option value="schedule">Schedule Change</option>
+<option value="custom">Custom</option>
+</select>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Message</label>
+<textarea id="urgentMsg" rows="4" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm resize-none" oninput="updateCharCount('urgent')">URGENT: {name}, mandatory meeting today. Your presence is required. - FreshMart Management</textarea>
+<div class="flex justify-between mt-1 text-xs text-slate-400">
+<span id="urgentCharCount">0/160 characters</span>
+<span id="urgentSMSCount">1 SMS</span>
+</div>
+</div>
+<div class="bg-red-50 border border-red-200 rounded-lg p-3">
+<p class="text-xs font-semibold text-red-700 mb-2">Available Variables:</p>
+<div class="flex flex-wrap gap-2">
+<code onclick="insertVar('urgent','{name}')" class="px-2 py-1 bg-white text-red-600 text-xs rounded cursor-pointer hover:bg-red-100">{name}</code>
+<code onclick="insertVar('urgent','{position}')" class="px-2 py-1 bg-white text-red-600 text-xs rounded cursor-pointer hover:bg-red-100">{position}</code>
+<code onclick="insertVar('urgent','{date}')" class="px-2 py-1 bg-white text-red-600 text-xs rounded cursor-pointer hover:bg-red-100">{date}</code>
+<code onclick="insertVar('urgent','{time}')" class="px-2 py-1 bg-white text-red-600 text-xs rounded cursor-pointer hover:bg-red-100">{time}</code>
+</div>
+</div>
+<button onclick="sendUrgentSMS()" class="w-full py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-medium text-sm">Send Urgent Notice</button>
+</div>
+</div>
+
+</div>
+
+<!-- Right: Preview & Templates -->
+<div class="space-y-4">
+<!-- SMS Preview -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<h3 class="text-sm font-semibold text-slate-800 mb-4">Preview</h3>
+<div class="bg-slate-800 rounded-xl p-4">
+<div class="bg-emerald-500 rounded-lg p-3 max-w-[90%] ml-auto">
+<p class="text-white text-sm" id="previewText">Your message preview will appear here...</p>
+</div>
+<p class="text-slate-500 text-[10px] mt-2 text-right">Sent • Now</p>
+</div>
+</div>
+
+<!-- Quick Templates -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<h3 class="text-sm font-semibold text-slate-800 mb-4">Quick Templates</h3>
+<div class="space-y-2">
+<button onclick="useTemplate('welcome')" class="w-full px-3 py-2 text-left text-xs bg-slate-50 hover:bg-slate-100 rounded-lg">
+<span class="font-medium text-slate-700">Welcome</span>
+<p class="text-slate-400 truncate">Welcome to FreshMart! Thank you...</p>
+</button>
+<button onclick="useTemplate('thanks')" class="w-full px-3 py-2 text-left text-xs bg-slate-50 hover:bg-slate-100 rounded-lg">
+<span class="font-medium text-slate-700">Thank You</span>
+<p class="text-slate-400 truncate">Thank you for your purchase...</p>
+</button>
+<button onclick="useTemplate('reminder')" class="w-full px-3 py-2 text-left text-xs bg-slate-50 hover:bg-slate-100 rounded-lg">
+<span class="font-medium text-slate-700">Payment Reminder</span>
+<p class="text-slate-400 truncate">Dear {name}, your payment of...</p>
+</button>
+<button onclick="useTemplate('delivery')" class="w-full px-3 py-2 text-left text-xs bg-slate-50 hover:bg-slate-100 rounded-lg">
+<span class="font-medium text-slate-700">Delivery Update</span>
+<p class="text-slate-400 truncate">Your order is on the way...</p>
+</button>
+</div>
+</div>
+
+<!-- Recent Sent -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-semibold text-slate-800">Recent Sent</h3>
+<a href="#" onclick="openSMSLog()" class="text-xs text-emerald-600 hover:text-emerald-700 font-medium">View All</a>
+</div>
+<div class="space-y-3" id="recentSentList"></div>
+</div>
+</div>
+
+</div>
+</main>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Sent</span>
+</div>
+
+<script>
+const customers=[
+{id:1,name:'Rahim Ahmed',phone:'+880 1711 111111',company:'ABC Corp',due:5000},
+{id:2,name:'Karim Hossain',phone:'+880 1722 222222',company:'XYZ Ltd',due:3200},
+{id:3,name:'Fatima Begum',phone:'+880 1733 333333',company:'',due:0},
+{id:4,name:'Jamal Uddin',phone:'+880 1744 444444',company:'DEF Inc',due:1500},
+{id:5,name:'Nasreen Akter',phone:'+880 1755 555555',company:'',due:8000},
+];
+
+const suppliers=[
+{id:1,name:'Supplier A',phone:'+880 1811 111111',company:'Supply Co'},
+{id:2,name:'Supplier B',phone:'+880 1822 222222',company:'Trade Ltd'},
+];
+
+const staff=[
+{id:1,name:'Rahim Manager',phone:'+880 1911 111111',position:'Manager'},
+{id:2,name:'Karim Cashier',phone:'+880 1922 222222',position:'Cashier'},
+{id:3,name:'Fatima Sales',phone:'+880 1933 333333',position:'Sales'},
+{id:4,name:'Jamal Delivery',phone:'+880 1944 444444',position:'Delivery'},
+];
+
+const recentSent=[
+{to:'Rahim Ahmed',type:'Due',time:'2 min ago'},
+{to:'15 Customers',type:'Offer',time:'1 hour ago'},
+{to:'All Staff',type:'Urgent',time:'3 hours ago'},
+];
+
+function showToast(msg){
+const t=document.getElementById('toast');
+document.getElementById('toastMsg').textContent=msg;
+t.style.display='flex';
+setTimeout(()=>t.style.display='none',3000);
+}
+
+function onSendToChange(){
+const sendTo=document.getElementById('sendTo').value;
+const typeSelect=document.getElementById('smsType');
+const currentType=typeSelect.value;
+
+// Update SMS Type options based on Send To
+if(sendTo==='staff'){
+typeSelect.innerHTML=`
+<option value="static">Static SMS</option>
+<option value="bulk">Bulk SMS</option>
+<option value="urgent">Urgent Notice</option>`;
+}else{
+typeSelect.innerHTML=`
+<option value="static">Static SMS</option>
+<option value="bulk">Bulk SMS</option>
+<option value="due">Due Reminder</option>
+<option value="offer">Offer / Promotional</option>`;
+}
+onSMSTypeChange();
+loadRecipients();
+}
+
+function onSMSTypeChange(){
+const smsType=document.getElementById('smsType').value;
+['static','bulk','due','offer','urgent'].forEach(t=>{
+const form=document.getElementById('form'+t.charAt(0).toUpperCase()+t.slice(1));
+if(form)form.style.display=t===smsType?'block':'none';
+});
+loadRecipients();
+}
+
+function loadRecipients(){
+const sendTo=document.getElementById('sendTo').value;
+const data=sendTo==='customer'?customers:sendTo==='supplier'?suppliers:staff;
+
+// Bulk list
+document.getElementById('bulkRecipientList').innerHTML=data.map(d=>`
+<label class="flex items-center gap-3 p-2 hover:bg-slate-50 cursor-pointer">
+<input type="checkbox" class="bulk-check w-4 h-4 rounded border-slate-300 text-emerald-600" data-id="${d.id}" onchange="updateBulkCount()">
+<div class="flex-1"><span class="text-sm font-medium text-slate-700">${d.name}</span><span class="text-xs text-slate-400 ml-2">${d.phone}</span></div>
+</label>`).join('');
+
+// Due list
+const dueCustomers=customers.filter(c=>c.due>0);
+document.getElementById('dueCount').textContent=dueCustomers.length+' customers with due';
+document.getElementById('dueCustomerList').innerHTML=dueCustomers.map(d=>`
+<label class="flex items-center justify-between p-2 hover:bg-slate-50 cursor-pointer">
+<div class="flex items-center gap-3">
+<input type="checkbox" class="due-check w-4 h-4 rounded border-slate-300 text-emerald-600" data-id="${d.id}" checked onchange="updateDueCount()">
+<div><span class="text-sm font-medium text-slate-700">${d.name}</span><span class="text-xs text-slate-400 ml-2">${d.phone}</span></div>
+</div>
+<span class="text-sm font-bold text-amber-600">৳${d.due.toLocaleString()}</span>
+</label>`).join('');
+
+// Urgent staff list
+document.getElementById('urgentStaffList').innerHTML=staff.map(s=>`
+<label class="flex items-center gap-3 p-2 hover:bg-slate-50 cursor-pointer">
+<input type="checkbox" class="urgent-check w-4 h-4 rounded border-slate-300 text-emerald-600" data-id="${s.id}" onchange="updateUrgentCount()">
+<div class="flex-1"><span class="text-sm font-medium text-slate-700">${s.name}</span><span class="text-xs text-slate-400 ml-2">${s.position}</span></div>
+</label>`).join('');
+
+// Recent sent
+document.getElementById('recentSentList').innerHTML=recentSent.map(r=>`
+<div class="flex items-center justify-between text-xs">
+<div><span class="font-medium text-slate-700">${r.to}</span><span class="ml-2 px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded">${r.type}</span></div>
+<span class="text-slate-400">${r.time}</span>
+</div>`).join('');
+
+updateDueCount();
+}
+
+function toggleBulkAll(){
+const checked=document.getElementById('bulkSelectAll').checked;
+document.querySelectorAll('.bulk-check').forEach(cb=>cb.checked=checked);
+updateBulkCount();
+}
+
+function updateBulkCount(){
+const count=document.querySelectorAll('.bulk-check:checked').length;
+document.getElementById('bulkSelectedCount').textContent=count+' recipients selected';
+const chars=document.getElementById('bulkMsg').value.length;
+document.getElementById('bulkSMSCount').textContent=`${Math.ceil(chars/160)||1} SMS × ${count} = ${(Math.ceil(chars/160)||1)*count} SMS`;
+}
+
+function toggleDueAll(){
+const checked=document.getElementById('dueSelectAll').checked;
+document.querySelectorAll('.due-check').forEach(cb=>cb.checked=checked);
+updateDueCount();
+}
+
+function updateDueCount(){
+const count=document.querySelectorAll('.due-check:checked').length;
+document.getElementById('dueCount').textContent=count+' customers selected';
+}
+
+function toggleUrgentAll(){
+const checked=document.getElementById('urgentSelectAll').checked;
+document.querySelectorAll('.urgent-check').forEach(cb=>cb.checked=checked);
+updateUrgentCount();
+}
+
+function updateUrgentCount(){
+const count=document.querySelectorAll('.urgent-check:checked').length;
+document.getElementById('urgentSelectedCount').textContent=count+' staff selected';
+}
+
+function updateCharCount(type){
+const textarea=document.getElementById(type+'Msg');
+const chars=textarea?textarea.value.length:0;
+const smsCount=Math.ceil(chars/160)||1;
+document.getElementById(type+'CharCount').textContent=chars+'/160 characters';
+if(type!=='bulk')document.getElementById(type+'SMSCount').textContent=smsCount+' SMS';
+updatePreview(textarea?textarea.value:'');
+}
+
+function updatePreview(text){
+document.getElementById('previewText').textContent=text||'Your message preview will appear here...';
+}
+
+function updateOfferPreview(){
+let msg=document.getElementById('offerMsg').value;
+msg=msg.replace('{offer_title}',document.getElementById('offerTitle').value||'{offer_title}');
+msg=msg.replace('{discount}',document.getElementById('offerDiscount').value||'{discount}');
+msg=msg.replace('{valid_from}',document.getElementById('offerFrom').value||'{valid_from}');
+msg=msg.replace('{valid_until}',document.getElementById('offerTo').value||'{valid_until}');
+updatePreview(msg);
+updateCharCount('offer');
+}
+
+function insertVar(type,variable){
+const textarea=document.getElementById(type+'Msg');
+const start=textarea.selectionStart;
+const end=textarea.selectionEnd;
+textarea.value=textarea.value.substring(0,start)+variable+textarea.value.substring(end);
+textarea.focus();
+textarea.selectionStart=textarea.selectionEnd=start+variable.length;
+updateCharCount(type);
+}
+
+function useTemplate(type){
+const templates={
+welcome:'Welcome to FreshMart, {name}! Thank you for joining us. Enjoy exclusive offers and quality products. - FreshMart',
+thanks:'Dear {name}, thank you for your purchase at FreshMart. We appreciate your business! - FreshMart',
+reminder:'Dear {name}, your payment of {due_amount} is pending. Please clear at your earliest convenience. - FreshMart',
+delivery:'Dear {name}, your order is on the way and will arrive shortly. Thank you for shopping with FreshMart!'
+};
+const smsType=document.getElementById('smsType').value;
+const textarea=document.getElementById(smsType+'Msg')||document.getElementById('staticMsg');
+if(textarea){
+textarea.value=templates[type]||'';
+updateCharCount(smsType);
+}
+}
+
+function selectOfferGroup(group){
+const count=group==='all'?customers.length:group==='active'?3:2;
+document.getElementById('offerSelectedCount').textContent=count+' recipients selected';
+showToast(group.charAt(0).toUpperCase()+group.slice(1)+' customers selected');
+}
+
+function setUrgentTemplate(){
+const type=document.getElementById('urgentType').value;
+const templates={
+meeting:'URGENT: {name}, mandatory meeting today at {time}. Your presence is required. - FreshMart Management',
+emergency:'EMERGENCY: {name}, please report to office immediately. Contact: 01XXX-XXXXXX - FreshMart',
+schedule:'NOTICE: {name}, your schedule has been changed for {date}. Please check with HR. - FreshMart',
+custom:''
+};
+document.getElementById('urgentMsg').value=templates[type];
+updateCharCount('urgent');
+}
+
+function sendStaticSMS(){
+const phone=document.getElementById('staticPhone').value;
+const msg=document.getElementById('staticMsg').value;
+if(!phone||!msg){alert('Enter phone and message');return;}
+showToast('SMS sent successfully!');
+}
+
+function sendBulkSMS(){
+const count=document.querySelectorAll('.bulk-check:checked').length;
+if(!count){alert('Select at least one recipient');return;}
+showToast(count+' SMS sent successfully!');
+}
+
+function sendDueSMS(){
+const count=document.querySelectorAll('.due-check:checked').length;
+if(!count){alert('Select at least one customer');return;}
+showToast(count+' due reminders sent!');
+}
+
+function sendOfferSMS(){
+showToast('Offer SMS sent successfully!');
+}
+
+function sendUrgentSMS(){
+const count=document.querySelectorAll('.urgent-check:checked').length;
+if(!count){alert('Select at least one staff');return;}
+showToast(count+' urgent notices sent!');
+}
+
+function filterDue(){showToast('Filter applied');}
+function openSMSLog(){showToast('Opening SMS Log...');}
+
+// Init
+loadRecipients();
+updateCharCount('static');
+updateCharCount('due');
+updateCharCount('offer');
+updateCharCount('urgent');
+</script>
+</body>
+</html>

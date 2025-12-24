@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Invoice - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{font-family:'Inter',sans-serif;box-sizing:border-box}
+.pos-receipt{width:80mm;font-size:12px;font-family:'Courier New',monospace}
+.a4-invoice{width:210mm;min-height:297mm}
+.a5-invoice{width:148mm;min-height:210mm}
+@media print{body *{visibility:hidden}#printArea,#printArea *{visibility:visible}#printArea{position:absolute;left:0;top:0;margin:0}}
+input:focus,select:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+.barcode{font-family:'Libre Barcode 128',cursive;font-size:48px}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Top Action Bar -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+<div class="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<button onclick="window.history.back()" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center">
+<svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+</button>
+<div class="flex bg-slate-100 rounded-lg p-1">
+<button onclick="setFormat('pos')" id="btnPOS" class="px-3 py-1.5 text-xs font-semibold rounded-md bg-white text-emerald-600 shadow-sm">POS</button>
+<button onclick="setFormat('a4')" id="btnA4" class="px-3 py-1.5 text-xs font-semibold rounded-md text-slate-500 hover:text-slate-700">A4</button>
+<button onclick="setFormat('a5')" id="btnA5" class="px-3 py-1.5 text-xs font-semibold rounded-md text-slate-500 hover:text-slate-700">A5</button>
+</div>
+<select id="bizType" onchange="changeBizType()" class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white">
+<option value="grocery">🛒 Grocery</option>
+<option value="apparel">👕 Apparel</option>
+<option value="electronics">📱 Electronics</option>
+<option value="restaurant">🍽️ Restaurant</option>
+<option value="pharmacy">💊 Pharmacy</option>
+</select>
+</div>
+<div class="flex items-center gap-1.5">
+<button onclick="openSetup()" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg" title="Settings">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+</button>
+<button onclick="saveLocal()" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="Save Local">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+</button>
+<div class="w-px h-6 bg-slate-200 mx-1"></div>
+<button onclick="generatePDF()" class="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg" title="PDF">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+</button>
+<button onclick="downloadInvoice()" class="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Download">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+</button>
+<button onclick="printInvoice()" class="px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-semibold shadow-sm hover:shadow flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>Print
+</button>
+</div>
+</div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-6 flex justify-center">
+<div id="printArea" class="bg-white shadow-xl rounded-lg overflow-hidden">
+
+<!-- POS Receipt -->
+<div id="posInvoice" class="pos-receipt p-4">
+<div class="text-center border-b border-dashed border-slate-400 pb-3 mb-3">
+<div id="posLogo" class="mb-2"></div>
+<h1 class="text-lg font-bold" id="posStoreName">FRESHMART</h1>
+<p class="text-[10px]" id="posTagline">Your Trusted Shopping Partner</p>
+<p class="text-[10px]" id="posAddress">123 Main Street, Dhaka-1205</p>
+<p class="text-[10px]" id="posPhone">Tel: +880 1711-111111</p>
+</div>
+<div class="text-[10px] mb-3 space-y-0.5">
+<div class="flex justify-between"><span>Invoice:</span><span id="posInvNo">#INV-0001</span></div>
+<div class="flex justify-between"><span>Date:</span><span id="posDate">24 Dec 2024</span></div>
+<div class="flex justify-between"><span>Time:</span><span id="posTime">10:30 AM</span></div>
+<div class="flex justify-between"><span>Cashier:</span><span id="posCashier">Rahim</span></div>
+<div class="flex justify-between"><span>Customer:</span><span id="posCustName">Walk-in</span></div>
+</div>
+<div class="border-t border-dashed border-slate-400 py-2 mb-2">
+<div class="flex justify-between text-[10px] font-bold border-b border-dotted pb-1 mb-1"><span>ITEM</span><span>TOTAL</span></div>
+<div id="posItems" class="text-[10px] space-y-1"></div>
+</div>
+<div class="text-[11px] space-y-0.5 border-t border-dashed border-slate-400 pt-2">
+<div class="flex justify-between"><span>Subtotal:</span><span id="posSubtotal">৳0</span></div>
+<div class="flex justify-between"><span>Discount:</span><span id="posDiscount">-৳0</span></div>
+<div class="flex justify-between"><span>VAT (5%):</span><span id="posVat">৳0</span></div>
+<div class="flex justify-between font-bold text-sm border-t border-double border-slate-400 pt-1 mt-1"><span>TOTAL:</span><span id="posTotal">৳0</span></div>
+<div class="flex justify-between mt-1"><span>Paid:</span><span id="posPaid">৳0</span></div>
+<div class="flex justify-between"><span>Change:</span><span id="posChange">৳0</span></div>
+<div class="flex justify-between"><span>Method:</span><span id="posPayMethod">Cash</span></div>
+</div>
+<div class="text-center text-[10px] border-t border-dashed border-slate-400 pt-3 mt-3">
+<p id="posFooter">Thank you for shopping!</p>
+<p class="mt-1">*** Keep this receipt ***</p>
+<div class="barcode text-center mt-2" id="posBarcode">INV0001</div>
+<p class="text-[8px] mt-1" id="posBarcodeText">INV-0001</p>
+</div>
+</div>
+
+<!-- A4 Invoice -->
+<div id="a4Invoice" class="a4-invoice p-10 hidden">
+<div class="flex justify-between items-start mb-8">
+<div class="flex items-center gap-4">
+<div id="a4Logo" class="w-16 h-16 bg-emerald-100 rounded-xl flex items-center justify-center text-2xl font-bold text-emerald-600">FM</div>
+<div>
+<h1 class="text-2xl font-bold text-slate-800" id="a4StoreName">FRESHMART</h1>
+<p class="text-sm text-slate-500" id="a4Tagline">Your Trusted Shopping Partner</p>
+</div>
+</div>
+<div class="text-right">
+<span class="text-4xl font-bold text-emerald-600">INVOICE</span>
+<p class="text-sm text-slate-500 mt-2">Invoice: <span class="font-bold text-slate-700" id="a4InvNo">#INV-0001</span></p>
+<p class="text-sm text-slate-500">Date: <span class="font-semibold text-slate-700" id="a4Date">24 Dec 2024</span></p>
+<p class="text-sm text-slate-500">Due: <span class="font-semibold text-slate-700" id="a4DueDate">31 Dec 2024</span></p>
+</div>
+</div>
+<div class="flex justify-between text-xs text-slate-500 mb-6 pb-4 border-b border-slate-200">
+<p id="a4Address">123 Main Street, Dhanmondi, Dhaka-1205</p>
+<p id="a4Contact">Tel: +880 1711-111111 | Email: info@freshmart.com</p>
+</div>
+<div class="grid grid-cols-2 gap-8 mb-8">
+<div class="bg-slate-50 rounded-xl p-5">
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-2">Bill To</p>
+<p class="font-semibold text-slate-800 text-lg" id="a4CustName">Walk-in Customer</p>
+<p class="text-sm text-slate-500" id="a4CustPhone">+880 1XXX-XXXXXX</p>
+<p class="text-sm text-slate-500" id="a4CustAddress">Dhaka, Bangladesh</p>
+</div>
+<div class="bg-slate-50 rounded-xl p-5">
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-2">Payment Info</p>
+<p class="text-sm text-slate-600">Method: <span class="font-semibold" id="a4PayMethod">Cash</span></p>
+<p class="text-sm text-slate-600">Status: <span class="font-semibold text-emerald-600" id="a4PayStatus">Paid</span></p>
+<p class="text-sm text-slate-600">Cashier: <span class="font-semibold" id="a4Cashier">Rahim Ahmed</span></p>
+</div>
+</div>
+<table class="w-full mb-8">
+<thead><tr class="bg-slate-800 text-white text-xs uppercase">
+<th class="py-3 px-4 text-left rounded-tl-lg">#</th>
+<th class="py-3 px-4 text-left">Description</th>
+<th class="py-3 px-4 text-center">Qty</th>
+<th class="py-3 px-4 text-right">Price</th>
+<th class="py-3 px-4 text-center">Disc</th>
+<th class="py-3 px-4 text-right rounded-tr-lg">Total</th>
+</tr></thead>
+<tbody id="a4Items" class="text-sm"></tbody>
+</table>
+<div class="flex justify-between items-end">
+<div class="barcode text-4xl" id="a4Barcode">INV0001</div>
+<div class="w-80">
+<div class="flex justify-between py-2 text-sm border-b border-slate-100"><span class="text-slate-500">Subtotal:</span><span class="font-medium" id="a4Subtotal">৳0</span></div>
+<div class="flex justify-between py-2 text-sm border-b border-slate-100"><span class="text-slate-500">Discount:</span><span class="font-medium text-red-500" id="a4Discount">-৳0</span></div>
+<div class="flex justify-between py-2 text-sm border-b border-slate-100"><span class="text-slate-500">VAT (5%):</span><span class="font-medium" id="a4Vat">৳0</span></div>
+<div class="flex justify-between py-3 text-xl font-bold bg-emerald-50 px-3 rounded-lg mt-2"><span>Total:</span><span class="text-emerald-600" id="a4Total">৳0</span></div>
+<div class="flex justify-between py-2 text-sm mt-2"><span class="text-slate-500">Paid Amount:</span><span class="font-semibold" id="a4Paid">৳0</span></div>
+<div class="flex justify-between py-2 text-sm bg-amber-50 px-3 rounded-lg"><span class="text-amber-700">Change:</span><span class="font-bold text-amber-700" id="a4Change">৳0</span></div>
+</div>
+</div>
+<div class="mt-10 pt-6 border-t border-slate-200 text-center text-xs text-slate-400">
+<p id="a4Footer">Thank you for your business! Visit us again.</p>
+<p class="mt-1">This is a computer generated invoice. No signature required.</p>
+</div>
+</div>
+
+<!-- A5 Invoice -->
+<div id="a5Invoice" class="a5-invoice p-6 hidden">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div id="a5Logo" class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center text-lg font-bold text-emerald-600">FM</div>
+<div>
+<h1 class="text-xl font-bold text-slate-800" id="a5StoreName">FRESHMART</h1>
+<p class="text-[10px] text-slate-400" id="a5Address">123 Main Street, Dhaka | +880 1711-111111</p>
+</div>
+</div>
+<div class="text-right">
+<span class="text-2xl font-bold text-emerald-600">INVOICE</span>
+<p class="text-xs text-slate-500">#<span id="a5InvNo">INV-0001</span></p>
+<p class="text-xs text-slate-500" id="a5Date">24 Dec 2024</p>
+</div>
+</div>
+<div class="flex gap-4 mb-4">
+<div class="flex-1 bg-slate-50 rounded-lg p-3">
+<p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Bill To</p>
+<p class="font-semibold text-slate-700 text-sm" id="a5CustName">Walk-in Customer</p>
+<p class="text-xs text-slate-500" id="a5CustPhone">+880 1XXX-XXXXXX</p>
+</div>
+<div class="flex-1 bg-slate-50 rounded-lg p-3">
+<p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Payment</p>
+<p class="text-xs text-slate-600">Method: <span class="font-semibold" id="a5PayMethod">Cash</span></p>
+<p class="text-xs text-slate-600">Cashier: <span class="font-semibold" id="a5Cashier">Rahim</span></p>
+</div>
+</div>
+<table class="w-full mb-4 text-xs">
+<thead><tr class="bg-slate-700 text-white">
+<th class="py-2 px-2 text-left rounded-tl-lg">#</th>
+<th class="py-2 px-2 text-left">Item</th>
+<th class="py-2 px-2 text-center">Qty</th>
+<th class="py-2 px-2 text-right">Price</th>
+<th class="py-2 px-2 text-right rounded-tr-lg">Total</th>
+</tr></thead>
+<tbody id="a5Items"></tbody>
+</table>
+<div class="flex justify-between items-end">
+<div class="barcode text-3xl" id="a5Barcode">INV0001</div>
+<div class="w-44 text-xs">
+<div class="flex justify-between py-1 border-b border-slate-100"><span class="text-slate-500">Subtotal:</span><span id="a5Subtotal">৳0</span></div>
+<div class="flex justify-between py-1 border-b border-slate-100"><span class="text-slate-500">Discount:</span><span class="text-red-500" id="a5Discount">-৳0</span></div>
+<div class="flex justify-between py-1 border-b border-slate-100"><span class="text-slate-500">VAT:</span><span id="a5Vat">৳0</span></div>
+<div class="flex justify-between py-2 font-bold text-sm bg-emerald-50 px-2 rounded mt-1"><span>Total:</span><span class="text-emerald-600" id="a5Total">৳0</span></div>
+<div class="flex justify-between py-1 mt-1"><span class="text-slate-500">Paid:</span><span id="a5Paid">৳0</span></div>
+<div class="flex justify-between py-1 bg-amber-50 px-2 rounded"><span class="text-amber-700">Change:</span><span class="font-bold text-amber-700" id="a5Change">৳0</span></div>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t text-center text-[10px] text-slate-400">
+<p id="a5Footer">Thank you for shopping with us!</p>
+</div>
+</div>
+
+</div>
+</main>
+
+<!-- Setup Modal -->
+<div id="setupModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeSetup()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+<div class="sticky top-0 bg-white px-6 py-4 border-b flex items-center justify-between">
+<h3 class="text-lg font-bold text-slate-800">Invoice Setup</h3>
+<button onclick="closeSetup()" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+</button>
+</div>
+<div class="p-6 space-y-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase">Logo</label>
+<input type="file" id="setLogo" accept="image/*" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-emerald-50 file:text-emerald-600">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase">Store Name</label>
+<input type="text" id="setStoreName" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" value="FRESHMART">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase">Tagline</label>
+<input type="text" id="setTagline" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" value="Your Trusted Shopping Partner">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase">Address</label>
+<input type="text" id="setAddress" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" value="123 Main Street, Dhanmondi, Dhaka-1205">
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase">Phone</label>
+<input type="text" id="setPhone" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" value="+880 1711-111111">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase">VAT %</label>
+<input type="number" id="setVat" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" value="5">
+</div>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase">Email</label>
+<input type="text" id="setEmail" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" value="info@freshmart.com">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase">Footer Text</label>
+<input type="text" id="setFooter" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" value="Thank you for shopping!">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase">Cashier Name</label>
+<input type="text" id="setCashier" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" value="Rahim Ahmed">
+</div>
+</div>
+<div class="sticky bottom-0 bg-slate-50 px-6 py-4 border-t flex justify-end gap-3">
+<button onclick="closeSetup()" class="px-4 py-2 text-sm text-slate-600 bg-white border rounded-lg font-medium">Cancel</button>
+<button onclick="applySetup()" class="px-4 py-2 text-sm bg-emerald-500 text-white rounded-lg font-semibold">Apply</button>
+</div>
+</div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-16 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Saved</span>
+</div>
+
+<script>
+let currentFormat='pos';
+let logoData='';
+let settings={storeName:'FRESHMART',tagline:'Your Trusted Shopping Partner',address:'123 Main Street, Dhanmondi, Dhaka-1205',phone:'+880 1711-111111',email:'info@freshmart.com',vat:5,footer:'Thank you for shopping!',cashier:'Rahim Ahmed'};
+
+// Sample invoice data (would come from sale)
+let invoice={
+  invNo:'INV-0001',
+  date:'24 Dec 2024',
+  time:'10:30 AM',
+  dueDate:'31 Dec 2024',
+  customer:{name:'Walk-in Customer',phone:'+880 1XXX-XXXXXX',address:'Dhaka, Bangladesh'},
+  items:[
+    {name:'Organic Apples 🍎',qty:2,unit:'kg',price:250,discount:0},
+    {name:'Fresh Milk 🥛',qty:3,unit:'ltr',price:180,discount:5},
+    {name:'Whole Wheat Bread 🍞',qty:1,unit:'pcs',price:120,discount:0},
+    {name:'Chicken Breast 🍗',qty:1.5,unit:'kg',price:450,discount:10}
+  ],
+  subtotal:1380,discount:85,vat:65,total:1360,paid:1500,change:140,method:'Cash',status:'Paid'
+};
+
+const templates={
+  grocery:[{name:'Organic Apples 🍎',qty:2,unit:'kg',price:250,discount:0},{name:'Fresh Milk 🥛',qty:3,unit:'ltr',price:180,discount:5},{name:'Whole Wheat Bread 🍞',qty:1,unit:'pcs',price:120,discount:0}],
+  apparel:[{name:'Cotton T-Shirt 👕',qty:2,unit:'pcs',price:650,discount:10},{name:'Denim Jeans 👖',qty:1,unit:'pcs',price:1200,discount:0},{name:'Sports Socks 🧦',qty:3,unit:'pair',price:150,discount:0}],
+  electronics:[{name:'USB-C Cable 🔌',qty:2,unit:'pcs',price:350,discount:0},{name:'Wireless Earbuds 🎧',qty:1,unit:'pcs',price:2500,discount:15},{name:'Phone Case 📱',qty:1,unit:'pcs',price:450,discount:0}],
+  restaurant:[{name:'Chicken Biryani 🍛',qty:2,unit:'plate',price:320,discount:0},{name:'Soft Drink 🥤',qty:3,unit:'pcs',price:50,discount:0},{name:'Chocolate Cake 🍰',qty:1,unit:'slice',price:180,discount:0}],
+  pharmacy:[{name:'Paracetamol 500mg 💊',qty:2,unit:'strip',price:25,discount:0},{name:'Vitamin C 1000mg 🍊',qty:1,unit:'bottle',price:450,discount:10},{name:'First Aid Bandage 🩹',qty:1,unit:'pack',price:120,discount:0}]
+};
+
+function showToast(msg){document.getElementById('toast').style.display='flex';document.getElementById('toastMsg').textContent=msg;setTimeout(()=>document.getElementById('toast').style.display='none',2500);}
+
+function setFormat(f){
+  currentFormat=f;
+  ['pos','a4','a5'].forEach(x=>{
+    document.getElementById('btn'+x.toUpperCase()).className=x===f?'px-3 py-1.5 text-xs font-semibold rounded-md bg-white text-emerald-600 shadow-sm':'px-3 py-1.5 text-xs font-semibold rounded-md text-slate-500 hover:text-slate-700';
+    document.getElementById(x+'Invoice').classList.toggle('hidden',x!==f);
+  });
+}
+
+function changeBizType(){
+  const type=document.getElementById('bizType').value;
+  invoice.items=templates[type]||templates.grocery;
+  calculateInvoice();
+  renderInvoice();
+}
+
+function calculateInvoice(){
+  let subtotal=0,totalDisc=0;
+  invoice.items.forEach(it=>{
+    const itemTotal=it.qty*it.price;
+    const disc=itemTotal*it.discount/100;
+    subtotal+=itemTotal;
+    totalDisc+=disc;
+  });
+  const net=subtotal-totalDisc;
+  const vat=Math.round(net*settings.vat/100);
+  const total=net+vat;
+  invoice.subtotal=subtotal;
+  invoice.discount=totalDisc;
+  invoice.vat=vat;
+  invoice.total=total;
+  invoice.change=Math.max(0,invoice.paid-total);
+}
+
+function renderInvoice(){
+  const inv=invoice;
+  const barcodeText=inv.invNo.replace(/[^A-Z0-9]/gi,'');
+  
+  // POS
+  document.getElementById('posStoreName').textContent=settings.storeName;
+  document.getElementById('posTagline').textContent=settings.tagline;
+  document.getElementById('posAddress').textContent=settings.address;
+  document.getElementById('posPhone').textContent='Tel: '+settings.phone;
+  document.getElementById('posInvNo').textContent='#'+inv.invNo;
+  document.getElementById('posDate').textContent=inv.date;
+  document.getElementById('posTime').textContent=inv.time;
+  document.getElementById('posCashier').textContent=settings.cashier;
+  document.getElementById('posCustName').textContent=inv.customer.name;
+  document.getElementById('posItems').innerHTML=inv.items.map(it=>`<div class="flex justify-between"><span>${it.name} x${it.qty}${it.unit}</span><span>৳${(it.qty*it.price*(100-it.discount)/100).toFixed(0)}</span></div>`).join('');
+  document.getElementById('posSubtotal').textContent='৳'+inv.subtotal;
+  document.getElementById('posDiscount').textContent='-৳'+Math.round(inv.discount);
+  document.getElementById('posVat').textContent='৳'+inv.vat;
+  document.getElementById('posTotal').textContent='৳'+inv.total;
+  document.getElementById('posPaid').textContent='৳'+inv.paid;
+  document.getElementById('posChange').textContent='৳'+inv.change;
+  document.getElementById('posPayMethod').textContent=inv.method;
+  document.getElementById('posFooter').textContent=settings.footer;
+  document.getElementById('posBarcode').textContent=barcodeText;
+  document.getElementById('posBarcodeText').textContent=inv.invNo;
+  if(logoData)document.getElementById('posLogo').innerHTML=`<img src="${logoData}" class="h-10 mx-auto">`;
+  
+  // A4
+  document.getElementById('a4StoreName').textContent=settings.storeName;
+  document.getElementById('a4Tagline').textContent=settings.tagline;
+  document.getElementById('a4Address').textContent=settings.address;
+  document.getElementById('a4Contact').textContent='Tel: '+settings.phone+' | Email: '+settings.email;
+  document.getElementById('a4InvNo').textContent='#'+inv.invNo;
+  document.getElementById('a4Date').textContent=inv.date;
+  document.getElementById('a4DueDate').textContent=inv.dueDate;
+  document.getElementById('a4CustName').textContent=inv.customer.name;
+  document.getElementById('a4CustPhone').textContent=inv.customer.phone;
+  document.getElementById('a4CustAddress').textContent=inv.customer.address;
+  document.getElementById('a4Cashier').textContent=settings.cashier;
+  document.getElementById('a4PayMethod').textContent=inv.method;
+  document.getElementById('a4PayStatus').textContent=inv.status;
+  document.getElementById('a4Items').innerHTML=inv.items.map((it,i)=>{
+    const total=it.qty*it.price*(100-it.discount)/100;
+    return`<tr class="${i%2?'bg-slate-50':''}"><td class="py-3 px-4">${i+1}</td><td class="py-3 px-4 font-medium">${it.name}</td><td class="py-3 px-4 text-center">${it.qty} ${it.unit}</td><td class="py-3 px-4 text-right">৳${it.price}</td><td class="py-3 px-4 text-center">${it.discount?it.discount+'%':'-'}</td><td class="py-3 px-4 text-right font-semibold">৳${total.toFixed(0)}</td></tr>`;
+  }).join('');
+  document.getElementById('a4Subtotal').textContent='৳'+inv.subtotal;
+  document.getElementById('a4Discount').textContent='-৳'+Math.round(inv.discount);
+  document.getElementById('a4Vat').textContent='৳'+inv.vat;
+  document.getElementById('a4Total').textContent='৳'+inv.total;
+  document.getElementById('a4Paid').textContent='৳'+inv.paid;
+  document.getElementById('a4Change').textContent='৳'+inv.change;
+  document.getElementById('a4Footer').textContent=settings.footer;
+  document.getElementById('a4Barcode').textContent=barcodeText;
+  if(logoData)document.getElementById('a4Logo').innerHTML=`<img src="${logoData}" class="w-16 h-16 object-contain">`;
+  
+  // A5
+  document.getElementById('a5StoreName').textContent=settings.storeName;
+  document.getElementById('a5Address').textContent=settings.address+' | '+settings.phone;
+  document.getElementById('a5InvNo').textContent=inv.invNo;
+  document.getElementById('a5Date').textContent=inv.date;
+  document.getElementById('a5CustName').textContent=inv.customer.name;
+  document.getElementById('a5CustPhone').textContent=inv.customer.phone;
+  document.getElementById('a5Cashier').textContent=settings.cashier;
+  document.getElementById('a5PayMethod').textContent=inv.method;
+  document.getElementById('a5Items').innerHTML=inv.items.map((it,i)=>{
+    const total=it.qty*it.price*(100-it.discount)/100;
+    return`<tr class="${i%2?'bg-slate-50':''}"><td class="py-2 px-2">${i+1}</td><td class="py-2 px-2">${it.name}</td><td class="py-2 px-2 text-center">${it.qty}</td><td class="py-2 px-2 text-right">৳${it.price}</td><td class="py-2 px-2 text-right font-semibold">৳${total.toFixed(0)}</td></tr>`;
+  }).join('');
+  document.getElementById('a5Subtotal').textContent='৳'+inv.subtotal;
+  document.getElementById('a5Discount').textContent='-৳'+Math.round(inv.discount);
+  document.getElementById('a5Vat').textContent='৳'+inv.vat;
+  document.getElementById('a5Total').textContent='৳'+inv.total;
+  document.getElementById('a5Paid').textContent='৳'+inv.paid;
+  document.getElementById('a5Change').textContent='৳'+inv.change;
+  document.getElementById('a5Footer').textContent=settings.footer;
+  document.getElementById('a5Barcode').textContent=barcodeText;
+  if(logoData)document.getElementById('a5Logo').innerHTML=`<img src="${logoData}" class="w-12 h-12 object-contain">`;
+}
+
+function openSetup(){
+  document.getElementById('setStoreName').value=settings.storeName;
+  document.getElementById('setTagline').value=settings.tagline;
+  document.getElementById('setAddress').value=settings.address;
+  document.getElementById('setPhone').value=settings.phone;
+  document.getElementById('setEmail').value=settings.email;
+  document.getElementById('setVat').value=settings.vat;
+  document.getElementById('setFooter').value=settings.footer;
+  document.getElementById('setCashier').value=settings.cashier;
+  document.getElementById('setupModal').style.display='flex';
+}
+function closeSetup(){document.getElementById('setupModal').style.display='none';}
+
+function applySetup(){
+  settings.storeName=document.getElementById('setStoreName').value;
+  settings.tagline=document.getElementById('setTagline').value;
+  settings.address=document.getElementById('setAddress').value;
+  settings.phone=document.getElementById('setPhone').value;
+  settings.email=document.getElementById('setEmail').value;
+  settings.vat=+document.getElementById('setVat').value;
+  settings.footer=document.getElementById('setFooter').value;
+  settings.cashier=document.getElementById('setCashier').value;
+  const logoFile=document.getElementById('setLogo').files[0];
+  if(logoFile){
+    const reader=new FileReader();
+    reader.onload=e=>{logoData=e.target.result;calculateInvoice();renderInvoice();};
+    reader.readAsDataURL(logoFile);
+  }
+  closeSetup();
+  calculateInvoice();
+  renderInvoice();
+  showToast('Settings applied!');
+}
+
+function saveLocal(){
+  const data={settings,logoData,format:currentFormat};
+  localStorage.setItem('invoiceSetup',JSON.stringify(data));
+  showToast('Saved to local storage!');
+}
+
+function loadLocal(){
+  const saved=localStorage.getItem('invoiceSetup');
+  if(saved){
+    const data=JSON.parse(saved);
+    settings=data.settings||settings;
+    logoData=data.logoData||'';
+    if(data.format)setFormat(data.format);
+  }
+}
+
+function printInvoice(){window.print();}
+function generatePDF(){showToast('Opening print dialog for PDF...');window.print();}
+function downloadInvoice(){showToast('Opening print dialog...');window.print();}
+
+loadLocal();
+calculateInvoice();
+renderInvoice();
+</script>
+</body>
+</html>
