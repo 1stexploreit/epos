@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Service Delivery Invoice - FreshMart</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+body{background:#e5e7eb;padding:20px;color:#000;}
+.controls{width:210mm;margin:0 auto 15px;display:flex;gap:10px;flex-wrap:wrap;}
+.control-group{display:flex;gap:4px;padding:3px;background:#d1d5db;border-radius:6px;}
+.control-label{font-size:10px;color:#555;padding:8px 10px;font-weight:bold;}
+.controls button{padding:8px 14px;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;background:transparent;color:#374151;transition:all .2s;}
+.controls button.active{background:#1f2937;color:#fff;}
+.controls button:hover:not(.active){background:#9ca3af;}
+.controls .print-btn{margin-left:auto;background:#1f2937;color:#fff;padding:10px 20px;border-radius:6px;}
+
+.invoice{width:210mm;background:#fff;margin:0 auto;padding:15mm;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+
+/* A5 */
+.invoice.a5{width:148mm;padding:10mm;}
+.invoice.a5 .header h1{font-size:20px;}
+.invoice.a5 .header p{font-size:9px;}
+.invoice.a5 .inv-title{font-size:18px;}
+.invoice.a5 .inv-num{font-size:11px;}
+.invoice.a5 .info-box{padding:10px;}
+.invoice.a5 .info-box p{font-size:10px;}
+.invoice.a5 table th,.invoice.a5 table td{padding:8px;font-size:10px;}
+.invoice.a5 .total-row td{font-size:12px;}
+.invoice.a5 .notes{font-size:9px;padding:8px;}
+.invoice.a5 .sig-line{height:30px;}
+.invoice.a5 .sig-label{font-size:8px;}
+.invoice.a5 .footer p{font-size:8px;}
+
+/* 80mm POS */
+.invoice.pos80{width:80mm;padding:5mm;}
+.invoice.pos80 .header{flex-direction:column;text-align:center;padding-bottom:8px;margin-bottom:8px;}
+.invoice.pos80 .header h1{font-size:16px;}
+.invoice.pos80 .header p{font-size:8px;}
+.invoice.pos80 .header-right{text-align:center;margin-top:8px;}
+.invoice.pos80 .inv-title{font-size:12px;}
+.invoice.pos80 .inv-num{font-size:10px;}
+.invoice.pos80 .info-section{flex-direction:column;gap:8px;}
+.invoice.pos80 .info-box{padding:8px;}
+.invoice.pos80 .info-box p{font-size:9px;}
+.invoice.pos80 table th,.invoice.pos80 table td{padding:6px 4px;font-size:9px;}
+.invoice.pos80 .total-row td{font-size:11px;}
+.invoice.pos80 .notes{font-size:8px;padding:6px;}
+.invoice.pos80 .signatures{flex-direction:column;gap:15px;}
+.invoice.pos80 .sig-line{height:25px;}
+.invoice.pos80 .sig-label{font-size:7px;}
+.invoice.pos80 .footer p{font-size:7px;}
+
+/* 58mm POS */
+.invoice.pos58{width:58mm;padding:3mm;}
+.invoice.pos58 .header{flex-direction:column;text-align:center;padding-bottom:6px;margin-bottom:6px;}
+.invoice.pos58 .header h1{font-size:14px;}
+.invoice.pos58 .header p{font-size:7px;line-height:1.3;}
+.invoice.pos58 .header-right{text-align:center;margin-top:6px;}
+.invoice.pos58 .inv-title{font-size:11px;}
+.invoice.pos58 .inv-num{font-size:9px;}
+.invoice.pos58 .info-section{flex-direction:column;gap:6px;}
+.invoice.pos58 .info-box{padding:6px;}
+.invoice.pos58 .info-box p{font-size:8px;}
+.invoice.pos58 table th,.invoice.pos58 table td{padding:4px 2px;font-size:8px;}
+.invoice.pos58 .total-row td{font-size:10px;}
+.invoice.pos58 .notes{font-size:7px;padding:5px;}
+.invoice.pos58 .signatures{flex-direction:column;gap:10px;}
+.invoice.pos58 .sig-line{height:20px;}
+.invoice.pos58 .sig-label{font-size:6px;}
+.invoice.pos58 .footer p{font-size:6px;}
+
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:2px solid #000;margin-bottom:15px;}
+.header h1{font-size:24px;font-weight:bold;margin-bottom:3px;}
+.header p{font-size:10px;line-height:1.5;color:#444;}
+.header-right{text-align:right;}
+.inv-title{font-size:22px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+.inv-num{font-size:12px;font-weight:bold;}
+.inv-date{font-size:10px;color:#555;margin-top:3px;}
+
+.info-section{display:flex;gap:15px;margin-bottom:15px;}
+.info-box{flex:1;background:#f5f5f5;padding:12px;border-radius:4px;}
+.info-box .label{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+.info-box p{font-size:11px;margin:3px 0;}
+.info-box .name{font-weight:bold;font-size:13px;}
+
+table{width:100%;border-collapse:collapse;margin-bottom:15px;}
+table th{background:#000;color:#fff;padding:10px 8px;text-align:left;font-size:10px;text-transform:uppercase;}
+table th:last-child{text-align:right;}
+table td{padding:10px 8px;border-bottom:1px solid #ddd;font-size:11px;}
+table td:last-child{text-align:right;font-weight:bold;}
+.total-row td{background:#f5f5f5;font-weight:bold;font-size:13px;}
+.total-row td:last-child{font-size:16px;}
+.sub-row td{color:#555;font-size:10px;}
+.sub-row td:last-child{font-weight:normal;}
+
+.notes{background:#fffbeb;border:1px dashed #fbbf24;padding:10px;margin-bottom:15px;font-size:10px;border-radius:4px;}
+.notes .label{font-weight:bold;margin-bottom:5px;color:#92400e;}
+
+.signatures{display:flex;gap:50px;margin-bottom:15px;padding-top:10px;}
+.sig-box{flex:1;text-align:center;}
+.sig-line{border-bottom:1px solid #000;height:40px;margin-bottom:8px;}
+.sig-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#555;}
+
+.footer{text-align:center;padding-top:12px;border-top:1px dashed #ccc;}
+.footer p{font-size:9px;color:#555;margin:3px 0;}
+
+@media print{
+body{background:#fff;padding:0;}
+.invoice{box-shadow:none;}
+.controls{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="controls" id="controls">
+<div class="control-group">
+<span class="control-label">Paper:</span>
+<button class="active" onclick="setSize('a4')">A4</button>
+<button onclick="setSize('a5')">A5</button>
+<button onclick="setSize('pos80')">80mm</button>
+<button onclick="setSize('pos58')">58mm</button>
+</div>
+<button class="print-btn" onclick="window.print()">Print</button>
+</div>
+
+<div class="invoice" id="invoice">
+<div class="header">
+<div>
+<h1>FreshMart</h1>
+<p>123 Market Street, Dhaka<br>Tel: 01700-123456<br>Email: service@freshmart.com</p>
+</div>
+<div class="header-right">
+<div class="inv-title">Service Invoice</div>
+<div class="inv-num" id="invId">SRV-2025-0048</div>
+<div class="inv-date" id="invDate">December 26, 2025</div>
+</div>
+</div>
+
+<div class="info-section">
+<div class="info-box">
+<div class="label">Customer</div>
+<p class="name" id="custName">Mohammad Rafiq</p>
+<p id="custPhone">01712-345678</p>
+</div>
+<div class="info-box">
+<div class="label">Product</div>
+<p class="name" id="prodName">Samsung Galaxy A54</p>
+<p>Serial: <span id="prodSerial">R58T30ABCDE</span></p>
+</div>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Description</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td id="problemDesc">Display Issue - Display replacement with original part</td>
+<td id="serviceCharge">৳1,500</td>
+</tr>
+<tr class="sub-row">
+<td>Advance Paid (Cash)</td>
+<td id="advancePaid">- ৳500</td>
+</tr>
+</tbody>
+<tfoot>
+<tr class="total-row">
+<td>Amount Due</td>
+<td id="amountDue">৳1,000</td>
+</tr>
+</tfoot>
+</table>
+
+<div class="notes">
+<div class="label">Service Notes:</div>
+<p id="serviceNotes">Display replaced with original Samsung part. 30-day service warranty applicable. Please keep this invoice for warranty claims.</p>
+</div>
+
+<div class="signatures">
+<div class="sig-box">
+<div class="sig-line"></div>
+<div class="sig-label">Delivered By</div>
+</div>
+<div class="sig-box">
+<div class="sig-line"></div>
+<div class="sig-label">Customer Signature</div>
+</div>
+</div>
+
+<div class="footer">
+<p><strong>Thank you for choosing FreshMart Service Center!</strong></p>
+<p>For queries, call: 01700-123456 | service@freshmart.com</p>
+</div>
+</div>
+
+<script>
+function setSize(size){
+var inv=document.getElementById('invoice');
+var btns=document.querySelectorAll('.control-group button');
+var ctrl=document.getElementById('controls');
+btns.forEach(function(b){b.classList.remove('active');});
+event.target.classList.add('active');
+inv.className='invoice';
+if(size==='a5'){inv.classList.add('a5');ctrl.style.width='148mm';}
+else if(size==='pos80'){inv.classList.add('pos80');ctrl.style.width='80mm';}
+else if(size==='pos58'){inv.classList.add('pos58');ctrl.style.width='58mm';}
+else{ctrl.style.width='210mm';}
+}
+
+// Parse URL params to fill invoice
+function loadData(){
+var params=new URLSearchParams(window.location.search);
+if(params.get('id'))document.getElementById('invId').textContent=params.get('id');
+if(params.get('date'))document.getElementById('invDate').textContent=params.get('date');
+if(params.get('custName'))document.getElementById('custName').textContent=params.get('custName');
+if(params.get('custPhone'))document.getElementById('custPhone').textContent=params.get('custPhone');
+if(params.get('prodName'))document.getElementById('prodName').textContent=params.get('prodName');
+if(params.get('prodSerial'))document.getElementById('prodSerial').textContent=params.get('prodSerial');
+if(params.get('problem'))document.getElementById('problemDesc').textContent=params.get('problem');
+if(params.get('charge'))document.getElementById('serviceCharge').textContent='৳'+parseInt(params.get('charge')).toLocaleString();
+if(params.get('advance'))document.getElementById('advancePaid').textContent='- ৳'+parseInt(params.get('advance')).toLocaleString();
+if(params.get('due'))document.getElementById('amountDue').textContent='৳'+parseInt(params.get('due')).toLocaleString();
+if(params.get('notes'))document.getElementById('serviceNotes').textContent=params.get('notes');
+}
+loadData();
+</script>
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Transfer - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+.item-row{animation:slideIn 0.15s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Header -->
+<div class="bg-white border-b border-slate-200">
+<div class="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-slate-800 font-semibold">Product Transfer</h1>
+<p class="text-xs text-slate-400">Transfer products between branches</p>
+</div>
+<div class="flex items-center gap-3">
+<a href="#" onclick="openTransferLog()" class="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+Transfer Log
+</a>
+</div>
+</div>
+</div>
+
+<main class="max-w-5xl mx-auto px-6 py-5 space-y-4">
+
+<!-- Branch Selection -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<div class="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
+<div class="md:col-span-3">
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">From Branch <span class="text-red-400">*</span></label>
+<select id="fromBranch" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" onchange="updateFromStock()">
+<option value="">Select source branch</option>
+<option value="main">Main Branch</option>
+<option value="dhanmondi">Dhanmondi Branch</option>
+<option value="uttara">Uttara Branch</option>
+<option value="mirpur">Mirpur Branch</option>
+</select>
+</div>
+<div class="md:col-span-1 flex justify-center">
+<div class="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center">
+<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+</div>
+</div>
+<div class="md:col-span-3">
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">To Branch <span class="text-red-400">*</span></label>
+<select id="toBranch" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm">
+<option value="">Select destination branch</option>
+<option value="main">Main Branch</option>
+<option value="dhanmondi">Dhanmondi Branch</option>
+<option value="uttara">Uttara Branch</option>
+<option value="mirpur">Mirpur Branch</option>
+</select>
+</div>
+</div>
+</div>
+
+<!-- Search & Scan -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<div class="flex flex-col md:flex-row gap-3">
+<div class="flex-1 relative">
+<svg class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<input type="text" id="searchInput" class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="Search by product name..." oninput="searchProducts()">
+</div>
+<div class="flex gap-2">
+<div class="relative flex-1 md:w-48">
+<svg class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 12h2m10 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+<input type="text" id="barcodeInput" class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="Scan barcode..." onkeypress="handleBarcode(event)">
+</div>
+<button onclick="openScanner()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-600 flex items-center gap-2">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9V5a2 2 0 012-2h4M3 15v4a2 2 0 002 2h4m8-18h4a2 2 0 012 2v4m0 6v4a2 2 0 01-2 2h-4"/></svg>
+Scan
+</button>
+</div>
+</div>
+
+<!-- Search Results Dropdown -->
+<div id="searchResults" class="mt-2 border border-slate-200 rounded-lg max-h-48 overflow-y-auto" style="display:none">
+<div id="searchResultsList"></div>
+</div>
+</div>
+
+<!-- Transfer Items -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+<h3 class="text-sm font-semibold text-slate-800">Transfer Items</h3>
+<span class="text-xs text-slate-500"><span id="itemCount" class="font-bold text-emerald-600">0</span> items added</span>
+</div>
+
+<!-- Table Header -->
+<div class="grid grid-cols-12 gap-2 px-5 py-2 bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+<div class="col-span-1">Icon</div>
+<div class="col-span-2">SKU</div>
+<div class="col-span-3">Product Name</div>
+<div class="col-span-2 text-center">Available</div>
+<div class="col-span-2 text-center">Transfer Qty</div>
+<div class="col-span-2 text-right">Action</div>
+</div>
+
+<!-- Items List -->
+<div id="transferItems" class="divide-y divide-slate-100 max-h-64 overflow-y-auto">
+<div id="emptyState" class="p-8 text-center">
+<div class="w-14 h-14 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-3">
+<svg class="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+</div>
+<p class="text-sm text-slate-500">No products added</p>
+<p class="text-xs text-slate-400 mt-1">Search or scan barcode to add products</p>
+</div>
+</div>
+</div>
+
+<!-- Transfer Details -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Transfer Date</label>
+<input type="date" id="transferDate" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Reason</label>
+<input type="text" id="reason" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="e.g., Stock rebalancing">
+</div>
+</div>
+<div class="mt-4">
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Note</label>
+<textarea id="note" rows="2" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm resize-none" placeholder="Optional note..."></textarea>
+</div>
+</div>
+
+<!-- Action Buttons -->
+<div class="flex items-center justify-between bg-white rounded-xl shadow-sm border border-slate-200/80 p-4">
+<button onclick="resetForm()" class="px-5 py-2.5 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Reset</button>
+<div class="flex gap-3">
+<button onclick="saveDraft()" class="px-5 py-2.5 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Save Draft</button>
+<button onclick="submitTransfer()" class="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/20">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+Submit Transfer
+</button>
+</div>
+</div>
+
+</main>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Success</span>
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeConfirmModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+<h3 class="text-lg font-semibold text-slate-800 mb-4">Confirm Transfer</h3>
+<div class="bg-slate-50 rounded-lg p-4 mb-4 space-y-2 text-sm">
+<div class="flex justify-between"><span class="text-slate-500">From:</span><span class="font-medium text-slate-700" id="confirmFrom">—</span></div>
+<div class="flex justify-between"><span class="text-slate-500">To:</span><span class="font-medium text-slate-700" id="confirmTo">—</span></div>
+<div class="flex justify-between"><span class="text-slate-500">Total Items:</span><span class="font-bold text-emerald-600" id="confirmItems">0</span></div>
+<div class="flex justify-between"><span class="text-slate-500">Total Qty:</span><span class="font-bold text-slate-800" id="confirmQty">0</span></div>
+</div>
+<div class="flex gap-3">
+<button onclick="closeConfirmModal()" class="flex-1 px-4 py-2.5 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Cancel</button>
+<button onclick="confirmTransfer()" class="flex-1 px-4 py-2.5 text-sm bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium">Confirm</button>
+</div>
+</div>
+</div>
+
+<script>
+const products=[
+{id:1,sku:'SKU001',name:'Fresh Apple',emoji:'🍎',stock:{main:150,dhanmondi:80,uttara:45,mirpur:60}},
+{id:2,sku:'SKU002',name:'Banana Bunch',emoji:'🍌',stock:{main:200,dhanmondi:120,uttara:90,mirpur:75}},
+{id:3,sku:'SKU003',name:'Orange Fresh',emoji:'🍊',stock:{main:100,dhanmondi:65,uttara:40,mirpur:55}},
+{id:4,sku:'SKU004',name:'Milk 1L Pack',emoji:'🥛',stock:{main:300,dhanmondi:150,uttara:100,mirpur:120}},
+{id:5,sku:'SKU005',name:'Whole Wheat Bread',emoji:'🍞',stock:{main:80,dhanmondi:45,uttara:30,mirpur:40}},
+{id:6,sku:'SKU006',name:'Eggs (12 pcs)',emoji:'🥚',stock:{main:250,dhanmondi:130,uttara:85,mirpur:95}},
+{id:7,sku:'SKU007',name:'Chicken Breast',emoji:'🍗',stock:{main:120,dhanmondi:70,uttara:50,mirpur:60}},
+{id:8,sku:'SKU008',name:'Rice 5kg Bag',emoji:'🍚',stock:{main:180,dhanmondi:90,uttara:65,mirpur:80}},
+{id:9,sku:'SKU009',name:'Coca Cola 500ml',emoji:'🥤',stock:{main:400,dhanmondi:200,uttara:150,mirpur:180}},
+{id:10,sku:'SKU010',name:'Potato Chips',emoji:'🍿',stock:{main:220,dhanmondi:110,uttara:80,mirpur:95}},
+];
+
+let transferItems=[];
+
+function showToast(msg){
+const t=document.getElementById('toast');
+document.getElementById('toastMsg').textContent=msg;
+t.style.display='flex';
+setTimeout(()=>t.style.display='none',3000);
+}
+
+
+
+function searchProducts(){
+const query=document.getElementById('searchInput').value.toLowerCase().trim();
+const resultsDiv=document.getElementById('searchResults');
+const listDiv=document.getElementById('searchResultsList');
+const fromBranch=document.getElementById('fromBranch').value;
+
+if(!query){resultsDiv.style.display='none';return;}
+if(!fromBranch){showToast('Select source branch first');return;}
+
+const filtered=products.filter(p=>p.name.toLowerCase().includes(query)||p.sku.toLowerCase().includes(query));
+
+if(filtered.length){
+listDiv.innerHTML=filtered.map(p=>{
+const stock=p.stock[fromBranch]||0;
+const added=transferItems.find(i=>i.id===p.id);
+return`<div class="flex items-center justify-between p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0" onclick="addProduct(${p.id})">
+<div class="flex items-center gap-3">
+<span class="text-xl">${p.emoji}</span>
+<div>
+<p class="text-sm font-medium text-slate-700">${p.name}</p>
+<p class="text-xs text-slate-400">${p.sku}</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold ${stock>0?'text-emerald-600':'text-red-500'}">${stock} pcs</p>
+${added?'<span class="text-[10px] text-amber-500 font-medium">Added</span>':''}
+</div>
+</div>`;
+}).join('');
+resultsDiv.style.display='block';
+}else{
+listDiv.innerHTML='<p class="p-4 text-sm text-slate-400 text-center">No products found</p>';
+resultsDiv.style.display='block';
+}
+}
+
+function handleBarcode(e){
+if(e.key==='Enter'){
+const barcode=document.getElementById('barcodeInput').value.trim().toUpperCase();
+const product=products.find(p=>p.sku.toUpperCase()===barcode);
+if(product){
+addProduct(product.id);
+document.getElementById('barcodeInput').value='';
+}else{
+showToast('Product not found');
+}
+}
+}
+
+function addProduct(id){
+const fromBranch=document.getElementById('fromBranch').value;
+if(!fromBranch){showToast('Select source branch first');return;}
+
+const product=products.find(p=>p.id===id);
+if(!product)return;
+
+const existing=transferItems.find(i=>i.id===id);
+if(existing){
+showToast('Product already added');
+return;
+}
+
+const stock=product.stock[fromBranch]||0;
+if(stock<=0){
+showToast('No stock available');
+return;
+}
+
+transferItems.push({
+id:product.id,
+sku:product.sku,
+name:product.name,
+emoji:product.emoji,
+available:stock,
+qty:1
+});
+
+document.getElementById('searchInput').value='';
+document.getElementById('searchResults').style.display='none';
+renderTransferItems();
+showToast('Product added');
+}
+
+function renderTransferItems(){
+const container=document.getElementById('transferItems');
+const emptyState=document.getElementById('emptyState');
+
+if(!transferItems.length){
+container.innerHTML='';
+container.appendChild(emptyState.cloneNode(true));
+document.getElementById('itemCount').textContent='0';
+return;
+}
+
+container.innerHTML=transferItems.map((item,idx)=>`
+<div class="item-row grid grid-cols-12 gap-2 px-5 py-3 items-center">
+<div class="col-span-1">
+<span class="text-xl">${item.emoji}</span>
+</div>
+<div class="col-span-2">
+<span class="text-xs font-mono text-slate-500">${item.sku}</span>
+</div>
+<div class="col-span-3">
+<span class="text-sm font-medium text-slate-700">${item.name}</span>
+</div>
+<div class="col-span-2 text-center">
+<span class="text-sm font-bold text-emerald-600">${item.available}</span>
+<span class="text-xs text-slate-400 ml-1">pcs</span>
+</div>
+<div class="col-span-2 flex items-center justify-center gap-1">
+<button onclick="updateQty(${idx},-1)" class="w-7 h-7 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-bold">−</button>
+<input type="number" value="${item.qty}" min="1" max="${item.available}" onchange="setQty(${idx},this.value)" class="w-14 text-center py-1 border border-slate-200 rounded text-sm font-medium">
+<button onclick="updateQty(${idx},1)" class="w-7 h-7 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-bold">+</button>
+</div>
+<div class="col-span-2 text-right">
+<button onclick="removeItem(${idx})" class="p-2 text-red-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+</button>
+</div>
+</div>
+`).join('');
+
+document.getElementById('itemCount').textContent=transferItems.length;
+}
+
+function updateQty(idx,delta){
+const item=transferItems[idx];
+const newQty=item.qty+delta;
+if(newQty>=1&&newQty<=item.available){
+item.qty=newQty;
+renderTransferItems();
+}
+}
+
+function setQty(idx,val){
+const item=transferItems[idx];
+const newQty=parseInt(val)||1;
+item.qty=Math.max(1,Math.min(newQty,item.available));
+renderTransferItems();
+}
+
+function removeItem(idx){
+transferItems.splice(idx,1);
+renderTransferItems();
+showToast('Item removed');
+}
+
+function updateFromStock(){
+const fromBranch=document.getElementById('fromBranch').value;
+transferItems.forEach(item=>{
+const product=products.find(p=>p.id===item.id);
+if(product){
+item.available=product.stock[fromBranch]||0;
+if(item.qty>item.available)item.qty=item.available||1;
+}
+});
+renderTransferItems();
+}
+
+function resetForm(){
+document.getElementById('fromBranch').value='';
+document.getElementById('toBranch').value='';
+document.getElementById('reason').value='';
+document.getElementById('note').value='';
+transferItems=[];
+renderTransferItems();
+showToast('Form reset');
+}
+
+function saveDraft(){
+if(!transferItems.length){alert('Add at least one product');return;}
+showToast('Draft saved');
+}
+
+function submitTransfer(){
+const from=document.getElementById('fromBranch').value;
+const to=document.getElementById('toBranch').value;
+
+if(!from||!to){alert('Select both branches');return;}
+if(from===to){alert('Source and destination cannot be same');return;}
+if(!transferItems.length){alert('Add at least one product');return;}
+
+const fromText=document.getElementById('fromBranch').options[document.getElementById('fromBranch').selectedIndex].text;
+const toText=document.getElementById('toBranch').options[document.getElementById('toBranch').selectedIndex].text;
+const totalQty=transferItems.reduce((sum,i)=>sum+i.qty,0);
+
+document.getElementById('confirmFrom').textContent=fromText;
+document.getElementById('confirmTo').textContent=toText;
+document.getElementById('confirmItems').textContent=transferItems.length;
+document.getElementById('confirmQty').textContent=totalQty+' pcs';
+
+document.getElementById('confirmModal').style.display='flex';
+}
+
+function closeConfirmModal(){
+document.getElementById('confirmModal').style.display='none';
+}
+
+function confirmTransfer(){
+closeConfirmModal();
+showToast('Transfer submitted successfully!');
+resetForm();
+}
+
+function openTransferLog(){showToast('Opening transfer log...');}
+function openScanner(){showToast('Scanner opening...');}
+
+// Init
+document.getElementById('transferDate').valueAsDate=new Date();
+</script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction Voucher - FreshMart</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+    body{background:#e5e7eb;padding:20px;color:#000;}
+    
+    .controls{width:210mm;margin:0 auto 15px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .control-group{display:flex;gap:4px;padding:3px;background:#d1d5db;border-radius:6px;}
+    .control-label{font-size:10px;color:#555;padding:8px 10px;font-weight:bold;}
+    .controls button{padding:8px 14px;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;background:transparent;color:#374151;transition:all .2s;}
+    .controls button.active{background:#1f2937;color:#fff;}
+    .controls button:hover:not(.active){background:#9ca3af;}
+    .controls .print-btn{margin-left:auto;background:#1f2937;color:#fff;padding:10px 20px;border-radius:6px;}
+    .type-receive{background:#059669!important;color:#fff!important;}
+    .type-payment{background:#dc2626!important;color:#fff!important;}
+    
+    .voucher{width:210mm;background:#fff;margin:0 auto;padding:15mm;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+    
+    /* A5 */
+    .voucher.a5{width:148mm;padding:10mm;}
+    .voucher.a5 .header h1{font-size:20px;}
+    .voucher.a5 .header p{font-size:10px;}
+    .voucher.a5 .voucher-title{font-size:18px;padding:8px 16px;}
+    .voucher.a5 .voucher-num{font-size:11px;}
+    .voucher.a5 .info-row{font-size:11px;margin-bottom:6px;}
+    .voucher.a5 .amount-box{padding:15px 20px;}
+    .voucher.a5 .amount-box .amount{font-size:28px;}
+    .voucher.a5 .amount-words{font-size:11px;}
+    .voucher.a5 .details-row{font-size:11px;padding:8px 0;}
+    .voucher.a5 .signatures{gap:30px;}
+    .voucher.a5 .sig-line{height:35px;}
+    .voucher.a5 .sig-label{font-size:9px;}
+    .voucher.a5 .footer{font-size:9px;}
+    
+    /* 80mm POS */
+    .voucher.pos80{width:80mm;padding:5mm;}
+    .voucher.pos80 .header{padding-bottom:8px;margin-bottom:8px;text-align:center;flex-direction:column;align-items:center;}
+    .voucher.pos80 .company-info{text-align:center;}
+    .voucher.pos80 .company-info h1{font-size:16px;}
+    .voucher.pos80 .company-info p{font-size:9px;}
+    .voucher.pos80 .header-right{text-align:center;margin-top:8px;}
+    .voucher.pos80 .voucher-title{font-size:12px;padding:6px 12px;}
+    .voucher.pos80 .voucher-num{font-size:10px;}
+    .voucher.pos80 .info-section{margin-bottom:8px;}
+    .voucher.pos80 .info-row{font-size:10px;margin-bottom:4px;}
+    .voucher.pos80 .info-row .label{width:auto;min-width:70px;}
+    .voucher.pos80 .amount-box{padding:10px;margin-bottom:8px;}
+    .voucher.pos80 .amount-box .label{font-size:9px;}
+    .voucher.pos80 .amount-box .amount{font-size:22px;}
+    .voucher.pos80 .amount-words{font-size:9px;padding:6px 0;}
+    .voucher.pos80 .details-section{margin-bottom:8px;padding-bottom:8px;}
+    .voucher.pos80 .details-row{font-size:9px;padding:5px 0;}
+    .voucher.pos80 .details-row .label{min-width:80px;}
+    .voucher.pos80 .signatures{gap:15px;margin-bottom:10px;}
+    .voucher.pos80 .sig-line{height:28px;}
+    .voucher.pos80 .sig-label{font-size:8px;}
+    .voucher.pos80 .footer p{font-size:8px;}
+    
+    /* 58mm POS */
+    .voucher.pos58{width:58mm;padding:3mm;}
+    .voucher.pos58 .header{padding-bottom:6px;margin-bottom:6px;text-align:center;flex-direction:column;align-items:center;}
+    .voucher.pos58 .company-info{text-align:center;}
+    .voucher.pos58 .company-info h1{font-size:14px;}
+    .voucher.pos58 .company-info p{font-size:8px;line-height:1.3;}
+    .voucher.pos58 .header-right{text-align:center;margin-top:6px;}
+    .voucher.pos58 .voucher-title{font-size:11px;padding:5px 10px;}
+    .voucher.pos58 .voucher-num{font-size:9px;}
+    .voucher.pos58 .info-section{margin-bottom:6px;}
+    .voucher.pos58 .info-row{font-size:8px;margin-bottom:3px;}
+    .voucher.pos58 .info-row .label{width:auto;min-width:55px;}
+    .voucher.pos58 .amount-box{padding:8px;}
+    .voucher.pos58 .amount-box .label{font-size:8px;}
+    .voucher.pos58 .amount-box .amount{font-size:18px;}
+    .voucher.pos58 .amount-words{font-size:8px;padding:5px 0;}
+    .voucher.pos58 .details-section{margin-bottom:6px;padding-bottom:6px;}
+    .voucher.pos58 .details-row{font-size:8px;padding:4px 0;}
+    .voucher.pos58 .details-row .label{min-width:60px;}
+    .voucher.pos58 .signatures{gap:10px;margin-bottom:8px;}
+    .voucher.pos58 .sig-line{height:22px;}
+    .voucher.pos58 .sig-label{font-size:7px;}
+    .voucher.pos58 .footer p{font-size:7px;}
+    
+    .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:2px solid #000;margin-bottom:15px;}
+    .company-info h1{font-size:24px;font-weight:bold;margin-bottom:3px;}
+    .company-info p{font-size:11px;line-height:1.6;color:#444;}
+    .header-right{text-align:right;}
+    .voucher-title{display:inline-block;font-size:20px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:10px 20px;border-radius:4px;}
+    .voucher-title.receive{background:#d1fae5;color:#065f46;border:2px solid #059669;}
+    .voucher-title.payment{background:#fee2e2;color:#991b1b;border:2px solid #dc2626;}
+    .voucher-num{font-size:12px;color:#555;}
+    
+    .info-section{margin-bottom:15px;padding:12px;background:#f9fafb;border-radius:6px;}
+    .info-row{display:flex;font-size:12px;margin-bottom:8px;}
+    .info-row:last-child{margin-bottom:0;}
+    .info-row .label{width:120px;color:#555;font-weight:500;}
+    .info-row .value{font-weight:bold;flex:1;}
+    
+    .amount-section{margin-bottom:15px;}
+    .amount-box{padding:20px 25px;text-align:center;margin-bottom:10px;border-radius:6px;}
+    .amount-box.receive{background:#ecfdf5;border:2px solid #10b981;}
+    .amount-box.payment{background:#fef2f2;border:2px solid #ef4444;}
+    .amount-box .label{font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;color:#555;}
+    .amount-box .amount{font-size:36px;font-weight:bold;}
+    .amount-box.receive .amount{color:#059669;}
+    .amount-box.payment .amount{color:#dc2626;}
+    .amount-words{font-size:12px;padding:10px 0;border-bottom:1px dotted #999;text-align:center;}
+    .amount-words span{font-weight:bold;}
+    
+    .details-section{margin-bottom:15px;padding-bottom:10px;border-bottom:1px dotted #999;}
+    .section-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:10px;font-weight:bold;}
+    .details-row{display:flex;font-size:12px;padding:10px 0;border-bottom:1px dotted #eee;}
+    .details-row:last-child{border-bottom:none;}
+    .details-row .label{width:120px;color:#555;}
+    .details-row .value{font-weight:600;flex:1;}
+    .details-row .value.mono{font-family:monospace;}
+    
+    .note-section{background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:12px;margin-bottom:15px;}
+    .note-section .note-title{font-size:10px;text-transform:uppercase;color:#92400e;font-weight:bold;margin-bottom:5px;}
+    .note-section .note-text{font-size:11px;color:#78350f;}
+    
+    .signatures{display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-bottom:15px;padding-top:10px;}
+    .sig-box{text-align:center;}
+    .sig-line{border-bottom:1px solid #000;height:40px;margin-bottom:8px;}
+    .sig-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#555;}
+    
+    .footer{text-align:center;padding-top:12px;border-top:1px dashed #ccc;}
+    .footer p{font-size:10px;margin-bottom:3px;color:#555;}
+    .print-time{font-size:9px;color:#999;margin-top:8px;}
+    
+    @media print{
+      body{background:#fff;padding:0;}
+      .voucher{box-shadow:none;}
+      .controls{display:none;}
+    }
+  </style>
+</head>
+<body>
+  <div class="controls" id="controls">
+    <div class="control-group">
+      <span class="control-label">Type:</span>
+      <button class="active type-receive" onclick="setType('receive')">↓ Receive</button>
+      <button onclick="setType('payment')">↑ Payment</button>
+    </div>
+    <div class="control-group">
+      <span class="control-label">Paper:</span>
+      <button class="active" onclick="setSize('a4')">A4</button>
+      <button onclick="setSize('a5')">A5</button>
+      <button onclick="setSize('pos80')">80mm</button>
+      <button onclick="setSize('pos58')">58mm</button>
+    </div>
+    <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+  </div>
+
+  <div class="voucher" id="voucher">
+    <div class="header">
+      <div class="company-info">
+        <h1>FreshMart</h1>
+        <p>123 Market Street, Dhaka<br>Tel: 01XXX-XXXXXX</p>
+      </div>
+      <div class="header-right">
+        <div class="voucher-title receive" id="voucherTitle">Receive Voucher</div>
+        <div class="voucher-num">No: <span id="voucherNo">RV-2025-0001</span></div>
+      </div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-row"><span class="label">Date:</span><span class="value" id="txnDate">25 Jan 2025</span></div>
+      <div class="info-row"><span class="label">Branch:</span><span class="value" id="txnBranch">Main Branch</span></div>
+      <div class="info-row"><span class="label">Category:</span><span class="value" id="txnCategory">Loan</span></div>
+      <div class="info-row"><span class="label">Sub Category:</span><span class="value" id="txnSubCat">Bank Loan Received</span></div>
+    </div>
+    
+    <div class="amount-section">
+      <div class="amount-box receive" id="amountBox">
+        <div class="label" id="amountLabel">Amount Received</div>
+        <div class="amount" id="txnAmount">৳5,00,000</div>
+      </div>
+      <div class="amount-words">
+        <span>In Words:</span> <span id="amountWords">Five Lakh Taka Only</span>
+      </div>
+    </div>
+    
+    <div class="details-section">
+      <div class="section-title">Transaction Details</div>
+      <div class="details-row"><span class="label">Method:</span><span class="value" id="txnMethod">Bank Transfer</span></div>
+      <div class="details-row"><span class="label">Reference/TrxID:</span><span class="value mono" id="txnRef">LN-001/TXN789</span></div>
+      <div class="details-row"><span class="label">Profit Related:</span><span class="value" id="txnProfit">No</span></div>
+    </div>
+    
+    <div class="note-section" id="noteSection">
+      <div class="note-title">Description / Remarks</div>
+      <div class="note-text" id="txnDesc">Business loan from Sonali Bank for inventory expansion</div>
+    </div>
+    
+    <div class="signatures">
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label" id="sigLabel1">Received By</div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label">Authorized Signature</div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>Thank you for your transaction!</p>
+      <p class="print-time" id="printTime"></p>
+    </div>
+  </div>
+
+  <script>
+    var currentType = 'receive';
+    var currentSize = 'a4';
+    
+    function setType(type) {
+      currentType = type;
+      var buttons = document.querySelectorAll('.control-group:first-child button');
+      buttons.forEach(function(btn) {
+        btn.classList.remove('active', 'type-receive', 'type-payment');
+      });
+      if (type === 'receive') {
+        buttons[0].classList.add('active', 'type-receive');
+      } else {
+        buttons[1].classList.add('active', 'type-payment');
+      }
+      updateVoucher();
+    }
+    
+    function setSize(size) {
+      currentSize = size;
+      var voucher = document.getElementById('voucher');
+      var buttons = document.querySelectorAll('.control-group:nth-child(2) button');
+      var controls = document.getElementById('controls');
+      
+      buttons.forEach(function(btn) { btn.classList.remove('active'); });
+      event.target.classList.add('active');
+      
+      voucher.className = 'voucher';
+      
+      if (size === 'a5') {
+        voucher.classList.add('a5');
+        controls.style.width = '148mm';
+      } else if (size === 'pos80') {
+        voucher.classList.add('pos80');
+        controls.style.width = '80mm';
+      } else if (size === 'pos58') {
+        voucher.classList.add('pos58');
+        controls.style.width = '58mm';
+      } else {
+        controls.style.width = '210mm';
+      }
+    }
+    
+    function updateVoucher() {
+      var title = document.getElementById('voucherTitle');
+      var amountBox = document.getElementById('amountBox');
+      var amountLabel = document.getElementById('amountLabel');
+      var voucherNo = document.getElementById('voucherNo');
+      var sigLabel = document.getElementById('sigLabel1');
+      
+      if (currentType === 'receive') {
+        title.className = 'voucher-title receive';
+        title.textContent = 'Receive Voucher';
+        amountBox.className = 'amount-box receive';
+        amountLabel.textContent = 'Amount Received';
+        voucherNo.textContent = 'RV-2025-0001';
+        sigLabel.textContent = 'Received By';
+      } else {
+        title.className = 'voucher-title payment';
+        title.textContent = 'Payment Voucher';
+        amountBox.className = 'amount-box payment';
+        amountLabel.textContent = 'Amount Paid';
+        voucherNo.textContent = 'PV-2025-0001';
+        sigLabel.textContent = 'Paid By';
+      }
+    }
+    
+    function updatePrintTime() {
+      var now = new Date();
+      document.getElementById('printTime').textContent = 'Printed: ' + now.toLocaleString('en-GB');
+    }
+    
+    updatePrintTime();
+    setInterval(updatePrintTime, 60000);
+  </script>
+</body>
+</html>

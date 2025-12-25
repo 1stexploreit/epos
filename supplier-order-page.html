@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Supplier Order - FreshMart POS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    *{font-family:'Inter',sans-serif;box-sizing:border-box;}
+    body{background:#f8fafc;min-height:100vh;padding-bottom:90px;}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+    .input-light{background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b;border-radius:10px;}
+    .input-light:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1);}
+    .btn-primary{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;font-weight:600;}
+    .btn-primary:hover{background:linear-gradient(135deg,#34d399 0%,#10b981 100%);}
+    .modal{display:none;}.modal.active{display:flex;}
+    .item-row{animation:fadeIn .25s ease;}
+    @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+    .tag{font-size:10px;padding:4px 8px;border-radius:6px;font-weight:600;text-transform:uppercase;}
+    ::-webkit-scrollbar{width:6px;height:6px;}
+    ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px;}
+    .brand-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:500;}
+    .brand-chip.selected{background:#d1fae5;border-color:#10b981;color:#059669;}
+  </style>
+</head>
+<body class="text-slate-700">
+
+<!-- Header -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+  <div class="max-w-[1400px] mx-auto px-4 py-3">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <button onclick="window.history.back()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="tag bg-blue-100 text-blue-700">Supplier Order</span>
+            <span id="orderNum" class="text-xl font-bold text-slate-800">SO-0001</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">Create order sheet for supplier</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <select id="orderStatus" class="input-light px-3 py-2 text-sm">
+          <option value="order">📋 Order</option>
+          <option value="confirmed">✅ Confirmed</option>
+          <option value="cancelled">❌ Cancelled</option>
+        </select>
+        <button onclick="saveOrder()" class="btn-primary px-5 py-2.5 rounded-xl text-sm hidden md:flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Save Order
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1400px] mx-auto p-4 md:p-6">
+
+  <!-- Supplier & Brand Selection -->
+  <div class="card p-5 mb-6">
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+      <div class="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center">
+        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      </div>
+      <div>
+        <h2 class="font-semibold text-slate-800">Supplier & Brand Information</h2>
+        <p class="text-xs text-slate-400">Select supplier, brands and order details</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+      <!-- Supplier -->
+      <div class="md:col-span-2 relative">
+        <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Supplier *</label>
+        <input type="text" id="supplierSearch" class="w-full input-light px-4 py-2.5 text-sm" placeholder="Search supplier..." oninput="searchSuppliers()" onfocus="showSupplierDropdown()">
+        <div id="supplierDropdown" class="hidden absolute top-full left-0 right-0 mt-1 card shadow-xl z-30 max-h-48 overflow-y-auto"></div>
+      </div>
+      <div>
+        <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Order Date</label>
+        <input type="date" id="orderDate" class="w-full input-light px-3 py-2.5 text-sm">
+      </div>
+      <div>
+        <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Delivery Date</label>
+        <input type="date" id="deliveryDate" class="w-full input-light px-3 py-2.5 text-sm">
+      </div>
+      <div>
+        <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Reference</label>
+        <input type="text" id="orderRef" class="w-full input-light px-3 py-2.5 text-sm" placeholder="REF-XXX">
+      </div>
+    </div>
+
+    <!-- Brand Selection -->
+    <div>
+      <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-2 block">Add Brands</label>
+      <div class="flex gap-3">
+        <select id="brandSelect" onchange="onBrandSelect()" class="flex-1 input-light px-4 py-2.5 text-sm">
+          <option value="">-- Select Brand to Add --</option>
+          <option value="nestle">🥛 Nestlé</option>
+          <option value="unilever">🧴 Unilever</option>
+          <option value="cocacola">🥤 Coca-Cola</option>
+          <option value="pepsico">🍿 PepsiCo</option>
+          <option value="danone">🥛 Danone</option>
+          <option value="kelloggs">🥣 Kellogg's</option>
+          <option value="kraft">🧀 Kraft</option>
+          <option value="pg">🧼 P&G</option>
+        </select>
+      </div>
+      <!-- Selected Brands Tags -->
+      <div id="selectedBrandTags" class="flex flex-wrap gap-2 mt-3"></div>
+    </div>
+
+    <!-- Supplier Info -->
+    <div id="supplierInfo" class="hidden mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+      <p class="font-medium text-slate-800" id="suppName">-</p>
+      <p class="text-xs text-slate-500"><span id="suppPhone">-</span> • <span id="suppAddress">-</span></p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+
+    <!-- Products Section -->
+    <div class="xl:col-span-9">
+
+      <!-- Search Bar -->
+      <div class="card p-4 mb-4">
+        <div class="flex flex-wrap gap-3">
+          <div class="flex-1 min-w-[200px] relative">
+            <input type="text" id="productSearch" class="w-full input-light px-4 py-3 pl-11 text-sm" placeholder="Search products by name or SKU..." oninput="searchProducts()" onfocus="showProductDropdown()">
+            <svg class="w-5 h-5 text-emerald-500 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <div id="productDropdown" class="hidden absolute top-full left-0 right-0 mt-2 card shadow-xl z-20 max-h-80 overflow-y-auto"></div>
+          </div>
+          <select id="categoryFilter" onchange="onCategoryChange()" class="input-light px-4 py-3 text-sm">
+            <option value="">All Categories</option>
+            <option value="beverages">🥤 Beverages</option>
+            <option value="dairy">🥛 Dairy</option>
+            <option value="snacks">🍿 Snacks</option>
+            <option value="cereals">🥣 Cereals</option>
+            <option value="household">🧴 Household</option>
+          </select>
+          <select id="subCategoryFilter" onchange="searchProducts()" class="input-light px-4 py-3 text-sm hidden">
+            <option value="">All</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            Order Items
+            <span id="itemCount" class="tag bg-emerald-100 text-emerald-700 ml-1">0</span>
+          </h3>
+          <button onclick="clearCart()" class="text-xs text-red-500 hover:text-red-700 font-medium">Clear All</button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="bg-slate-50">
+                <th class="text-left p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-12">#</th>
+                <th class="text-left p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Product</th>
+                <th class="text-center p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Stock</th>
+                <th class="text-center p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Min</th>
+                <th class="text-center p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Order Qty</th>
+                <th class="text-right p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Cost</th>
+                <th class="text-right p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Amount</th>
+                <th class="w-12"></th>
+              </tr>
+            </thead>
+            <tbody id="cartBody"></tbody>
+          </table>
+        </div>
+
+        <div id="emptyCart" class="p-12 text-center">
+          <div class="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          </div>
+          <p class="text-slate-500 font-medium">No items added</p>
+          <p class="text-slate-400 text-sm mt-1">Search products or check low stock to add</p>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="card p-5 mt-4">
+        <label class="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Order Notes</label>
+        <textarea id="orderNotes" rows="2" class="w-full input-light px-4 py-3 text-sm resize-none" placeholder="Special instructions for supplier..."></textarea>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="xl:col-span-3 space-y-4">
+
+      <!-- Summary -->
+      <div class="card p-5">
+        <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          Order Summary
+        </h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-500">Total Items</span>
+            <span id="totalItems" class="text-slate-800 font-medium">0</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-500">Total Quantity</span>
+            <span id="totalQty" class="text-slate-800 font-medium">0</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-500">Subtotal</span>
+            <span id="subtotal" class="text-slate-800 font-medium">$0.00</span>
+          </div>
+          <div class="border-t border-slate-100 pt-4 mt-4">
+            <div class="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-4 text-center">
+              <p class="text-emerald-100 text-xs font-medium mb-1">GRAND TOTAL</p>
+              <p id="grandTotal" class="text-2xl font-extrabold text-white">$0.00</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selected Brands -->
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40">
+  <div class="max-w-[1400px] mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-6 text-sm">
+      <span class="text-slate-500">Items: <strong id="footerItems" class="text-slate-800">0</strong></span>
+      <span class="text-slate-500">Total: <strong id="footerTotal" class="text-emerald-600">$0.00</strong></span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="resetOrder()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm font-medium transition">Cancel</button>
+      <button onclick="saveOrder()" class="btn-primary px-6 py-2.5 rounded-xl text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        Save Order
+      </button>
+    </div>
+  </div>
+</footer>
+
+<!-- Low Stock Modal -->
+<div id="lowStockModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50 p-4">
+  <div class="card p-6 w-full max-w-lg">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-2xl" id="modalBrandEmoji">🏷️</div>
+      <div>
+        <h3 class="text-lg font-bold text-slate-800">Add <span id="modalBrandName">Brand</span></h3>
+        <p class="text-sm text-slate-500"><span id="modalLowCount">0</span> low stock products found</p>
+      </div>
+    </div>
+
+    <div id="lowStockInfo">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-slate-600 text-sm">Select products to add:</p>
+        <label class="flex items-center gap-2 text-xs text-slate-500 cursor-pointer">
+          <input type="checkbox" id="selectAllItems" onchange="toggleSelectAll()" class="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+          Select All
+        </label>
+      </div>
+      <div id="lowStockList" class="max-h-64 overflow-y-auto mb-4 space-y-2"></div>
+    </div>
+    
+    <div id="noLowStock" class="hidden py-6 text-center">
+      <div class="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+        <svg class="w-7 h-7 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <p class="text-slate-600">All products are well stocked!</p>
+      <p class="text-slate-400 text-sm mt-1">You can still add products manually.</p>
+    </div>
+
+    <div class="flex gap-3">
+      <button onclick="closeLowStockModal(false)" class="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 font-medium transition">Skip / Add Manually</button>
+      <button onclick="closeLowStockModal(true)" id="addLowStockBtn" class="flex-1 py-3 btn-primary rounded-xl hidden">Add Selected (<span id="selectedCount">0</span>)</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50 p-4">
+  <div class="card p-6 w-full max-w-sm text-center">
+    <div class="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <h3 class="text-xl font-bold text-slate-800 mb-1">Order Saved!</h3>
+    <p id="successOrderNum" class="text-lg font-bold text-emerald-600 mb-1">SO-0001</p>
+    <p id="successInfo" class="text-sm text-slate-500 mb-5">Total: $0.00</p>
+    <div class="flex gap-3">
+      <button onclick="newOrder()" class="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 font-medium transition">New Order</button>
+      <button onclick="closeSuccessModal()" class="flex-1 py-3 btn-primary rounded-xl">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Data
+const suppliers = [
+  { id: '1', name: 'ABC Distributors', phone: '555-1111', address: '100 Main St' },
+  { id: '2', name: 'XYZ Wholesale', phone: '555-2222', address: '200 Market Rd' },
+  { id: '3', name: 'Global Trading Co.', phone: '555-3333', address: '300 Trade Ave' }
+];
+
+const brands = {
+  nestle: { name: 'Nestlé', emoji: '🥛' },
+  unilever: { name: 'Unilever', emoji: '🧴' },
+  cocacola: { name: 'Coca-Cola', emoji: '🥤' },
+  pepsico: { name: 'PepsiCo', emoji: '🍿' },
+  danone: { name: 'Danone', emoji: '🥛' },
+  kelloggs: { name: "Kellogg's", emoji: '🥣' },
+  kraft: { name: 'Kraft', emoji: '🧀' },
+  pg: { name: 'P&G', emoji: '🧼' }
+};
+
+const products = [
+  { id: 1, name: 'Nescafé Classic 200g', sku: 'NES001', cost: 8.50, stock: 12, minStock: 50, brand: 'nestle', category: 'beverages', subCategory: 'coffee' },
+  { id: 2, name: 'Nestlé Milo 400g', sku: 'NES002', cost: 6.00, stock: 8, minStock: 40, brand: 'nestle', category: 'beverages', subCategory: 'chocolate' },
+  { id: 3, name: 'Maggi Noodles 5pk', sku: 'NES003', cost: 3.50, stock: 45, minStock: 30, brand: 'nestle', category: 'snacks', subCategory: 'instant' },
+  { id: 4, name: 'Coca-Cola 1.5L', sku: 'COC001', cost: 2.00, stock: 20, minStock: 100, brand: 'cocacola', category: 'beverages', subCategory: 'soft-drinks' },
+  { id: 5, name: 'Sprite 1.5L', sku: 'COC002', cost: 2.00, stock: 15, minStock: 80, brand: 'cocacola', category: 'beverages', subCategory: 'soft-drinks' },
+  { id: 6, name: 'Fanta Orange 1.5L', sku: 'COC003', cost: 2.00, stock: 25, minStock: 60, brand: 'cocacola', category: 'beverages', subCategory: 'soft-drinks' },
+  { id: 7, name: 'Pepsi 1.5L', sku: 'PEP001', cost: 1.90, stock: 18, minStock: 80, brand: 'pepsico', category: 'beverages', subCategory: 'soft-drinks' },
+  { id: 8, name: "Lay's Classic 150g", sku: 'PEP002', cost: 3.50, stock: 10, minStock: 50, brand: 'pepsico', category: 'snacks', subCategory: 'chips' },
+  { id: 9, name: 'Doritos Nacho 150g', sku: 'PEP003', cost: 4.00, stock: 5, minStock: 40, brand: 'pepsico', category: 'snacks', subCategory: 'chips' },
+  { id: 10, name: 'Danone Yogurt 500g', sku: 'DAN001', cost: 4.50, stock: 8, minStock: 30, brand: 'danone', category: 'dairy', subCategory: 'yogurt' },
+  { id: 11, name: 'Activia Probiotic 4pk', sku: 'DAN002', cost: 5.50, stock: 12, minStock: 25, brand: 'danone', category: 'dairy', subCategory: 'yogurt' },
+  { id: 12, name: "Kellogg's Corn Flakes 500g", sku: 'KEL001', cost: 5.00, stock: 15, minStock: 40, brand: 'kelloggs', category: 'cereals', subCategory: 'flakes' },
+  { id: 13, name: "Kellogg's Froot Loops 350g", sku: 'KEL002', cost: 6.00, stock: 6, minStock: 30, brand: 'kelloggs', category: 'cereals', subCategory: 'kids' },
+  { id: 14, name: 'Kraft Cheddar Slices 200g', sku: 'KRA001', cost: 4.50, stock: 20, minStock: 35, brand: 'kraft', category: 'dairy', subCategory: 'cheese' },
+  { id: 15, name: 'Kraft Mayo 400g', sku: 'KRA002', cost: 3.50, stock: 18, minStock: 25, brand: 'kraft', category: 'snacks', subCategory: 'sauce' },
+  { id: 16, name: 'Dove Soap Bar 100g', sku: 'UNI001', cost: 2.50, stock: 30, minStock: 60, brand: 'unilever', category: 'household', subCategory: 'soap' },
+  { id: 17, name: 'Lux Shampoo 400ml', sku: 'UNI002', cost: 5.50, stock: 10, minStock: 40, brand: 'unilever', category: 'household', subCategory: 'haircare' },
+  { id: 18, name: 'Tide Detergent 1kg', sku: 'PG001', cost: 7.00, stock: 8, minStock: 30, brand: 'pg', category: 'household', subCategory: 'laundry' },
+  { id: 19, name: 'Ariel Powder 500g', sku: 'PG002', cost: 4.50, stock: 12, minStock: 35, brand: 'pg', category: 'household', subCategory: 'laundry' }
+];
+
+const subCategories = {
+  beverages: [{value:'coffee',label:'Coffee'},{value:'chocolate',label:'Chocolate'},{value:'soft-drinks',label:'Soft Drinks'}],
+  dairy: [{value:'yogurt',label:'Yogurt'},{value:'cheese',label:'Cheese'}],
+  snacks: [{value:'chips',label:'Chips'},{value:'instant',label:'Instant'},{value:'sauce',label:'Sauce'}],
+  cereals: [{value:'flakes',label:'Flakes'},{value:'kids',label:'Kids'}],
+  household: [{value:'soap',label:'Soap'},{value:'haircare',label:'Hair Care'},{value:'laundry',label:'Laundry'}]
+};
+
+let cart = [];
+let selectedBrands = [];
+let selectedSupplier = null;
+let orderNum = 1;
+
+// Init dates
+document.getElementById('orderDate').value = new Date().toISOString().split('T')[0];
+const delivery = new Date(); delivery.setDate(delivery.getDate() + 7);
+document.getElementById('deliveryDate').value = delivery.toISOString().split('T')[0];
+
+// Supplier Functions
+function searchSuppliers() {
+  const q = document.getElementById('supplierSearch').value.toLowerCase();
+  const dd = document.getElementById('supplierDropdown');
+  dd.classList.remove('hidden');
+  let html = '';
+  suppliers.forEach(s => {
+    if (s.name.toLowerCase().includes(q) || s.phone.includes(q)) {
+      html += `<div onclick="selectSupplier('${s.id}')" class="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+        <p class="font-medium text-slate-800">${s.name}</p>
+        <p class="text-xs text-slate-400">${s.phone} • ${s.address}</p>
+      </div>`;
+    }
+  });
+  dd.innerHTML = html || '<p class="p-3 text-slate-400 text-sm">No suppliers found</p>';
+}
+
+function showSupplierDropdown() { searchSuppliers(); }
+
+function selectSupplier(id) {
+  const s = suppliers.find(x => x.id === id);
+  if (!s) return;
+  selectedSupplier = s;
+  document.getElementById('supplierSearch').value = s.name;
+  document.getElementById('suppName').textContent = s.name;
+  document.getElementById('suppPhone').textContent = s.phone;
+  document.getElementById('suppAddress').textContent = s.address;
+  document.getElementById('supplierInfo').classList.remove('hidden');
+  document.getElementById('supplierDropdown').classList.add('hidden');
+}
+
+// Brand Functions
+let pendingBrand = null;
+let lowStockItems = [];
+
+function onBrandSelect() {
+  const select = document.getElementById('brandSelect');
+  const brandId = select.value;
+  
+  if (!brandId) return;
+  
+  // Check if already selected
+  if (selectedBrands.includes(brandId)) {
+    alert('This brand is already added');
+    select.value = '';
+    return;
+  }
+  
+  // Show low stock modal
+  pendingBrand = brandId;
+  const brandInfo = brands[brandId];
+  lowStockItems = products.filter(p => p.brand === brandId && p.stock < p.minStock);
+  
+  document.getElementById('modalBrandName').textContent = brandInfo.name;
+  document.getElementById('modalBrandEmoji').textContent = brandInfo.emoji;
+  document.getElementById('modalLowCount').textContent = lowStockItems.length;
+  
+  if (lowStockItems.length > 0) {
+    document.getElementById('lowStockList').innerHTML = lowStockItems.map((p, i) => `<label class="flex items-center gap-3 p-3 bg-slate-50 hover:bg-amber-50 rounded-lg cursor-pointer transition">
+      <input type="checkbox" checked data-index="${i}" onchange="updateSelectedCount()" class="low-stock-item w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+      <div class="flex-1">
+        <p class="text-sm font-medium text-slate-800">${p.name}</p>
+        <p class="text-xs text-slate-500">${p.sku} • Cost: ${p.cost.toFixed(2)}</p>
+      </div>
+      <div class="text-right">
+        <span class="tag bg-amber-200 text-amber-700">${p.stock}/${p.minStock}</span>
+      </div>
+    </label>`).join('');
+    document.getElementById('selectAllItems').checked = true;
+    document.getElementById('lowStockInfo').classList.remove('hidden');
+    document.getElementById('noLowStock').classList.add('hidden');
+    document.getElementById('addLowStockBtn').classList.remove('hidden');
+    updateSelectedCount();
+  } else {
+    document.getElementById('lowStockInfo').classList.add('hidden');
+    document.getElementById('noLowStock').classList.remove('hidden');
+    document.getElementById('addLowStockBtn').classList.add('hidden');
+  }
+  
+  document.getElementById('lowStockModal').classList.add('active');
+  select.value = '';
+}
+
+function toggleSelectAll() {
+  const checked = document.getElementById('selectAllItems').checked;
+  document.querySelectorAll('.low-stock-item').forEach(cb => cb.checked = checked);
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  const checked = document.querySelectorAll('.low-stock-item:checked').length;
+  document.getElementById('selectedCount').textContent = checked;
+  
+  // Update select all checkbox
+  const total = document.querySelectorAll('.low-stock-item').length;
+  document.getElementById('selectAllItems').checked = checked === total;
+  document.getElementById('selectAllItems').indeterminate = checked > 0 && checked < total;
+}
+
+function renderSelectedBrands() {
+  const container = document.getElementById('selectedBrandTags');
+  if (!selectedBrands.length) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = selectedBrands.map(b => `<span class="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium">
+    ${brands[b].emoji} ${brands[b].name}
+    <button onclick="removeBrand('${b}')" class="ml-1 hover:text-red-500">×</button>
+  </span>`).join('');
+}
+
+function removeBrand(brandId) {
+  const idx = selectedBrands.indexOf(brandId);
+  if (idx > -1) {
+    selectedBrands.splice(idx, 1);
+    renderSelectedBrands();
+  }
+}
+
+function updateSelectedBrandsList() {
+  const container = document.getElementById('selectedBrandsList');
+  if (!selectedBrands.length) {
+    container.innerHTML = '<span class="text-slate-400">No brands selected</span>';
+    return;
+  }
+  container.innerHTML = selectedBrands.map(b => `<span class="inline-block mr-2 mb-1 px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-medium">${brands[b].emoji} ${brands[b].name}</span>`).join('');
+}
+
+function closeLowStockModal(addSelected) {
+  document.getElementById('lowStockModal').classList.remove('active');
+  
+  if (pendingBrand) {
+    // Add brand to selected
+    selectedBrands.push(pendingBrand);
+    renderSelectedBrands();
+    
+    // Add selected low stock products
+    if (addSelected && lowStockItems.length) {
+      const checkboxes = document.querySelectorAll('.low-stock-item:checked');
+      checkboxes.forEach(cb => {
+        const idx = parseInt(cb.dataset.index);
+        const p = lowStockItems[idx];
+        if (p && !cart.find(c => c.id === p.id)) {
+          const suggestedQty = Math.max(p.minStock - p.stock, 10);
+          cart.push({ ...p, orderQty: suggestedQty });
+        }
+      });
+      renderCart();
+    }
+    
+    pendingBrand = null;
+    lowStockItems = [];
+  }
+}
+
+// Product Search
+function searchProducts() {
+  const q = document.getElementById('productSearch').value.toLowerCase();
+  const cat = document.getElementById('categoryFilter').value;
+  const subCat = document.getElementById('subCategoryFilter').value;
+  const dd = document.getElementById('productDropdown');
+  
+  let filtered = products.filter(p => {
+    if (cat && p.category !== cat) return false;
+    if (subCat && p.subCategory !== subCat) return false;
+    if (q && !p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  
+  if (!q && !cat && !subCat) { dd.classList.add('hidden'); return; }
+  
+  dd.classList.remove('hidden');
+  dd.innerHTML = filtered.length ? filtered.slice(0, 10).map(p => {
+    const brandInfo = brands[p.brand];
+    const isLow = p.stock < p.minStock;
+    return `<div onclick="addToCart(${p.id})" class="flex items-center gap-3 p-4 hover:bg-emerald-50 cursor-pointer border-b border-slate-100">
+      <div class="flex-1">
+        <p class="font-medium text-slate-800">${p.name}</p>
+        <p class="text-xs text-slate-400">${p.sku} • ${brandInfo.emoji} ${brandInfo.name} • Stock: ${p.stock}</p>
+      </div>
+      <div class="text-right">
+        <p class="font-bold text-emerald-600">$${p.cost.toFixed(2)}</p>
+        ${isLow ? '<span class="tag bg-amber-100 text-amber-600">LOW</span>' : ''}
+      </div>
+    </div>`;
+  }).join('') : '<p class="p-4 text-center text-slate-400">No products found</p>';
+}
+
+function showProductDropdown() { if (document.getElementById('productSearch').value) searchProducts(); }
+
+function onCategoryChange() {
+  const cat = document.getElementById('categoryFilter').value;
+  const subSel = document.getElementById('subCategoryFilter');
+  if (cat && subCategories[cat]) {
+    subSel.classList.remove('hidden');
+    subSel.innerHTML = '<option value="">All</option>' + subCategories[cat].map(s => `<option value="${s.value}">${s.label}</option>`).join('');
+  } else {
+    subSel.classList.add('hidden');
+    subSel.value = '';
+  }
+  searchProducts();
+}
+
+// Cart Functions
+function addToCart(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  
+  const existing = cart.find(c => c.id === id);
+  if (existing) {
+    existing.orderQty += 10;
+  } else {
+    const suggestedQty = p.stock < p.minStock ? Math.max(p.minStock - p.stock, 10) : 10;
+    cart.push({ ...p, orderQty: suggestedQty });
+  }
+  
+  document.getElementById('productSearch').value = '';
+  document.getElementById('productDropdown').classList.add('hidden');
+  renderCart();
+}
+
+function renderCart() {
+  const tbody = document.getElementById('cartBody');
+  const empty = document.getElementById('emptyCart');
+  
+  document.getElementById('itemCount').textContent = cart.length;
+  document.getElementById('footerItems').textContent = cart.length;
+  
+  if (!cart.length) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+    calculate();
+    return;
+  }
+  
+  empty.classList.add('hidden');
+  tbody.innerHTML = cart.map((item, i) => {
+    const brandInfo = brands[item.brand];
+    const isLow = item.stock < item.minStock;
+    const amount = item.orderQty * item.cost;
+    return `<tr class="item-row border-b border-slate-100 hover:bg-slate-50 transition">
+      <td class="p-4 text-slate-400">${i + 1}</td>
+      <td class="p-4">
+        <div>
+          <p class="font-medium text-slate-800">${item.name}</p>
+          <p class="text-xs text-slate-400">${item.sku} • ${brandInfo.emoji} ${brandInfo.name}</p>
+        </div>
+      </td>
+      <td class="p-4 text-center">
+        <span class="tag ${isLow ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-600'}">${item.stock}</span>
+      </td>
+      <td class="p-4 text-center text-slate-500">${item.minStock}</td>
+      <td class="p-3">
+        <div class="flex items-center justify-center gap-1">
+          <button onclick="changeQty(${i},-10)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-100 text-slate-500 hover:text-emerald-600 transition">-</button>
+          <input type="number" value="${item.orderQty}" min="1" onchange="setQty(${i},this.value)" class="w-16 text-center input-light py-1.5 text-sm">
+          <button onclick="changeQty(${i},10)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-100 text-slate-500 hover:text-emerald-600 transition">+</button>
+        </div>
+      </td>
+      <td class="p-3 text-right">
+        <input type="number" step="0.01" value="${item.cost.toFixed(2)}" onchange="setCost(${i},this.value)" class="w-20 input-light py-1.5 px-2 text-sm text-right">
+      </td>
+      <td class="p-4 text-right font-bold text-emerald-600">$${amount.toFixed(2)}</td>
+      <td class="p-3">
+        <button onclick="removeItem(${i})" class="w-8 h-8 rounded-lg hover:bg-red-100 text-slate-400 hover:text-red-500 flex items-center justify-center transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+  
+  calculate();
+}
+
+function changeQty(i, d) { cart[i].orderQty = Math.max(1, cart[i].orderQty + d); renderCart(); }
+function setQty(i, v) { cart[i].orderQty = Math.max(1, parseInt(v) || 1); renderCart(); }
+function setCost(i, v) { cart[i].cost = Math.max(0, parseFloat(v) || 0); renderCart(); }
+function removeItem(i) { cart.splice(i, 1); renderCart(); }
+function clearCart() { cart = []; renderCart(); }
+
+function calculate() {
+  let totalQty = 0, subtotal = 0;
+  cart.forEach(item => {
+    totalQty += item.orderQty;
+    subtotal += item.orderQty * item.cost;
+  });
+  
+  document.getElementById('totalItems').textContent = cart.length;
+  document.getElementById('totalQty').textContent = totalQty;
+  document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+  document.getElementById('grandTotal').textContent = '$' + subtotal.toFixed(2);
+  document.getElementById('footerTotal').textContent = '$' + subtotal.toFixed(2);
+}
+
+// Save & Reset
+function saveOrder() {
+  if (!cart.length) { alert('Add items to order'); return; }
+  if (!selectedSupplier) { alert('Select a supplier'); return; }
+  
+  document.getElementById('successOrderNum').textContent = document.getElementById('orderNum').textContent;
+  document.getElementById('successInfo').textContent = 'Total: ' + document.getElementById('grandTotal').textContent;
+  document.getElementById('successModal').classList.add('active');
+}
+
+function closeSuccessModal() {
+  document.getElementById('successModal').classList.remove('active');
+}
+
+function newOrder() {
+  closeSuccessModal();
+  orderNum++;
+  document.getElementById('orderNum').textContent = 'SO-' + String(orderNum).padStart(4, '0');
+  resetOrder();
+}
+
+function resetOrder() {
+  cart = [];
+  selectedBrands = [];
+  selectedSupplier = null;
+  document.getElementById('brandSelect').value = '';
+  document.getElementById('selectedBrandTags').innerHTML = '';
+  document.getElementById('supplierSearch').value = '';
+  document.getElementById('supplierInfo').classList.add('hidden');
+  document.getElementById('categoryFilter').value = '';
+  document.getElementById('subCategoryFilter').classList.add('hidden');
+  document.getElementById('productSearch').value = '';
+  document.getElementById('orderNotes').value = '';
+  document.getElementById('orderStatus').value = 'order';
+  renderCart();
+}
+
+// Close dropdowns
+document.addEventListener('click', e => {
+  if (!e.target.closest('#supplierSearch, #supplierDropdown')) {
+    document.getElementById('supplierDropdown').classList.add('hidden');
+  }
+  if (!e.target.closest('#productSearch, #productDropdown, #categoryFilter, #subCategoryFilter')) {
+    document.getElementById('productDropdown').classList.add('hidden');
+  }
+});
+
+// Init
+renderCart();
+</script>
+</body>
+</html>

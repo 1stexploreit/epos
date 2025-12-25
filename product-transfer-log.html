@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Transfer Log - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Header -->
+<div class="bg-white border-b border-slate-200">
+<div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-slate-800 font-semibold">Product Transfer Log</h1>
+<p class="text-xs text-slate-400">View all product transfer history</p>
+</div>
+<div class="flex items-center gap-3">
+<button onclick="exportData()" class="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+Export
+</button>
+<a href="#" class="px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+New Transfer
+</a>
+</div>
+</div>
+</div>
+
+<main class="max-w-6xl mx-auto px-6 py-5 space-y-4">
+
+<!-- Filters -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-4">
+<div class="flex flex-col md:flex-row gap-3">
+<div class="flex-1 relative">
+<svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<input type="text" id="search" placeholder="Search by reference, product..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm" oninput="filterTable()">
+</div>
+<div class="flex flex-wrap gap-2">
+<select id="filterFrom" class="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600" onchange="filterTable()">
+<option value="">From: All Branches</option>
+<option value="main">Main Branch</option>
+<option value="dhanmondi">Dhanmondi Branch</option>
+<option value="uttara">Uttara Branch</option>
+<option value="mirpur">Mirpur Branch</option>
+</select>
+<select id="filterTo" class="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600" onchange="filterTable()">
+<option value="">To: All Branches</option>
+<option value="main">Main Branch</option>
+<option value="dhanmondi">Dhanmondi Branch</option>
+<option value="uttara">Uttara Branch</option>
+<option value="mirpur">Mirpur Branch</option>
+</select>
+<select id="filterStatus" class="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600" onchange="filterTable()">
+<option value="">All Status</option>
+<option value="completed">Completed</option>
+<option value="pending">Pending</option>
+<option value="cancelled">Cancelled</option>
+</select>
+<input type="date" id="filterDateFrom" class="px-3 py-2 border border-slate-200 rounded-lg text-sm" onchange="filterTable()">
+<input type="date" id="filterDateTo" class="px-3 py-2 border border-slate-200 rounded-lg text-sm" onchange="filterTable()">
+</div>
+</div>
+</div>
+
+<!-- Transfer Log Table -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<table class="w-full">
+<thead class="bg-slate-50 border-b border-slate-200">
+<tr class="text-[10px] text-slate-500 uppercase tracking-wider">
+<th class="px-4 py-3 text-left font-semibold">Reference</th>
+<th class="px-4 py-3 text-left font-semibold">Date</th>
+<th class="px-4 py-3 text-left font-semibold">From</th>
+<th class="px-4 py-3 text-left font-semibold">To</th>
+<th class="px-4 py-3 text-center font-semibold">Items</th>
+<th class="px-4 py-3 text-center font-semibold">Total Qty</th>
+<th class="px-4 py-3 text-center font-semibold">Status</th>
+<th class="px-4 py-3 text-right font-semibold">Actions</th>
+</tr>
+</thead>
+<tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
+</table>
+
+<!-- Empty State -->
+<div id="emptyState" class="p-12 text-center" style="display:none">
+<div class="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
+<svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+</div>
+<p class="text-slate-500 font-medium">No transfers found</p>
+<p class="text-sm text-slate-400 mt-1">Try adjusting your filters</p>
+</div>
+
+<!-- Pagination -->
+<div class="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-slate-50/50">
+<p class="text-xs text-slate-500">Showing <span id="showCount" class="font-medium text-slate-700">0</span> of <span id="totalCount" class="font-medium text-slate-700">0</span> transfers</p>
+<div class="flex items-center gap-1">
+<button onclick="changePage(-1)" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg" id="prevBtn">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+</button>
+<span class="px-2 py-1 text-xs text-slate-600" id="pageInfo">1 / 1</span>
+<button onclick="changePage(1)" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg" id="nextBtn">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+</button>
+</div>
+</div>
+</div>
+
+</main>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Success</span>
+</div>
+
+<!-- View Detail Modal -->
+<div id="detailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeDetailModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden">
+<div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+<h3 class="text-lg font-semibold text-slate-800">Transfer Details</h3>
+<button onclick="closeDetailModal()" class="p-1 hover:bg-slate-100 rounded-lg">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+</button>
+</div>
+<div class="p-5 overflow-y-auto max-h-[60vh]">
+<div class="grid grid-cols-2 gap-4 mb-4">
+<div>
+<p class="text-xs text-slate-400 uppercase">Reference</p>
+<p class="text-sm font-semibold text-slate-800" id="modalRef">—</p>
+</div>
+<div>
+<p class="text-xs text-slate-400 uppercase">Date</p>
+<p class="text-sm font-medium text-slate-700" id="modalDate">—</p>
+</div>
+<div>
+<p class="text-xs text-slate-400 uppercase">From Branch</p>
+<p class="text-sm font-medium text-slate-700" id="modalFrom">—</p>
+</div>
+<div>
+<p class="text-xs text-slate-400 uppercase">To Branch</p>
+<p class="text-sm font-medium text-slate-700" id="modalTo">—</p>
+</div>
+<div>
+<p class="text-xs text-slate-400 uppercase">Reason</p>
+<p class="text-sm font-medium text-slate-700" id="modalReason">—</p>
+</div>
+<div>
+<p class="text-xs text-slate-400 uppercase">Status</p>
+<p class="text-sm" id="modalStatus">—</p>
+</div>
+</div>
+<div class="border-t border-slate-200 pt-4">
+<p class="text-xs text-slate-400 uppercase mb-3">Items Transferred</p>
+<div class="space-y-2" id="modalItems"></div>
+</div>
+</div>
+<div class="px-5 py-3 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+<button onclick="printTransfer()" class="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/></svg>
+Print
+</button>
+<button onclick="closeDetailModal()" class="px-4 py-2 text-sm bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium">Close</button>
+</div>
+</div>
+</div>
+
+<script>
+const transfers=[
+{id:'PTR-10001',date:'2024-12-25',from:'main',fromName:'Main Branch',to:'dhanmondi',toName:'Dhanmondi Branch',items:[{name:'Fresh Apple',emoji:'🍎',qty:50},{name:'Banana Bunch',emoji:'🍌',qty:30},{name:'Milk 1L Pack',emoji:'🥛',qty:40}],totalItems:3,totalQty:120,status:'completed',reason:'Stock rebalancing'},
+{id:'PTR-10002',date:'2024-12-24',from:'main',fromName:'Main Branch',to:'uttara',toName:'Uttara Branch',items:[{name:'Eggs (12 pcs)',emoji:'🥚',qty:60},{name:'Whole Wheat Bread',emoji:'🍞',qty:25}],totalItems:2,totalQty:85,status:'completed',reason:'Low stock replenishment'},
+{id:'PTR-10003',date:'2024-12-24',from:'dhanmondi',fromName:'Dhanmondi Branch',to:'mirpur',toName:'Mirpur Branch',items:[{name:'Coca Cola 500ml',emoji:'🥤',qty:100},{name:'Potato Chips',emoji:'🍿',qty:50},{name:'Orange Fresh',emoji:'🍊',qty:40}],totalItems:3,totalQty:190,status:'pending',reason:'Promotional event'},
+{id:'PTR-10004',date:'2024-12-23',from:'uttara',fromName:'Uttara Branch',to:'main',toName:'Main Branch',items:[{name:'Chicken Breast',emoji:'🍗',qty:30}],totalItems:1,totalQty:30,status:'completed',reason:'Excess stock return'},
+{id:'PTR-10005',date:'2024-12-23',from:'main',fromName:'Main Branch',to:'mirpur',toName:'Mirpur Branch',items:[{name:'Rice 5kg Bag',emoji:'🍚',qty:45},{name:'Milk 1L Pack',emoji:'🥛',qty:60}],totalItems:2,totalQty:105,status:'cancelled',reason:'Order cancelled'},
+{id:'PTR-10006',date:'2024-12-22',from:'mirpur',fromName:'Mirpur Branch',to:'dhanmondi',toName:'Dhanmondi Branch',items:[{name:'Fresh Apple',emoji:'🍎',qty:25},{name:'Orange Fresh',emoji:'🍊',qty:35},{name:'Banana Bunch',emoji:'🍌',qty:40},{name:'Eggs (12 pcs)',emoji:'🥚',qty:50}],totalItems:4,totalQty:150,status:'completed',reason:'Weekly distribution'},
+{id:'PTR-10007',date:'2024-12-21',from:'main',fromName:'Main Branch',to:'uttara',toName:'Uttara Branch',items:[{name:'Coca Cola 500ml',emoji:'🥤',qty:80}],totalItems:1,totalQty:80,status:'completed',reason:'Festival demand'},
+{id:'PTR-10008',date:'2024-12-20',from:'dhanmondi',fromName:'Dhanmondi Branch',to:'main',toName:'Main Branch',items:[{name:'Whole Wheat Bread',emoji:'🍞',qty:15},{name:'Chicken Breast',emoji:'🍗',qty:20}],totalItems:2,totalQty:35,status:'pending',reason:'Awaiting approval'},
+];
+
+let currentPage=1;
+const perPage=10;
+
+function showToast(msg){
+const t=document.getElementById('toast');
+document.getElementById('toastMsg').textContent=msg;
+t.style.display='flex';
+setTimeout(()=>t.style.display='none',3000);
+}
+
+function getFiltered(){
+const search=document.getElementById('search').value.toLowerCase();
+const from=document.getElementById('filterFrom').value;
+const to=document.getElementById('filterTo').value;
+const status=document.getElementById('filterStatus').value;
+const dateFrom=document.getElementById('filterDateFrom').value;
+const dateTo=document.getElementById('filterDateTo').value;
+
+return transfers.filter(t=>{
+const matchSearch=t.id.toLowerCase().includes(search)||t.fromName.toLowerCase().includes(search)||t.toName.toLowerCase().includes(search)||t.items.some(i=>i.name.toLowerCase().includes(search));
+const matchFrom=!from||t.from===from;
+const matchTo=!to||t.to===to;
+const matchStatus=!status||t.status===status;
+const matchDateFrom=!dateFrom||t.date>=dateFrom;
+const matchDateTo=!dateTo||t.date<=dateTo;
+return matchSearch&&matchFrom&&matchTo&&matchStatus&&matchDateFrom&&matchDateTo;
+});
+}
+
+function filterTable(){
+currentPage=1;
+renderTable();
+}
+
+function renderTable(){
+const filtered=getFiltered();
+const totalPages=Math.ceil(filtered.length/perPage)||1;
+if(currentPage>totalPages)currentPage=totalPages;
+const start=(currentPage-1)*perPage;
+const paged=filtered.slice(start,start+perPage);
+
+document.getElementById('totalCount').textContent=filtered.length;
+document.getElementById('showCount').textContent=paged.length;
+document.getElementById('pageInfo').textContent=currentPage+' / '+totalPages;
+
+if(!filtered.length){
+document.getElementById('tableBody').innerHTML='';
+document.getElementById('emptyState').style.display='block';
+return;
+}
+document.getElementById('emptyState').style.display='none';
+
+document.getElementById('tableBody').innerHTML=paged.map(t=>{
+const statusClass=t.status==='completed'?'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20':t.status==='pending'?'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20':'bg-red-50 text-red-600 ring-1 ring-red-500/20';
+const statusText=t.status.charAt(0).toUpperCase()+t.status.slice(1);
+const dateFormatted=new Date(t.date).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});
+
+return`<tr class="hover:bg-slate-50/80 text-sm">
+<td class="px-4 py-3">
+<span class="font-semibold text-slate-800">${t.id}</span>
+</td>
+<td class="px-4 py-3 text-slate-600">${dateFormatted}</td>
+<td class="px-4 py-3">
+<span class="text-slate-700">${t.fromName}</span>
+</td>
+<td class="px-4 py-3">
+<span class="text-slate-700">${t.toName}</span>
+</td>
+<td class="px-4 py-3 text-center">
+<span class="font-semibold text-slate-700">${t.totalItems}</span>
+</td>
+<td class="px-4 py-3 text-center">
+<span class="font-bold text-emerald-600">${t.totalQty}</span>
+<span class="text-xs text-slate-400 ml-1">pcs</span>
+</td>
+<td class="px-4 py-3 text-center">
+<span class="inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full ${statusClass}">${statusText}</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex justify-end gap-1">
+<button onclick="viewDetail('${t.id}')" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="View">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+</button>
+<button onclick="printSingle('${t.id}')" class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Print">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/></svg>
+</button>
+</div>
+</td>
+</tr>`;
+}).join('');
+}
+
+function changePage(dir){
+const filtered=getFiltered();
+const totalPages=Math.ceil(filtered.length/perPage)||1;
+const newPage=currentPage+dir;
+if(newPage>=1&&newPage<=totalPages){
+currentPage=newPage;
+renderTable();
+}
+}
+
+function viewDetail(id){
+const t=transfers.find(tr=>tr.id===id);
+if(!t)return;
+
+const statusClass=t.status==='completed'?'text-emerald-600 font-semibold':t.status==='pending'?'text-amber-600 font-semibold':'text-red-500 font-semibold';
+const dateFormatted=new Date(t.date).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});
+
+document.getElementById('modalRef').textContent=t.id;
+document.getElementById('modalDate').textContent=dateFormatted;
+document.getElementById('modalFrom').textContent=t.fromName;
+document.getElementById('modalTo').textContent=t.toName;
+document.getElementById('modalReason').textContent=t.reason||'—';
+document.getElementById('modalStatus').innerHTML=`<span class="${statusClass}">${t.status.charAt(0).toUpperCase()+t.status.slice(1)}</span>`;
+
+document.getElementById('modalItems').innerHTML=t.items.map(i=>`
+<div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+<div class="flex items-center gap-2">
+<span class="text-lg">${i.emoji}</span>
+<span class="text-sm font-medium text-slate-700">${i.name}</span>
+</div>
+<span class="text-sm font-bold text-slate-800">${i.qty} pcs</span>
+</div>
+`).join('');
+
+document.getElementById('detailModal').style.display='flex';
+}
+
+function closeDetailModal(){
+document.getElementById('detailModal').style.display='none';
+}
+
+function printTransfer(){
+showToast('Printing transfer details...');
+}
+
+function printSingle(id){
+showToast('Printing '+id+'...');
+}
+
+function exportData(){
+showToast('Exporting transfer log...');
+}
+
+// Init
+renderTable();
+</script>
+</body>
+</html>

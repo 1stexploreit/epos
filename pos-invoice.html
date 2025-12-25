@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS Receipt - FreshMart</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#e5e7eb;padding:30px;font-family:Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+    
+    .controls{width:80mm;margin-bottom:20px;display:flex;gap:8px;flex-wrap:wrap;}
+    .control-group{display:flex;gap:4px;padding:3px;background:#d1d5db;border-radius:6px;}
+    .controls button{padding:8px 14px;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;background:transparent;color:#374151;transition:all .2s;}
+    .controls button.active{background:#111;color:#fff;}
+    .controls button:hover:not(.active){background:#9ca3af;}
+    .controls .print-btn{margin-left:auto;background:#111;color:#fff;padding:8px 16px;border-radius:6px;}
+    
+    /* Receipt */
+    .receipt{width:80mm;background:#fff;padding:5mm;box-shadow:0 2px 10px rgba(0,0,0,0.15);font-family:Arial,sans-serif;font-size:12px;color:#000;line-height:1.4;}
+    
+    /* 58mm */
+    .receipt.w58{width:58mm;padding:3mm;font-size:11px;}
+    .receipt.w58 .header h1{font-size:16px;}
+    .receipt.w58 .header p{font-size:9px;}
+    .receipt.w58 .invoice-num{font-size:12px;}
+    .receipt.w58 .meta-row{font-size:10px;}
+    .receipt.w58 .items-table th,.receipt.w58 .items-table td{font-size:10px;padding:4px 2px;}
+    .receipt.w58 .totals-row{font-size:11px;}
+    .receipt.w58 .totals-row.grand-total{font-size:14px;}
+    .receipt.w58 .barcode{height:35px;}
+    .receipt.w58 .barcode-num{font-size:10px;}
+    .receipt.w58 .footer p{font-size:9px;}
+    
+    /* Header */
+    .header{text-align:center;padding-bottom:8px;border-bottom:1px dashed #000;margin-bottom:8px;}
+    .header h1{font-size:20px;font-weight:bold;margin-bottom:5px;}
+    .header p{font-size:10px;line-height:1.5;}
+    
+    /* Invoice Info */
+    .invoice-info{text-align:center;padding-bottom:8px;border-bottom:1px dashed #000;margin-bottom:8px;}
+    .invoice-type{font-size:10px;font-weight:bold;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;}
+    .invoice-num{font-size:14px;font-weight:bold;margin-bottom:8px;}
+    .meta-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;}
+    .meta-row span:last-child{font-weight:bold;}
+    
+    /* Customer */
+    .customer-box{padding:8px;border:1px solid #000;margin-bottom:8px;}
+    .customer-box .label{font-size:9px;font-weight:bold;text-transform:uppercase;margin-bottom:3px;}
+    .customer-box .name{font-size:12px;font-weight:bold;margin-bottom:2px;}
+    .customer-box .details{font-size:10px;}
+    
+    /* Items Table */
+    .items-table{width:100%;border-collapse:collapse;margin-bottom:8px;}
+    .items-table th{font-size:10px;text-transform:uppercase;padding:5px 2px;border-bottom:1px solid #000;text-align:left;font-weight:bold;}
+    .items-table th:nth-child(2){text-align:center;width:40px;}
+    .items-table th:last-child{text-align:right;width:60px;}
+    .items-table td{padding:5px 2px;border-bottom:1px dotted #999;font-size:11px;vertical-align:top;}
+    .items-table td:nth-child(2){text-align:center;}
+    .items-table td:last-child{text-align:right;font-weight:bold;}
+    .item-name{font-weight:bold;}
+    .item-detail{font-size:9px;color:#555;}
+    .item-disc{font-size:9px;font-style:italic;}
+    
+    /* Totals */
+    .totals-section{padding:8px 0;border-top:1px dashed #000;border-bottom:1px dashed #000;margin-bottom:8px;}
+    .totals-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;}
+    .totals-row span:last-child{font-weight:bold;}
+    .totals-row.grand-total{font-size:16px;font-weight:bold;padding:8px 0;margin-top:5px;border-top:2px solid #000;}
+    
+    /* Payment */
+    .payment-section{padding:8px;border:1px solid #000;margin-bottom:8px;}
+    .payment-section .title{font-size:10px;font-weight:bold;text-transform:uppercase;margin-bottom:8px;padding-bottom:5px;border-bottom:1px dotted #000;}
+    .payment-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;}
+    .payment-row:last-child{margin-bottom:0;}
+    .payment-row span:last-child{font-weight:bold;}
+    .payment-row.highlight{background:#000;color:#fff;margin:8px -8px -8px;padding:8px;}
+    .payment-row.highlight span{font-size:13px;font-weight:bold;}
+    
+    .balance-box{padding:8px;border:2px solid #000;margin-bottom:8px;text-align:center;}
+    .balance-box .label{font-size:10px;text-transform:uppercase;margin-bottom:3px;}
+    .balance-box .amount{font-size:18px;font-weight:bold;}
+    
+    /* Barcode */
+    .barcode-section{text-align:center;padding:12px 0;border-bottom:1px dashed #000;margin-bottom:8px;}
+    .barcode{display:flex;justify-content:center;align-items:flex-end;gap:1px;height:45px;margin-bottom:5px;}
+    .barcode .bar{background:#000;}
+    .barcode-num{font-size:11px;letter-spacing:2px;}
+    
+    /* Footer */
+    .footer{text-align:center;}
+    .footer .thanks{font-size:14px;font-weight:bold;margin-bottom:8px;}
+    .footer p{font-size:10px;margin-bottom:3px;}
+    
+    /* Cut line */
+    .cut-line{position:relative;margin:12px -5mm;padding:8px 0;border-top:1px dashed #000;border-bottom:1px dashed #000;}
+    .cut-line::before{content:'✂';position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:10px;}
+    .cut-line p{text-align:center;font-size:9px;text-transform:uppercase;letter-spacing:2px;}
+    
+    @media print{
+      body{background:#fff;padding:0;}
+      .receipt{box-shadow:none;}
+      .controls{display:none;}
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <div class="control-group">
+      <button class="active" onclick="setWidth('80')">80mm</button>
+      <button onclick="setWidth('58')">58mm</button>
+    </div>
+    <button class="print-btn" onclick="window.print()">Print</button>
+  </div>
+
+  <div class="receipt" id="receipt">
+    <div class="header">
+      <h1>FreshMart</h1>
+      <p>
+        123 Market Street, Shopping Plaza<br>
+        City, State 12345<br>
+        Tel: (555) 123-4567
+      </p>
+    </div>
+    
+    <div class="invoice-info">
+      <div class="invoice-type">Sales Receipt</div>
+      <div class="invoice-num">INV-0005</div>
+      <div class="meta-row"><span>Date:</span><span>Dec 25, 2025</span></div>
+      <div class="meta-row"><span>Time:</span><span>14:35:22</span></div>
+      <div class="meta-row"><span>Cashier:</span><span>Sarah K.</span></div>
+      <div class="meta-row"><span>Terminal:</span><span>POS-01</span></div>
+    </div>
+    
+    <div class="customer-box">
+      <div class="label">Customer</div>
+      <div class="name">John Smith</div>
+      <div class="details">C001 | (555) 987-6543</div>
+    </div>
+    
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="item-name">Organic Apples</div><div class="item-detail">2 kg x $4.99</div></td>
+          <td>2</td>
+          <td>$9.98</td>
+        </tr>
+        <tr>
+          <td><div class="item-name">Whole Milk 1L</div><div class="item-detail">3 ltr x $3.29</div></td>
+          <td>3</td>
+          <td>$9.87</td>
+        </tr>
+        <tr>
+          <td><div class="item-name">Sourdough Bread</div><div class="item-detail">2 pcs x $4.99</div></td>
+          <td>2</td>
+          <td>$9.98</td>
+        </tr>
+        <tr>
+          <td><div class="item-name">Cheddar Cheese</div><div class="item-detail">1 Box x $6.99 x 10</div><div class="item-disc">Disc: 5%</div></td>
+          <td>10</td>
+          <td>$66.41</td>
+        </tr>
+        <tr>
+          <td><div class="item-name">USB-C Cable 2m</div><div class="item-detail">2 pcs x $12.99</div></td>
+          <td>2</td>
+          <td>$25.98</td>
+        </tr>
+        <tr>
+          <td><div class="item-name">Fresh Carrots</div><div class="item-detail">1.5 kg x $2.99</div></td>
+          <td>1.5</td>
+          <td>$4.49</td>
+        </tr>
+        <tr>
+          <td><div class="item-name">Broccoli</div><div class="item-detail">1 kg x $3.49</div></td>
+          <td>1</td>
+          <td>$3.49</td>
+        </tr>
+        <tr>
+          <td><div class="item-name">Greek Yogurt</div><div class="item-detail">4 pcs x $5.49</div><div class="item-disc">Disc: 10%</div></td>
+          <td>4</td>
+          <td>$19.76</td>
+        </tr>
+        <tr>
+          <td><div class="item-name">Chicken Breast</div><div class="item-detail">2 kg x $12.99</div></td>
+          <td>2</td>
+          <td>$25.98</td>
+        </tr>
+        <tr>
+          <td><div class="item-name">Ground Beef</div><div class="item-detail">1.5 kg x $9.99</div></td>
+          <td>1.5</td>
+          <td>$14.99</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="totals-section">
+      <div class="totals-row"><span>Subtotal (10 items)</span><span>$190.93</span></div>
+      <div class="totals-row"><span>Discounts</span><span>-$8.50</span></div>
+      <div class="totals-row"><span>VAT (8%)</span><span>$14.59</span></div>
+      <div class="totals-row grand-total"><span>TOTAL</span><span>$197.02</span></div>
+    </div>
+    
+    <div class="payment-section">
+      <div class="title">Payment</div>
+      <div class="payment-row"><span>Method:</span><span>Cash</span></div>
+      <div class="payment-row"><span>Tendered:</span><span>$200.00</span></div>
+      <div class="payment-row highlight"><span>Change:</span><span>$2.98</span></div>
+    </div>
+    
+    <!--
+    <div class="balance-box">
+      <div class="label">Balance Due</div>
+      <div class="amount">$47.02</div>
+    </div>
+    -->
+    
+    <div class="barcode-section">
+      <div class="barcode" id="barcode"></div>
+      <div class="barcode-num">INV-0005-20251225</div>
+    </div>
+    
+    <div class="cut-line">
+      <p>Customer Copy</p>
+    </div>
+    
+    <div class="footer">
+      <div class="thanks">Thank You!</div>
+      <p>Returns within 30 days with receipt</p>
+      <p>Electronics within 15 days</p>
+      <p>www.freshmart.com</p>
+    </div>
+  </div>
+
+  <script>
+    function setWidth(w) {
+      var receipt = document.getElementById('receipt');
+      var buttons = document.querySelectorAll('.control-group button');
+      
+      buttons.forEach(function(btn) { btn.classList.remove('active'); });
+      event.target.classList.add('active');
+      
+      receipt.classList.remove('w58');
+      if (w === '58') {
+        receipt.classList.add('w58');
+        document.querySelector('.controls').style.width = '58mm';
+      } else {
+        document.querySelector('.controls').style.width = '80mm';
+      }
+    }
+    
+    function generateBarcode() {
+      var barcode = document.getElementById('barcode');
+      var pattern = [2,1,1,2,2,1,2,1,1,2,2,1,2,1,1,2,1,2,2,1,1,2,2,1,1,2,1,2,2,1,2,1,1,2,2,1,2,1,1,2,2,1,2,1,1,2,1,2,2,1,2,1,1,2];
+      for (var i = 0; i < pattern.length; i++) {
+        var div = document.createElement('div');
+        div.className = 'bar';
+        div.style.width = pattern[i] + 'px';
+        div.style.height = (35 + Math.random() * 10) + 'px';
+        div.style.background = i % 2 === 0 ? '#000' : 'transparent';
+        barcode.appendChild(div);
+      }
+    }
+    
+    generateBarcode();
+  </script>
+</body>
+</html>

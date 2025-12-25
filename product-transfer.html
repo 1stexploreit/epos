@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Product Transfer - FreshMart POS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    *{font-family:'Inter',sans-serif;box-sizing:border-box;}
+    body{background:#f8fafc;min-height:100vh;padding-bottom:90px;}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+    .input-light{background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b;border-radius:10px;}
+    .input-light:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1);}
+    .btn-primary{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;font-weight:600;}
+    .btn-primary:hover{background:linear-gradient(135deg,#34d399 0%,#10b981 100%);}
+    .modal{display:none;}.modal.active{display:flex;}
+    .item-row{animation:fadeIn .25s ease;}
+    @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+    .tag{font-size:10px;padding:4px 8px;border-radius:6px;font-weight:600;text-transform:uppercase;}
+    ::-webkit-scrollbar{width:6px;height:6px;}
+    ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px;}
+  </style>
+</head>
+<body class="text-slate-700">
+
+<!-- Header -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+  <div class="max-w-[1400px] mx-auto px-4 py-3">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <button onclick="window.history.back()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="tag bg-indigo-100 text-indigo-700">Stock Transfer</span>
+            <span id="transferNum" class="text-xl font-bold text-slate-800">TRF-0001</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">Transfer products between branches</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <select id="transferStatus" class="input-light px-3 py-2 text-sm">
+          <option value="pending">📋 Pending</option>
+          <option value="in-transit">🚚 In Transit</option>
+          <option value="completed">✅ Completed</option>
+          <option value="cancelled">❌ Cancelled</option>
+        </select>
+        <button onclick="saveTransfer()" class="btn-primary px-5 py-2.5 rounded-xl text-sm hidden md:flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Save Transfer
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1400px] mx-auto p-4 md:p-6">
+
+  <!-- Transfer Info -->
+  <div class="card p-5 mb-6">
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+      <div class="w-11 h-11 rounded-xl bg-indigo-100 flex items-center justify-center">
+        <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+      </div>
+      <div>
+        <h2 class="font-semibold text-slate-800">Transfer Information</h2>
+        <p class="text-xs text-slate-400">Select source and destination branches</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+      <!-- From Branch -->
+      <div class="md:col-span-4">
+        <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">From Branch *</label>
+        <select id="fromBranch" onchange="onFromBranchChange()" class="w-full input-light px-4 py-2.5 text-sm">
+          <option value="">-- Select Source --</option>
+          <option value="main">🏢 Main Warehouse</option>
+          <option value="branch1">🏪 Branch 1 - Downtown</option>
+          <option value="branch2">🏪 Branch 2 - Mall</option>
+          <option value="branch3">🏪 Branch 3 - Airport</option>
+        </select>
+      </div>
+
+      <!-- Arrow -->
+      <div class="md:col-span-1 flex items-end justify-center pb-2">
+        <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </div>
+      </div>
+
+      <!-- To Branch -->
+      <div class="md:col-span-4">
+        <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">To Branch *</label>
+        <select id="toBranch" class="w-full input-light px-4 py-2.5 text-sm">
+          <option value="">-- Select Destination --</option>
+          <option value="main">🏢 Main Warehouse</option>
+          <option value="branch1">🏪 Branch 1 - Downtown</option>
+          <option value="branch2">🏪 Branch 2 - Mall</option>
+          <option value="branch3">🏪 Branch 3 - Airport</option>
+        </select>
+      </div>
+
+      <!-- Date -->
+      <div class="md:col-span-3">
+        <label class="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Transfer Date</label>
+        <input type="date" id="transferDate" class="w-full input-light px-3 py-2.5 text-sm">
+      </div>
+    </div>
+
+    </div>
+
+  <!-- Main Content -->
+  <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+
+    <!-- Products Section -->
+    <div class="xl:col-span-9">
+
+      <!-- Search Bar -->
+      <div class="card p-4 mb-4">
+        <div class="flex flex-wrap gap-3">
+          <!-- Barcode Scanner -->
+          <div class="flex">
+            <input type="text" id="barcodeInput" class="w-40 input-light rounded-r-none px-4 py-3 text-sm border-r-0" placeholder="Scan Barcode" onkeypress="if(event.key==='Enter')scanBarcode()">
+            <button onclick="scanBarcode()" class="btn-primary px-4 rounded-l-none rounded-r-xl flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 12h2m14 0h2M6 20h2M6 4h2m8 0h2"/></svg>
+            </button>
+          </div>
+
+          <!-- Search -->
+          <div class="flex-1 min-w-[200px] relative">
+            <input type="text" id="productSearch" class="w-full input-light px-4 py-3 pl-11 text-sm" placeholder="Search products by name or SKU..." oninput="searchProducts()" onfocus="showDropdown()">
+            <svg class="w-5 h-5 text-emerald-500 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <div id="productDropdown" class="hidden absolute top-full left-0 right-0 mt-2 card shadow-xl z-20 max-h-60 overflow-y-auto"></div>
+          </div>
+
+          <!-- Category Filter -->
+          <select id="categoryFilter" onchange="onCategoryChange()" class="input-light px-4 py-3 text-sm">
+            <option value="">All Categories</option>
+            <option value="fruits">🍎 Fruits</option>
+            <option value="dairy">🥛 Dairy</option>
+            <option value="bakery">🍞 Bakery</option>
+            <option value="meat">🥩 Meat</option>
+            <option value="vegetables">🥕 Vegetables</option>
+            <option value="beverages">🥤 Beverages</option>
+          </select>
+
+          <!-- Sub Category -->
+          <select id="subCategoryFilter" onchange="searchProducts()" class="input-light px-4 py-3 text-sm hidden">
+            <option value="">All</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            Transfer Items
+            <span id="itemCount" class="tag bg-indigo-100 text-indigo-700 ml-1">0</span>
+          </h3>
+          <button onclick="clearCart()" class="text-xs text-red-500 hover:text-red-700 font-medium">Clear All</button>
+        </div>
+
+        <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+          <table class="w-full">
+            <thead class="sticky top-0 z-10">
+              <tr class="bg-slate-50">
+                <th class="text-left px-3 py-2 text-[10px] font-semibold text-slate-500 uppercase w-10">#</th>
+                <th class="text-left px-3 py-2 text-[10px] font-semibold text-slate-500 uppercase">Product</th>
+                <th class="text-center px-2 py-2 text-[10px] font-semibold text-slate-500 uppercase w-16">Stock</th>
+                <th class="text-center px-2 py-2 text-[10px] font-semibold text-slate-500 uppercase w-28">Qty</th>
+                <th class="text-right px-2 py-2 text-[10px] font-semibold text-slate-500 uppercase w-20">Cost</th>
+                <th class="text-right px-3 py-2 text-[10px] font-semibold text-slate-500 uppercase w-24">Total</th>
+                <th class="w-8"></th>
+              </tr>
+            </thead>
+            <tbody id="cartBody"></tbody>
+          </table>
+        </div>
+
+        <div id="emptyCart" class="p-8 text-center">
+          <div class="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
+            <svg class="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+          </div>
+          <p class="text-slate-500 text-sm font-medium">No items added</p>
+          <p class="text-slate-400 text-xs mt-1">Scan barcode or search products</p>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="card p-5 mt-4">
+        <label class="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Transfer Notes</label>
+        <textarea id="transferNotes" rows="2" class="w-full input-light px-4 py-3 text-sm resize-none" placeholder="Reason for transfer or special instructions..."></textarea>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="xl:col-span-3 space-y-4">
+
+      <!-- Summary -->
+      <div class="card p-5">
+        <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          Transfer Summary
+        </h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-500">Total Items</span>
+            <span id="totalItems" class="text-slate-800 font-medium">0</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-500">Total Quantity</span>
+            <span id="totalQty" class="text-slate-800 font-medium">0</span>
+          </div>
+          <div class="border-t border-slate-100 pt-4 mt-4">
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl p-4 text-center">
+              <p class="text-indigo-100 text-xs font-medium mb-1">TOTAL VALUE</p>
+              <p id="grandTotal" class="text-2xl font-extrabold text-white">$0.00</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transfer Info Card -->
+      <div class="card p-5">
+        <h3 class="font-semibold text-slate-800 mb-3">Transfer Details</h3>
+        <div class="space-y-2 text-sm">
+          <div class="flex items-center gap-2 text-slate-500">
+            <span class="w-16">From:</span>
+            <span id="summaryFrom" class="text-slate-800 font-medium">Not selected</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-500">
+            <span class="w-16">To:</span>
+            <span id="summaryTo" class="text-slate-800 font-medium">Not selected</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-500">
+            <span class="w-16">Date:</span>
+            <span id="summaryDate" class="text-slate-800 font-medium">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40">
+  <div class="max-w-[1400px] mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-6 text-sm">
+      <span class="text-slate-500">Items: <strong id="footerItems" class="text-slate-800">0</strong></span>
+      <span class="text-slate-500">Value: <strong id="footerTotal" class="text-indigo-600">$0.00</strong></span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="resetTransfer()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm font-medium transition">Cancel</button>
+      <button onclick="saveTransfer()" class="btn-primary px-6 py-2.5 rounded-xl text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        Save Transfer
+      </button>
+    </div>
+  </div>
+</footer>
+
+<!-- Success Modal -->
+<div id="successModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50 p-4">
+  <div class="card p-6 w-full max-w-sm text-center">
+    <div class="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <h3 class="text-xl font-bold text-slate-800 mb-1">Transfer Saved!</h3>
+    <p id="successTransferNum" class="text-lg font-bold text-indigo-600 mb-1">TRF-0001</p>
+    <p id="successInfo" class="text-sm text-slate-500 mb-5">0 items transferred</p>
+    <div class="flex gap-3">
+      <button onclick="newTransfer()" class="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 font-medium transition">New Transfer</button>
+      <button onclick="closeSuccessModal()" class="flex-1 py-3 btn-primary rounded-xl">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Data
+const branches = {
+  main: { name: 'Main Warehouse', icon: '🏢' },
+  branch1: { name: 'Branch 1 - Downtown', icon: '🏪' },
+  branch2: { name: 'Branch 2 - Mall', icon: '🏪' },
+  branch3: { name: 'Branch 3 - Airport', icon: '🏪' }
+};
+
+const products = [
+  { id: 1, name: 'Organic Apples', sku: 'FRT001', barcode: '8901234567001', cost: 3.50, category: 'fruits', subCategory: 'fresh', stock: { main: 150, branch1: 45, branch2: 30, branch3: 20 } },
+  { id: 2, name: 'Fresh Bananas', sku: 'FRT002', barcode: '8901234567002', cost: 1.80, category: 'fruits', subCategory: 'tropical', stock: { main: 200, branch1: 60, branch2: 40, branch3: 25 } },
+  { id: 3, name: 'Sweet Oranges', sku: 'FRT003', barcode: '8901234567003', cost: 2.80, category: 'fruits', subCategory: 'citrus', stock: { main: 180, branch1: 50, branch2: 35, branch3: 15 } },
+  { id: 4, name: 'Whole Milk 1L', sku: 'DRY001', barcode: '8901234567004', cost: 2.50, category: 'dairy', subCategory: 'milk', stock: { main: 300, branch1: 80, branch2: 60, branch3: 40 } },
+  { id: 5, name: 'Greek Yogurt', sku: 'DRY002', barcode: '8901234567005', cost: 4.00, category: 'dairy', subCategory: 'yogurt', stock: { main: 120, branch1: 35, branch2: 25, branch3: 15 } },
+  { id: 6, name: 'Cheddar Cheese', sku: 'DRY003', barcode: '8901234567006', cost: 5.50, category: 'dairy', subCategory: 'cheese', stock: { main: 100, branch1: 30, branch2: 20, branch3: 10 } },
+  { id: 7, name: 'Sourdough Bread', sku: 'BKY001', barcode: '8901234567007', cost: 3.50, category: 'bakery', subCategory: 'bread', stock: { main: 80, branch1: 25, branch2: 18, branch3: 12 } },
+  { id: 8, name: 'Croissants', sku: 'BKY002', barcode: '8901234567008', cost: 5.00, category: 'bakery', subCategory: 'pastry', stock: { main: 60, branch1: 20, branch2: 15, branch3: 8 } },
+  { id: 9, name: 'Chicken Breast', sku: 'MET001', barcode: '8901234567009', cost: 9.50, category: 'meat', subCategory: 'poultry', stock: { main: 90, branch1: 28, branch2: 20, branch3: 12 } },
+  { id: 10, name: 'Ground Beef', sku: 'MET002', barcode: '8901234567010', cost: 7.50, category: 'meat', subCategory: 'beef', stock: { main: 70, branch1: 22, branch2: 16, branch3: 10 } },
+  { id: 11, name: 'Fresh Carrots', sku: 'VEG001', barcode: '8901234567011', cost: 2.00, category: 'vegetables', subCategory: 'root', stock: { main: 200, branch1: 55, branch2: 40, branch3: 25 } },
+  { id: 12, name: 'Broccoli', sku: 'VEG002', barcode: '8901234567012', cost: 2.50, category: 'vegetables', subCategory: 'green', stock: { main: 150, branch1: 40, branch2: 30, branch3: 18 } },
+  { id: 13, name: 'Coca-Cola 1.5L', sku: 'BEV001', barcode: '8901234567013', cost: 2.00, category: 'beverages', subCategory: 'soft-drinks', stock: { main: 400, branch1: 100, branch2: 80, branch3: 50 } },
+  { id: 14, name: 'Orange Juice 1L', sku: 'BEV002', barcode: '8901234567014', cost: 3.50, category: 'beverages', subCategory: 'juice', stock: { main: 180, branch1: 50, branch2: 35, branch3: 20 } }
+];
+
+const subCategories = {
+  fruits: [{value:'fresh',label:'Fresh'},{value:'tropical',label:'Tropical'},{value:'citrus',label:'Citrus'}],
+  dairy: [{value:'milk',label:'Milk'},{value:'cheese',label:'Cheese'},{value:'yogurt',label:'Yogurt'}],
+  bakery: [{value:'bread',label:'Bread'},{value:'pastry',label:'Pastry'}],
+  meat: [{value:'poultry',label:'Poultry'},{value:'beef',label:'Beef'}],
+  vegetables: [{value:'green',label:'Green'},{value:'root',label:'Root'}],
+  beverages: [{value:'soft-drinks',label:'Soft Drinks'},{value:'juice',label:'Juice'}]
+};
+
+let cart = [];
+let selectedFromBranch = null;
+let transferNum = 1;
+
+// Init
+document.getElementById('transferDate').value = new Date().toISOString().split('T')[0];
+
+// Branch Selection
+function onFromBranchChange() {
+  const branchId = document.getElementById('fromBranch').value;
+  if (branchId) {
+    selectedFromBranch = branchId;
+    document.getElementById('summaryFrom').textContent = branches[branchId].name;
+  } else {
+    selectedFromBranch = null;
+    document.getElementById('summaryFrom').textContent = 'Not selected';
+  }
+  // Clear cart when branch changes
+  cart = [];
+  renderCart();
+}
+
+// Update summary on changes
+document.getElementById('toBranch').addEventListener('change', function() {
+  const val = this.value;
+  document.getElementById('summaryTo').textContent = val ? branches[val].name : 'Not selected';
+});
+
+document.getElementById('transferDate').addEventListener('change', function() {
+  document.getElementById('summaryDate').textContent = this.value || '-';
+});
+
+// Barcode Scanner
+function scanBarcode() {
+  const code = document.getElementById('barcodeInput').value.trim();
+  if (!code) return;
+  
+  if (!selectedFromBranch) {
+    alert('Please select source branch first');
+    return;
+  }
+  
+  const p = products.find(x => x.barcode === code || x.sku === code);
+  if (p) {
+    addToCart(p.id);
+    document.getElementById('barcodeInput').value = '';
+  } else {
+    alert('Product not found: ' + code);
+  }
+}
+
+// Product Search
+function searchProducts() {
+  const q = document.getElementById('productSearch').value.toLowerCase();
+  const cat = document.getElementById('categoryFilter').value;
+  const subCat = document.getElementById('subCategoryFilter').value;
+  const dd = document.getElementById('productDropdown');
+  
+  if (!selectedFromBranch) {
+    dd.innerHTML = '<p class="p-4 text-center text-amber-600">Please select source branch first</p>';
+    dd.classList.remove('hidden');
+    return;
+  }
+  
+  let filtered = products.filter(p => {
+    if (cat && p.category !== cat) return false;
+    if (subCat && p.subCategory !== subCat) return false;
+    if (q && !p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  
+  if (!q && !cat && !subCat) { dd.classList.add('hidden'); return; }
+  
+  dd.classList.remove('hidden');
+  dd.innerHTML = filtered.length ? filtered.slice(0, 10).map(p => {
+    const stock = p.stock[selectedFromBranch] || 0;
+    return `<div onclick="addToCart(${p.id})" class="flex items-center justify-between px-3 py-2 hover:bg-emerald-50 cursor-pointer border-b border-slate-100">
+      <div>
+        <span class="text-sm font-medium text-slate-800">${p.name}</span>
+        <span class="text-xs text-slate-400 ml-2">${p.sku}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-semibold text-emerald-600">${p.cost.toFixed(2)}</span>
+        <span class="tag ${stock > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}">${stock}</span>
+      </div>
+    </div>`;
+  }).join('') : '<p class="p-4 text-center text-slate-400">No products found</p>';
+}
+
+function showDropdown() { if (document.getElementById('productSearch').value || document.getElementById('categoryFilter').value) searchProducts(); }
+
+function onCategoryChange() {
+  const cat = document.getElementById('categoryFilter').value;
+  const subSel = document.getElementById('subCategoryFilter');
+  if (cat && subCategories[cat]) {
+    subSel.classList.remove('hidden');
+    subSel.innerHTML = '<option value="">All</option>' + subCategories[cat].map(s => `<option value="${s.value}">${s.label}</option>`).join('');
+  } else {
+    subSel.classList.add('hidden');
+    subSel.value = '';
+  }
+  searchProducts();
+}
+
+// Cart Functions
+function addToCart(id) {
+  if (!selectedFromBranch) {
+    alert('Please select source branch first');
+    return;
+  }
+  
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  
+  const stock = p.stock[selectedFromBranch] || 0;
+  if (stock <= 0) {
+    alert('No stock available in selected branch');
+    return;
+  }
+  
+  const existing = cart.find(c => c.id === id);
+  if (existing) {
+    if (existing.transferQty < stock) {
+      existing.transferQty++;
+    } else {
+      alert('Cannot exceed available stock');
+    }
+  } else {
+    cart.push({ ...p, availableStock: stock, transferQty: 1 });
+  }
+  
+  document.getElementById('productSearch').value = '';
+  document.getElementById('productDropdown').classList.add('hidden');
+  renderCart();
+}
+
+function renderCart() {
+  const tbody = document.getElementById('cartBody');
+  const empty = document.getElementById('emptyCart');
+  
+  document.getElementById('itemCount').textContent = cart.length;
+  document.getElementById('footerItems').textContent = cart.length;
+  
+  if (!cart.length) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+    calculate();
+    return;
+  }
+  
+  empty.classList.add('hidden');
+  tbody.innerHTML = cart.map((item, i) => {
+    const totalValue = item.transferQty * item.cost;
+    return `<tr class="item-row border-b border-slate-100 hover:bg-slate-50">
+      <td class="px-3 py-1.5 text-xs text-slate-400">${i + 1}</td>
+      <td class="px-3 py-1.5">
+        <p class="text-sm font-medium text-slate-800 leading-tight">${item.name}</p>
+        <p class="text-[10px] text-slate-400">${item.sku}</p>
+      </td>
+      <td class="px-2 py-1.5 text-center">
+        <span class="tag bg-blue-100 text-blue-700">${item.availableStock}</span>
+      </td>
+      <td class="px-2 py-1.5">
+        <div class="flex items-center justify-center gap-1">
+          <button onclick="changeQty(${i},-1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-indigo-100 text-slate-500 hover:text-indigo-600 text-sm">-</button>
+          <input type="number" value="${item.transferQty}" min="1" max="${item.availableStock}" onchange="setQty(${i},this.value)" class="w-12 text-center input-light py-1 text-xs">
+          <button onclick="changeQty(${i},1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-indigo-100 text-slate-500 hover:text-indigo-600 text-sm">+</button>
+        </div>
+      </td>
+      <td class="px-2 py-1.5 text-right text-xs text-slate-600">${item.cost.toFixed(2)}</td>
+      <td class="px-3 py-1.5 text-right text-sm font-bold text-indigo-600">${totalValue.toFixed(2)}</td>
+      <td class="px-1 py-1.5">
+        <button onclick="removeItem(${i})" class="w-6 h-6 rounded hover:bg-red-100 text-slate-400 hover:text-red-500 flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+  
+  calculate();
+}
+
+function changeQty(i, d) {
+  const newQty = cart[i].transferQty + d;
+  if (newQty >= 1 && newQty <= cart[i].availableStock) {
+    cart[i].transferQty = newQty;
+    renderCart();
+  }
+}
+
+function setQty(i, v) {
+  const qty = Math.max(1, Math.min(parseInt(v) || 1, cart[i].availableStock));
+  cart[i].transferQty = qty;
+  renderCart();
+}
+
+function removeItem(i) { cart.splice(i, 1); renderCart(); }
+function clearCart() { cart = []; renderCart(); }
+
+function calculate() {
+  let totalQty = 0, totalValue = 0;
+  cart.forEach(item => {
+    totalQty += item.transferQty;
+    totalValue += item.transferQty * item.cost;
+  });
+  
+  document.getElementById('totalItems').textContent = cart.length;
+  document.getElementById('totalQty').textContent = totalQty;
+  document.getElementById('grandTotal').textContent = '$' + totalValue.toFixed(2);
+  document.getElementById('footerTotal').textContent = '$' + totalValue.toFixed(2);
+}
+
+// Save & Reset
+function saveTransfer() {
+  if (!cart.length) { alert('Add items to transfer'); return; }
+  if (!document.getElementById('fromBranch').value) { alert('Select source branch'); return; }
+  if (!document.getElementById('toBranch').value) { alert('Select destination branch'); return; }
+  if (document.getElementById('fromBranch').value === document.getElementById('toBranch').value) {
+    alert('Source and destination cannot be same');
+    return;
+  }
+  
+  let totalQty = 0;
+  cart.forEach(item => totalQty += item.transferQty);
+  
+  document.getElementById('successTransferNum').textContent = document.getElementById('transferNum').textContent;
+  document.getElementById('successInfo').textContent = totalQty + ' items transferred';
+  document.getElementById('successModal').classList.add('active');
+}
+
+function closeSuccessModal() {
+  document.getElementById('successModal').classList.remove('active');
+}
+
+function newTransfer() {
+  closeSuccessModal();
+  transferNum++;
+  document.getElementById('transferNum').textContent = 'TRF-' + String(transferNum).padStart(4, '0');
+  resetTransfer();
+}
+
+function resetTransfer() {
+  cart = [];
+  selectedFromBranch = null;
+  document.getElementById('fromBranch').value = '';
+  document.getElementById('toBranch').value = '';
+  document.getElementById('transferDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('categoryFilter').value = '';
+  document.getElementById('subCategoryFilter').classList.add('hidden');
+  document.getElementById('productSearch').value = '';
+  document.getElementById('barcodeInput').value = '';
+  document.getElementById('transferNotes').value = '';
+  document.getElementById('transferStatus').value = 'pending';
+  document.getElementById('summaryFrom').textContent = 'Not selected';
+  document.getElementById('summaryTo').textContent = 'Not selected';
+  document.getElementById('summaryDate').textContent = '-';
+  renderCart();
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('#productSearch, #productDropdown, #categoryFilter, #subCategoryFilter')) {
+    document.getElementById('productDropdown').classList.add('hidden');
+  }
+});
+
+// Init
+renderCart();
+document.getElementById('summaryDate').textContent = document.getElementById('transferDate').value;
+</script>
+</body>
+</html>

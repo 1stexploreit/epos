@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Dashboard - FreshMart POS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    :root { --theme-main: #10b981; --theme-light: #ecfdf5; --theme-hover: #34d399; --theme-dark: #059669; }
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+    .scrollbar-thin::-webkit-scrollbar { width: 5px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #f1f5f9; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .theme-bg { background-color: var(--theme-main); }
+    .theme-bg-light { background-color: var(--theme-light); }
+    .theme-bg-gradient { background: linear-gradient(to right, var(--theme-main), var(--theme-dark)); }
+    .theme-bg-gradient-br { background: linear-gradient(to bottom right, var(--theme-main), var(--theme-dark)); }
+    .theme-text { color: var(--theme-main); }
+    .theme-shadow { box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--theme-main) 30%, transparent); }
+    .theme-btn { background-color: var(--theme-main); }
+    .theme-btn:hover { background-color: var(--theme-hover); }
+    .nav-active { background-color: var(--theme-light); color: var(--theme-main); }
+    #sidebar { transition: transform 0.3s ease-in-out; }
+    @media (max-width: 1023px) { #sidebar { position: fixed; top: 0; left: 0; height: 100%; z-index: 50; transform: translateX(-100%); } #sidebar.open { transform: translateX(0); } }
+    #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 40; }
+    #overlay.show { display: block; }
+    .modal { display: none; }
+    .modal.active { display: flex; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen overflow-hidden">
+  <div id="overlay" onclick="closeSidebar()"></div>
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <div id="sidebar" class="w-64 bg-white flex flex-col border-r border-slate-200 shadow-sm flex-shrink-0 lg:translate-x-0">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 theme-bg-gradient-br rounded-xl flex items-center justify-center theme-shadow"><span class="text-lg font-bold text-white">FM</span></div>
+          <div><h1 class="font-bold text-lg text-slate-800">FreshMart</h1><p class="text-xs text-slate-400">POS System</p></div>
+        </div>
+        <button class="lg:hidden p-1 text-slate-400 hover:text-slate-600" onclick="closeSidebar()"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+      <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto scrollbar-thin">
+        <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-3">Main Menu</div>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl nav-active"><i data-lucide="layout-dashboard" class="h-5 w-5"></i><span class="text-sm font-medium">Dashboard</span></a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50"><i data-lucide="monitor" class="h-5 w-5 text-slate-400"></i><span class="text-sm font-medium">POS Terminal</span></a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50"><i data-lucide="package" class="h-5 w-5 text-slate-400"></i><span class="text-sm font-medium">Products</span><span class="ml-auto bg-orange-100 text-orange-600 text-[10px] px-2 py-0.5 rounded-lg font-medium">36</span></a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50"><i data-lucide="shopping-cart" class="h-5 w-5 text-slate-400"></i><span class="text-sm font-medium">Orders</span></a>
+        <div class="customer-menu">
+          <a href="#" onclick="toggleCustomerMenu(event)" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50"><i data-lucide="users" class="h-5 w-5 text-slate-400"></i><span class="text-sm font-medium">Customers</span><i data-lucide="chevron-down" class="h-4 w-4 ml-auto text-slate-400 transition-transform" id="customerArrow"></i></a>
+          <div id="customerSubmenu" class="hidden ml-4 pl-4 border-l border-slate-200 mt-1 space-y-1">
+            <a href="#" class="flex items-center px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-700 text-sm">All Customers</a>
+            <a href="#" class="flex items-center px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-700 text-sm">Add Customer</a>
+            <a href="#" class="flex items-center px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-700 text-sm">Customer Groups</a>
+            <a href="#" class="flex items-center px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-700 text-sm">Loyalty Program</a>
+          </div>
+        </div>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50"><i data-lucide="bar-chart-3" class="h-5 w-5 text-slate-400"></i><span class="text-sm font-medium">Analytics</span></a>
+        <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-3 mt-6">Inventory</div>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50"><i data-lucide="tags" class="h-5 w-5 text-slate-400"></i><span class="text-sm font-medium">Categories</span></a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50"><i data-lucide="warehouse" class="h-5 w-5 text-slate-400"></i><span class="text-sm font-medium">Stock Management</span></a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50"><i data-lucide="truck" class="h-5 w-5 text-slate-400"></i><span class="text-sm font-medium">Suppliers</span></a>
+        <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-3 mt-6">Settings</div>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50"><i data-lucide="settings" class="h-5 w-5 text-slate-400"></i><span class="text-sm font-medium">System Settings</span></a>
+      </nav>
+      <div class="p-4 border-t border-slate-200">
+        <div class="flex items-center gap-3 bg-gradient-to-r from-slate-50 to-slate-100 p-3 rounded-xl border border-slate-200">
+          <div class="w-9 h-9 theme-bg-light rounded-xl flex items-center justify-center"><i data-lucide="map-pin" class="h-4 w-4 theme-text"></i></div>
+          <div class="flex-1 min-w-0"><p class="text-sm font-medium text-slate-700 truncate">Main Branch</p><p class="text-xs text-slate-400">Downtown, New York</p></div>
+          <div class="w-2.5 h-2.5 theme-bg rounded-full animate-pulse"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <!-- Topbar -->
+      <div class="bg-white border-b border-slate-200 px-4 md:px-6 py-3 flex items-center justify-between shadow-sm flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <button id="burgerBtn" class="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl" onclick="toggleSidebar()"><i data-lucide="menu" class="h-5 w-5"></i></button>
+          <div class="flex items-center gap-3 lg:hidden">
+            <div class="w-8 h-8 theme-bg-gradient-br rounded-lg flex items-center justify-center"><span class="text-sm font-bold text-white">FM</span></div>
+            <div><h1 class="font-bold text-sm text-slate-800">FreshMart</h1><p class="text-[10px] text-slate-400">POS System</p></div>
+          </div>
+          <div class="hidden lg:block"><h2 class="text-xl font-bold text-slate-800">Dashboard</h2><p class="text-sm text-slate-500">Welcome back! Here's your store overview</p></div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="hidden sm:flex items-center gap-1.5 px-3 py-2 theme-bg-light theme-text rounded-xl text-sm font-medium hover:opacity-80"><i data-lucide="monitor" class="h-4 w-4"></i><span class="hidden md:inline">POS</span></button>
+          <!-- Quick Launch -->
+          <div class="relative">
+            <button id="quickLaunchBtn" class="p-2 text-slate-500 hover:bg-slate-100 rounded-xl"><i data-lucide="layout-grid" class="h-5 w-5"></i></button>
+            <div id="quickLaunchDropdown" class="hidden absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3">
+              <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-3">Quick Launch</p>
+              <div class="grid grid-cols-3 gap-2">
+                <a href="#" class="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-slate-50"><div class="w-10 h-10 rounded-xl flex items-center justify-center theme-bg-gradient-br theme-shadow"><i data-lucide="shopping-cart" class="w-5 h-5 text-white"></i></div><span class="text-[10px] font-medium text-slate-600">New Sale</span></a>
+                <a href="#" class="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-slate-50"><div class="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/30"><i data-lucide="package-plus" class="w-5 h-5 text-white"></i></div><span class="text-[10px] font-medium text-slate-600">Add Product</span></a>
+                <a href="#" class="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-slate-50"><div class="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-purple-500 to-purple-700 shadow-lg shadow-purple-500/30"><i data-lucide="user-plus" class="w-5 h-5 text-white"></i></div><span class="text-[10px] font-medium text-slate-600">Customer</span></a>
+              </div>
+            </div>
+          </div>
+          <!-- Language -->
+          <div class="relative hidden sm:block">
+            <button id="langBtn" class="p-2 text-slate-500 hover:bg-slate-100 rounded-xl flex items-center gap-1"><i data-lucide="globe" class="h-5 w-5"></i><span class="text-xs font-medium">EN</span></button>
+            <div id="langDropdown" class="hidden absolute right-0 top-full mt-2 w-40 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-2">
+              <a href="#" class="flex items-center gap-3 px-4 py-2 hover:bg-slate-50" onclick="setLang('EN',event)"><span>🇺🇸</span><span class="text-sm">English</span></a>
+              <a href="#" class="flex items-center gap-3 px-4 py-2 hover:bg-slate-50" onclick="setLang('ES',event)"><span>🇪🇸</span><span class="text-sm">Español</span></a>
+            </div>
+          </div>
+          <!-- Theme Toggle -->
+          <button id="themeToggle" class="p-2 text-slate-500 hover:bg-slate-100 rounded-xl"><i data-lucide="moon" class="h-5 w-5" id="themeIcon"></i></button>
+          <!-- Notifications -->
+          <div class="relative">
+            <button id="notifBtn" class="relative p-2 text-slate-500 hover:bg-slate-100 rounded-xl"><i data-lucide="bell" class="h-5 w-5"></i><span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">3</span></button>
+            <div id="notifDropdown" class="hidden absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden">
+              <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between"><h3 class="text-sm font-semibold text-slate-800">Notifications</h3><span class="text-xs theme-text cursor-pointer font-medium">Mark all read</span></div>
+              <div class="max-h-72 overflow-y-auto scrollbar-thin">
+                <div class="px-4 py-3 hover:bg-slate-50 border-b border-slate-100 cursor-pointer"><div class="flex gap-3"><div class="w-2 h-2 theme-bg rounded-full mt-1.5 flex-shrink-0"></div><div><p class="text-sm text-slate-700">New order <span class="font-semibold">#2847</span> received</p><p class="text-xs text-slate-400 mt-0.5">2 min ago</p></div></div></div>
+                <div class="px-4 py-3 hover:bg-slate-50 border-b border-slate-100 cursor-pointer"><div class="flex gap-3"><div class="w-2 h-2 bg-orange-500 rounded-full mt-1.5 flex-shrink-0"></div><div><p class="text-sm text-slate-700"><span class="font-semibold">Low stock</span> alert - iPhone cases</p><p class="text-xs text-slate-400 mt-0.5">15 min ago</p></div></div></div>
+                <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer"><div class="flex gap-3"><div class="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div><div><p class="text-sm text-slate-700">Payment received from <span class="font-semibold">ABC Corp</span></p><p class="text-xs text-slate-400 mt-0.5">1 hour ago</p></div></div></div>
+              </div>
+              <div class="px-4 py-2.5 border-t border-slate-100 bg-slate-50"><button class="w-full text-xs font-medium theme-text">View All Notifications</button></div>
+            </div>
+          </div>
+          <!-- User Menu -->
+          <div class="relative">
+            <button id="userBtn" class="flex items-center gap-2 p-1.5 hover:bg-slate-100 rounded-xl">
+              <div class="w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-md"><span class="text-xs font-medium text-white">JD</span></div>
+              <div class="text-right hidden md:block"><p class="text-sm font-medium text-slate-700">John Doe</p><p class="text-[10px] text-slate-400">Manager</p></div>
+              <i data-lucide="chevron-down" class="h-4 w-4 text-slate-400 hidden sm:block"></i>
+            </button>
+            <div id="userDropdown" class="hidden absolute right-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden">
+              <div class="p-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-slate-100"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-md"><span class="text-sm font-medium text-white">JD</span></div><div><p class="text-sm font-semibold text-slate-800">John Doe</p><p class="text-xs text-slate-400">Manager</p></div></div></div>
+              <div class="py-2"><a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50"><i data-lucide="user-circle" class="h-4 w-4 text-slate-400"></i>Profile</a><a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50"><i data-lucide="settings" class="h-4 w-4 text-slate-400"></i>Settings</a></div>
+              <div class="border-t border-slate-100 py-2"><a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"><i data-lucide="log-out" class="h-4 w-4"></i>Logout</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div class="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-6">
+        <!-- Stats Cards -->
+        <div id="statsCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"></div>
+
+        <!-- Charts & Wallet -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          <div class="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-5">
+              <div><h3 class="text-sm font-semibold text-slate-800">Sales Overview</h3><p class="text-xs text-slate-400">Weekly performance</p></div>
+              <div class="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                <button class="px-4 py-1.5 text-xs font-medium text-white theme-bg-gradient rounded-lg shadow-sm">Week</button>
+                <button class="px-4 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700">Month</button>
+              </div>
+            </div>
+            <div class="h-56"><canvas id="salesChart"></canvas></div>
+          </div>
+          <div class="lg:col-span-4 bg-white border border-slate-200 rounded-2xl flex flex-col shadow-sm" style="max-height: 340px;">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+              <h3 class="text-sm font-semibold text-slate-800">Wallet Balance</h3>
+              <span class="text-lg font-bold theme-text">$271,450</span>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin" id="walletList"></div>
+          </div>
+        </div>
+
+        <!-- Orders Table & Side Panel -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
+              <div class="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                <button id="tabOrders" onclick="switchTab('orders')" class="px-3 py-1.5 text-xs font-medium text-white theme-bg rounded-lg">Orders</button>
+                <button id="tabReceivable" onclick="switchTab('receivable')" class="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 rounded-lg">Receivable</button>
+                <button id="tabReceive" onclick="switchTab('receive')" class="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 rounded-lg">Receive</button>
+                <button id="tabPayments" onclick="switchTab('payments')" class="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 rounded-lg">Payments</button>
+              </div>
+              <button class="theme-text text-xs font-medium hover:underline">View All</button>
+            </div>
+            <div id="ordersContent" class="overflow-x-auto"><table class="w-full"><thead class="bg-slate-50"><tr><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Order ID</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Customer</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Total</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Status</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Time</th></tr></thead><tbody id="ordersBody" class="divide-y divide-slate-100"></tbody></table></div>
+            <div id="receivableContent" class="hidden overflow-x-auto"><table class="w-full"><thead class="bg-slate-50"><tr><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Customer</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Invoice</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Due Date</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Amount</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Status</th></tr></thead><tbody id="receivableBody" class="divide-y divide-slate-100"></tbody></table></div>
+            <div id="receiveContent" class="hidden overflow-x-auto"><table class="w-full"><thead class="bg-slate-50"><tr><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Description</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Category</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Method</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Time</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Amount</th></tr></thead><tbody id="receiveBody" class="divide-y divide-slate-100"></tbody></table></div>
+            <div id="paymentsContent" class="hidden overflow-x-auto"><table class="w-full"><thead class="bg-slate-50"><tr><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Description</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Category</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Method</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Time</th><th class="text-left p-3 text-[11px] font-semibold text-slate-500 uppercase">Amount</th></tr></thead><tbody id="paymentsBody" class="divide-y divide-slate-100"></tbody></table></div>
+          </div>
+          <div class="space-y-4">
+            <div class="theme-bg-gradient-br rounded-2xl p-5 text-white theme-shadow">
+              <div class="flex items-center gap-2 mb-4"><div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><i data-lucide="wallet" class="h-4 w-4"></i></div><h3 class="font-semibold text-sm">Today Balance</h3></div>
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-sm"><span class="text-white/70">Total Receive</span><span class="text-emerald-200 font-medium">+$45,200</span></div>
+                <div class="flex items-center justify-between text-sm"><span class="text-white/70">Total Payment</span><span class="text-red-200 font-medium">-$12,500</span></div>
+                <div class="border-t border-white/20 pt-3 mt-3 flex items-center justify-between"><span class="text-white/80 font-medium">Net Balance</span><span class="text-2xl font-bold">$32,700</span></div>
+              </div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2"><div class="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center"><i data-lucide="sticky-note" class="h-4 w-4 text-amber-600"></i></div><h3 class="font-semibold text-sm text-slate-800">Notes</h3></div>
+                <div class="flex items-center gap-1">
+                  <button onclick="openNoteModal()" class="w-7 h-7 theme-bg hover:opacity-90 rounded-lg flex items-center justify-center"><i data-lucide="plus" class="h-4 w-4 text-white"></i></button>
+                </div>
+              </div>
+              <div id="noteContent" class="min-h-20 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl p-3 border border-slate-200"></div>
+              <div class="flex items-center justify-between mt-3">
+                <button onclick="prevNote()" class="p-1.5 hover:bg-slate-100 rounded-lg"><i data-lucide="chevron-left" class="h-4 w-4 text-slate-400"></i></button>
+                <div class="flex gap-1.5" id="noteDots"></div>
+                <button onclick="nextNote()" class="p-1.5 hover:bg-slate-100 rounded-lg"><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Note Modal -->
+  <div id="addNoteModal" class="modal fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 w-96 shadow-2xl">
+      <div class="flex items-center justify-between mb-4"><h3 class="text-xl font-bold text-slate-800">Add New Note</h3><button onclick="closeNoteModal()" class="p-2 hover:bg-slate-100 rounded-lg"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button></div>
+      <textarea id="newNoteText" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm resize-none h-28 focus:outline-none focus:border-emerald-500" placeholder="Enter your note..."></textarea>
+      <div class="flex gap-3 mt-4">
+        <button onclick="closeNoteModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium text-slate-600">Cancel</button>
+        <button onclick="saveNote()" class="flex-1 py-3 theme-btn text-white rounded-xl font-medium theme-shadow">Save Note</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let customerMenuOpen = false;
+    const recentOrders = [
+      { id: '#ORD-2847', customer: 'John Smith', total: 149.97, status: 'Completed', time: '10:30 AM' },
+      { id: '#ORD-2846', customer: 'Emma Wilson', total: 999.99, status: 'Processing', time: '10:15 AM' },
+      { id: '#ORD-2845', customer: 'Michael Brown', total: 87.45, status: 'Completed', time: '09:45 AM' },
+      { id: '#ORD-2844', customer: 'Sarah Davis', total: 259.98, status: 'Pending', time: '09:30 AM' },
+    ];
+    const todayReceivable = [
+      { customer: 'ABC Corporation', invoice: 'INV-001', dueDate: 'Today', amount: 2500, status: 'Due Today' },
+      { customer: 'XYZ Ltd', invoice: 'INV-002', dueDate: 'Today', amount: 1850, status: 'Due Today' },
+      { customer: 'Smith & Sons', invoice: 'INV-003', dueDate: 'Tomorrow', amount: 3200, status: 'Upcoming' },
+      { customer: 'Tech Solutions', invoice: 'INV-004', dueDate: 'Dec 25', amount: 950, status: 'Upcoming' },
+    ];
+    const todayReceive = [
+      { desc: 'Cash Sales - Walk-in', category: 'Sales', method: 'Cash', time: '10:30 AM', amount: 18500 },
+      { desc: 'Card Payment - Online', category: 'Sales', method: 'Visa Card', time: '11:15 AM', amount: 15200 },
+      { desc: 'Invoice #INV-098 Payment', category: 'Collection', method: 'Bank Transfer', time: '12:00 PM', amount: 8500 },
+      { desc: 'Refund Return Credit', category: 'Adjustment', method: 'Cash', time: '2:30 PM', amount: 3000 },
+    ];
+    const todayPayments = [
+      { desc: 'Supplier - Tech Distributors', category: 'Inventory', method: 'Bank Transfer', time: '9:00 AM', amount: 6500 },
+      { desc: 'Monthly Salary - Staff', category: 'Payroll', method: 'Bank Transfer', time: '10:00 AM', amount: 3500 },
+      { desc: 'Electricity Bill - Dec', category: 'Utilities', method: 'Online', time: '11:30 AM', amount: 1500 },
+      { desc: 'Office Supplies', category: 'Operations', method: 'Cash', time: '3:00 PM', amount: 1000 },
+    ];
+    const walletItems = [
+      { name: 'Cash', sub: 'Main drawer', amount: '$125,400', icon: 'banknote', color: 'theme-bg-light', iconColor: 'theme-text' },
+      { name: 'Visa Card', sub: '****4582', amount: '$52,300', icon: 'credit-card', color: 'bg-blue-50', iconColor: 'text-blue-600' },
+      { name: 'Mastercard', sub: '****7891', amount: '$36,950', icon: 'credit-card', color: 'bg-orange-50', iconColor: 'text-orange-600' },
+      { name: 'PayPal', sub: 'store@email.com', amount: '$28,400', icon: 'smartphone', color: 'bg-purple-50', iconColor: 'text-purple-600' },
+      { name: 'Apple Pay', sub: 'Connected', amount: '$15,200', icon: 'smartphone', color: 'bg-green-50', iconColor: 'text-green-600' },
+      { name: 'Bank Account', sub: '****3421', amount: '$13,200', icon: 'landmark', color: 'bg-sky-50', iconColor: 'text-sky-600' },
+    ];
+    let notes = [
+      { text: 'Remember to reorder iPhone 15 Pro cases - stock running low. Contact supplier by EOD.', date: 'Today, 9:30 AM' },
+      { text: 'Staff meeting scheduled for tomorrow at 10 AM. Discuss Q4 sales targets and holiday schedule.', date: 'Today, 8:15 AM' },
+      { text: 'New supplier contract needs review. Check terms for bulk discounts on electronics.', date: 'Yesterday' },
+      { text: 'Customer feedback: Need more payment options. Consider adding Apple Pay integration.', date: 'Dec 18' },
+    ];
+    let currentNote = 0;
+
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+    function toggleCustomerMenu(e) { e.preventDefault(); customerMenuOpen = !customerMenuOpen; const sub = document.getElementById('customerSubmenu'); const arr = document.getElementById('customerArrow'); if (customerMenuOpen) { sub.classList.remove('hidden'); arr.style.transform = 'rotate(180deg)'; } else { sub.classList.add('hidden'); arr.style.transform = 'rotate(0deg)'; } }
+
+    function renderStatsCards() {
+      document.getElementById('statsCards').innerHTML = `
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-all shadow-sm">
+          <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 theme-bg-gradient-br rounded-xl flex items-center justify-center theme-shadow"><i data-lucide="shopping-bag" class="w-5 h-5 text-white"></i></div><span class="text-xs theme-bg-light theme-text px-2 py-1 rounded-lg font-medium">+12%</span></div>
+          <p class="text-2xl font-bold text-slate-800">142</p><p class="text-xs text-slate-400 uppercase tracking-wide mt-1">Today Orders</p>
+          <div class="flex items-center gap-3 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500"><span>Online <strong class="text-slate-700">68</strong></span><span>App <strong class="text-slate-700">52</strong></span><span>Store <strong class="text-slate-700">22</strong></span></div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-all shadow-sm">
+          <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30"><i data-lucide="dollar-sign" class="w-5 h-5 text-white"></i></div><span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-medium">+8.5%</span></div>
+          <p class="text-2xl font-bold text-slate-800">$32,700</p><p class="text-xs text-slate-400 uppercase tracking-wide mt-1">Today Revenue</p>
+          <div class="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100 text-xs"><span class="text-slate-500">In <strong class="theme-text">$45,200</strong></span><span class="text-slate-500">Out <strong class="text-red-500">$12,500</strong></span></div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-all shadow-sm">
+          <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 bg-gradient-to-br from-violet-500 to-violet-700 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30"><i data-lucide="wallet" class="w-5 h-5 text-white"></i></div><span class="text-xs bg-violet-50 text-violet-600 px-2 py-1 rounded-lg font-medium">Balance</span></div>
+          <p class="text-2xl font-bold text-slate-800">$214,500</p><p class="text-xs text-slate-400 uppercase tracking-wide mt-1">Account Balance</p>
+          <div class="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100 text-xs"><span class="text-slate-500">Payable <strong class="text-red-500">$125k</strong></span><span class="text-slate-500">Receivable <strong class="theme-text">$89.5k</strong></span></div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-all shadow-sm">
+          <div class="flex items-start justify-between mb-3"><div class="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-700 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/30"><i data-lucide="package" class="w-5 h-5 text-white"></i></div><span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded-lg font-medium">$3.4M</span></div>
+          <p class="text-2xl font-bold text-slate-800">183,838</p><p class="text-xs text-slate-400 uppercase tracking-wide mt-1">Inventory Items</p>
+          <div class="mt-3 pt-3 border-t border-slate-100"><div class="flex gap-1 h-1.5 rounded-full overflow-hidden bg-slate-100 mb-2"><div class="bg-emerald-500 rounded-full" style="flex:75"></div><div class="bg-amber-500 rounded-full" style="flex:18"></div><div class="bg-red-500 rounded-full" style="flex:7"></div></div><div class="flex items-center gap-2 text-[10px]"><span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>137,878 in stock</span><span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>33,091 low</span><span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>12,869 out</span></div></div>
+        </div>`;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function renderWallet() {
+      document.getElementById('walletList').innerHTML = walletItems.map(w => `<div class="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors border border-slate-100"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl ${w.color} flex items-center justify-center"><i data-lucide="${w.icon}" class="w-4 h-4 ${w.iconColor}"></i></div><div><p class="text-sm font-medium text-slate-700">${w.name}</p><p class="text-[10px] text-slate-400">${w.sub}</p></div></div><span class="text-sm font-semibold text-slate-800">${w.amount}</span></div>`).join('');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function renderOrders() {
+      document.getElementById('ordersBody').innerHTML = recentOrders.map(o => {
+        const sc = o.status === 'Completed' ? 'theme-bg-light theme-text' : o.status === 'Processing' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700';
+        return `<tr class="hover:bg-slate-50"><td class="p-3"><span class="text-sm font-semibold theme-text">${o.id}</span></td><td class="p-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-medium text-slate-600">${o.customer.split(' ').map(n=>n[0]).join('')}</div><span class="text-sm text-slate-700">${o.customer}</span></div></td><td class="p-3 text-sm font-semibold text-slate-800">$${o.total.toFixed(2)}</td><td class="p-3"><span class="px-2 py-1 rounded-lg text-[11px] font-medium ${sc}">${o.status}</span></td><td class="p-3 text-sm text-slate-500">${o.time}</td></tr>`;
+      }).join('');
+    }
+    function renderReceivable() {
+      document.getElementById('receivableBody').innerHTML = todayReceivable.map(r => {
+        const sc = r.status === 'Due Today' ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-600';
+        return `<tr class="hover:bg-slate-50"><td class="p-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-medium text-slate-600">${r.customer.split(' ').map(n=>n[0]).join('').slice(0,2)}</div><span class="text-sm text-slate-700">${r.customer}</span></div></td><td class="p-3"><span class="text-sm font-medium theme-text">${r.invoice}</span></td><td class="p-3 text-sm text-slate-600">${r.dueDate}</td><td class="p-3 text-sm font-semibold text-slate-800">$${r.amount.toLocaleString()}</td><td class="p-3"><span class="px-2 py-1 rounded-lg text-[11px] font-medium ${sc}">${r.status}</span></td></tr>`;
+      }).join('');
+    }
+    function renderReceive() {
+      document.getElementById('receiveBody').innerHTML = todayReceive.map(r => {
+        const cc = r.category === 'Sales' ? 'theme-bg-light theme-text' : r.category === 'Collection' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700';
+        return `<tr class="hover:bg-slate-50"><td class="p-3 text-sm text-slate-700">${r.desc}</td><td class="p-3"><span class="px-2 py-1 rounded-lg text-[11px] font-medium ${cc}">${r.category}</span></td><td class="p-3 text-sm text-slate-500">${r.method}</td><td class="p-3 text-sm text-slate-500">${r.time}</td><td class="p-3 text-sm font-semibold theme-text">+$${r.amount.toLocaleString()}</td></tr>`;
+      }).join('');
+    }
+    function renderPayments() {
+      document.getElementById('paymentsBody').innerHTML = todayPayments.map(p => {
+        const cc = p.category === 'Inventory' ? 'bg-orange-50 text-orange-700' : p.category === 'Payroll' ? 'bg-violet-50 text-violet-700' : p.category === 'Utilities' ? 'bg-cyan-50 text-cyan-700' : 'bg-slate-100 text-slate-600';
+        return `<tr class="hover:bg-slate-50"><td class="p-3 text-sm text-slate-700">${p.desc}</td><td class="p-3"><span class="px-2 py-1 rounded-lg text-[11px] font-medium ${cc}">${p.category}</span></td><td class="p-3 text-sm text-slate-500">${p.method}</td><td class="p-3 text-sm text-slate-500">${p.time}</td><td class="p-3 text-sm font-semibold text-red-500">-$${p.amount.toLocaleString()}</td></tr>`;
+      }).join('');
+    }
+
+    function switchTab(tab) {
+      ['orders', 'receivable', 'receive', 'payments'].forEach(t => {
+        const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        const content = document.getElementById(t + 'Content');
+        if (t === tab) { btn.className = 'px-3 py-1.5 text-xs font-medium text-white theme-bg rounded-lg'; content.classList.remove('hidden'); }
+        else { btn.className = 'px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 rounded-lg'; content.classList.add('hidden'); }
+      });
+    }
+
+    function renderNotes() {
+      const note = notes[currentNote];
+      document.getElementById('noteContent').innerHTML = `<p class="text-sm text-slate-600 leading-relaxed">${note.text}</p><p class="text-xs text-slate-400 mt-2">${note.date}</p>`;
+      document.getElementById('noteDots').innerHTML = notes.map((_, i) => `<button onclick="goToNote(${i})" class="w-2 h-2 rounded-full transition-colors ${i === currentNote ? 'theme-bg' : 'bg-slate-200 hover:bg-slate-300'}"></button>`).join('');
+    }
+    function nextNote() { currentNote = (currentNote + 1) % notes.length; renderNotes(); }
+    function prevNote() { currentNote = (currentNote - 1 + notes.length) % notes.length; renderNotes(); }
+    function goToNote(i) { currentNote = i; renderNotes(); }
+    function openNoteModal() { document.getElementById('addNoteModal').classList.add('active'); }
+    function closeNoteModal() { document.getElementById('addNoteModal').classList.remove('active'); document.getElementById('newNoteText').value = ''; }
+    function saveNote() { const t = document.getElementById('newNoteText').value.trim(); if (t) { notes.unshift({ text: t, date: 'Just now' }); currentNote = 0; renderNotes(); closeNoteModal(); } }
+
+    function setLang(l, e) { e.preventDefault(); document.querySelector('#langBtn span').textContent = l; document.getElementById('langDropdown').classList.add('hidden'); }
+
+    function initChart() {
+      const ctx = document.getElementById('salesChart').getContext('2d');
+      const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+      gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+      gradient.addColorStop(1, 'rgba(16, 185, 129, 0.01)');
+      new Chart(ctx, {
+        type: 'line',
+        data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ data: [4200, 3800, 5100, 4600, 6200, 7800, 5400], backgroundColor: gradient, borderColor: '#10b981', borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: '#fff', pointBorderColor: '#10b981', pointBorderWidth: 2, pointRadius: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderStatsCards();
+      renderWallet();
+      renderOrders();
+      renderReceivable();
+      renderReceive();
+      renderPayments();
+      renderNotes();
+      initChart();
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+
+      // Dropdowns
+      ['quickLaunchBtn', 'langBtn', 'notifBtn', 'userBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('click', e => {
+          e.stopPropagation();
+          const map = { quickLaunchBtn: 'quickLaunchDropdown', langBtn: 'langDropdown', notifBtn: 'notifDropdown', userBtn: 'userDropdown' };
+          const dd = document.getElementById(map[id]);
+          const isHidden = dd.classList.contains('hidden');
+          Object.values(map).forEach(d => { const x = document.getElementById(d); if(x) x.classList.add('hidden'); });
+          if (isHidden) dd.classList.remove('hidden');
+        });
+      });
+      document.addEventListener('click', () => { ['quickLaunchDropdown', 'langDropdown', 'notifDropdown', 'userDropdown'].forEach(id => { const el = document.getElementById(id); if(el) el.classList.add('hidden'); }); });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Service Receive - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+@keyframes slideIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.animate-modal{animation:slideIn 0.15s ease-out}
+@media print{.no-print{display:none!important}body{background:#fff!important;padding:0!important}.print-area{box-shadow:none!important;border:none!important}}
+@page{size:A5;margin:8mm}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<main class="no-print max-w-5xl mx-auto px-6 py-5">
+<div class="flex items-center justify-between mb-4">
+<div>
+<h1 class="text-lg font-semibold text-slate-800">Receive Product for Service</h1>
+<p class="text-xs text-slate-400">Create new service entry</p>
+</div>
+<a href="#" onclick="document.getElementById('manageSection').scrollIntoView({behavior:'smooth'})" class="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+Manage Services
+</a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+<!-- Left: Form -->
+<div class="lg:col-span-2 space-y-4">
+<!-- Customer Selection -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<h2 class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-4">Customer</h2>
+<div class="space-y-3">
+<div class="relative">
+<label class="text-xs text-slate-500 font-medium">Search Customer</label>
+<div class="relative mt-1">
+<svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<input type="text" id="custSearch" class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Search by name or phone..." oninput="searchCustomer()" onfocus="showCustList()">
+</div>
+<div id="custDropdown" class="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-auto" style="display:none">
+<div onclick="selectCustomer('walking')" class="px-3 py-2 hover:bg-emerald-50 cursor-pointer border-b border-slate-100 flex items-center gap-2">
+<span class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">W</span>
+<div><p class="text-sm font-medium text-emerald-600">+ Walking Customer</p><p class="text-[10px] text-slate-400">Manual entry</p></div>
+</div>
+<div id="custList"></div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="custFields">
+<div>
+<label class="text-xs text-slate-500 font-medium">Customer Name <span class="text-red-400">*</span></label>
+<input type="text" id="custName" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Enter customer name">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-medium">Phone Number <span class="text-red-400">*</span></label>
+<input type="text" id="custPhone" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="01XXX-XXXXXX">
+</div>
+</div>
+</div>
+</div>
+
+<!-- Product Info -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<h2 class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-4">Product</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="text-xs text-slate-500 font-medium">Product Name <span class="text-red-400">*</span></label>
+<input type="text" id="prodName" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="e.g., Samsung Galaxy A54">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-medium">Serial / IMEI</label>
+<input type="text" id="prodSerial" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Enter serial number">
+</div>
+</div>
+</div>
+
+<!-- Problem Details -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<h2 class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-4">Problem Details</h2>
+<div class="space-y-4">
+<div>
+<label class="text-xs text-slate-500 font-medium">Problem Type <span class="text-red-400">*</span></label>
+<select id="problemType" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm">
+<option value="">Select problem type...</option>
+<option selected>Display Issue</option>
+<option>Charging Issue</option>
+<option>Battery Issue</option>
+<option>Speaker/Mic Issue</option>
+<option>Camera Issue</option>
+<option>Software Issue</option>
+<option>Water Damage</option>
+<option>Physical Damage</option>
+<option>Other</option>
+</select>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-medium">Problem Description</label>
+<textarea id="problemDesc" rows="2" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none" placeholder="Describe the problem in detail...">Display flickering and touch not responding properly in some areas</textarea>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-medium">Accessories Received</label>
+<div class="mt-2 flex flex-wrap gap-2">
+<label class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-lg text-xs cursor-pointer hover:bg-slate-100">
+<input type="checkbox" id="accCharger" class="rounded border-slate-300 text-emerald-500 w-3.5 h-3.5"> Charger
+</label>
+<label class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-lg text-xs cursor-pointer hover:bg-slate-100">
+<input type="checkbox" id="accBox" class="rounded border-slate-300 text-emerald-500 w-3.5 h-3.5"> Box
+</label>
+<label class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-lg text-xs cursor-pointer hover:bg-slate-100">
+<input type="checkbox" id="accCable" class="rounded border-slate-300 text-emerald-500 w-3.5 h-3.5" checked> Cable
+</label>
+<label class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-lg text-xs cursor-pointer hover:bg-slate-100">
+<input type="checkbox" id="accBack" class="rounded border-slate-300 text-emerald-500 w-3.5 h-3.5" checked> Back Cover
+</label>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<!-- Right: Summary & Actions -->
+<div class="space-y-4">
+<div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-sm p-5 text-white">
+<p class="text-xs opacity-70 uppercase tracking-wider font-semibold mb-2">Service ID</p>
+<p class="text-2xl font-bold" id="serviceId">SRV-2025-0048</p>
+<div class="mt-4 pt-3 border-t border-white/20 text-sm">
+<p class="opacity-70">Date: <span class="font-medium opacity-100" id="currentDate">Dec 26, 2025</span></p>
+</div>
+</div>
+
+<!-- Payment Section -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-3">Service Charge & Payment</p>
+<div class="space-y-3">
+<div>
+<label class="text-xs text-slate-500 font-medium">Service Charge</label>
+<input type="number" id="serviceCharge" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="0.00" value="1500" oninput="calcDue()">
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="text-xs text-slate-500 font-medium">Advance</label>
+<input type="number" id="advance" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="0.00" value="500" oninput="calcDue()">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-medium">Payment Mode</label>
+<select id="paymentMode" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm">
+<option>Cash</option>
+<option>bKash</option>
+<option>Nagad</option>
+<option>Card</option>
+</select>
+</div>
+</div>
+<div class="flex justify-between items-center pt-3 border-t border-slate-100">
+<span class="text-sm text-slate-500">Due Amount</span>
+<span class="text-xl font-bold text-red-600" id="sumDue">৳1,000</span>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-medium">Remarks</label>
+<input type="text" id="remarks" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Any notes...">
+</div>
+</div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+<p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-3">Actions</p>
+<div class="space-y-2">
+<button onclick="saveAndPrint('slip')" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg text-sm font-medium shadow-sm hover:shadow flex items-center justify-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+Save & Print Slip
+</button>
+<button onclick="saveAndPrint('label')" class="w-full py-2.5 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 flex items-center justify-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+Print Product Label
+</button>
+<button onclick="showToast('SMS sent to customer')" class="w-full py-2.5 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 flex items-center justify-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+Send SMS to Customer
+</button>
+</div>
+</div>
+
+<div class="bg-blue-50 border border-blue-100 rounded-lg p-3 flex gap-2">
+<svg class="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+<p class="text-xs text-blue-700">Estimated delivery: 3-5 working days</p>
+</div>
+</div>
+</div>
+</main>
+
+<!-- Print: Service Slip -->
+<div id="printSlip" class="print-area hidden" style="display:none">
+<div style="width:148mm;margin:0 auto;padding:8mm;font-family:Arial,sans-serif;font-size:11px;color:#000;">
+<div style="display:flex;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:10px;">
+<div><h1 style="font-size:18px;font-weight:bold;margin:0;">FreshMart</h1><p style="font-size:9px;color:#555;margin:2px 0;">123 Market Street, Dhaka<br>Tel: 01700-123456</p></div>
+<div style="text-align:right;"><div style="font-size:16px;font-weight:bold;">SERVICE SLIP</div><div style="font-size:11px;font-weight:bold;" id="pSlipId">SRV-2025-0048</div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:12px;">
+<div><p style="font-size:9px;color:#888;text-transform:uppercase;margin-bottom:3px;">Customer</p><p style="font-weight:bold;margin:0;" id="pCustName">Mohammad Rafiq</p><p style="margin:2px 0;color:#555;" id="pCustPhone">01712-345678</p></div>
+<div style="text-align:right;"><p style="font-size:9px;color:#888;text-transform:uppercase;margin-bottom:3px;">Date</p><p style="font-weight:bold;margin:0;" id="pDate">Dec 26, 2025</p></div>
+</div>
+<div style="background:#f5f5f5;padding:10px;margin-bottom:12px;">
+<p style="font-size:9px;color:#888;text-transform:uppercase;margin-bottom:5px;">Product</p>
+<p style="font-weight:bold;font-size:13px;margin:0;" id="pProdName">Samsung Galaxy A54</p>
+<p style="font-size:10px;color:#555;margin:3px 0;" id="pProdSerial">Serial: R58T30ABCDE</p>
+</div>
+<div style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed #ccc;">
+<p style="font-size:9px;color:#888;text-transform:uppercase;margin-bottom:5px;">Problem</p>
+<p style="margin:0;" id="pProblem">Display Issue - Display flickering and touch not responding properly</p>
+</div>
+<div style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed #ccc;">
+<p style="font-size:9px;color:#888;text-transform:uppercase;margin-bottom:5px;">Accessories</p>
+<p style="margin:0;" id="pAccessories">Cable, Back Cover</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;margin-bottom:15px;">
+<div style="background:#f0fdf4;padding:8px;border-radius:4px;"><p style="font-size:9px;color:#888;margin:0;">Service Charge</p><p style="font-size:14px;font-weight:bold;margin:3px 0;" id="pCharge">৳1,500</p></div>
+<div style="background:#ecfeff;padding:8px;border-radius:4px;"><p style="font-size:9px;color:#888;margin:0;">Advance</p><p style="font-size:14px;font-weight:bold;color:#0891b2;margin:3px 0;" id="pAdvance">৳500</p></div>
+<div style="background:#fef2f2;padding:8px;border-radius:4px;"><p style="font-size:9px;color:#888;margin:0;">Due</p><p style="font-size:14px;font-weight:bold;color:#dc2626;margin:3px 0;" id="pDue">৳1,000</p></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-bottom:12px;">
+<div style="text-align:center;"><div style="border-bottom:1px solid #000;height:35px;"></div><p style="font-size:8px;text-transform:uppercase;color:#555;margin-top:5px;">Received By</p></div>
+<div style="text-align:center;"><div style="border-bottom:1px solid #000;height:35px;"></div><p style="font-size:8px;text-transform:uppercase;color:#555;margin-top:5px;">Customer Signature</p></div>
+</div>
+<div style="text-align:center;border-top:1px dashed #ccc;padding-top:8px;">
+<p style="font-size:9px;color:#555;margin:0;">Estimated delivery: 3-5 working days</p>
+<p style="font-size:8px;color:#888;margin:3px 0;">Keep this slip for product collection</p>
+</div>
+</div>
+</div>
+
+<!-- Print: Product Label -->
+<div id="printLabel" class="print-area hidden" style="display:none">
+<div style="width:60mm;padding:3mm;font-family:Arial,sans-serif;font-size:10px;border:1px dashed #000;">
+<div style="text-align:center;border-bottom:1px solid #000;padding-bottom:5px;margin-bottom:5px;">
+<p style="font-size:12px;font-weight:bold;margin:0;" id="lServiceId">SRV-2025-0048</p>
+</div>
+<p style="font-weight:bold;margin:3px 0;" id="lProdName">Samsung Galaxy A54</p>
+<p style="font-size:9px;margin:2px 0;" id="lSerial">R58T30ABCDE</p>
+<p style="font-size:9px;margin:2px 0;" id="lCustName">Mohammad Rafiq</p>
+<p style="font-size:9px;margin:2px 0;" id="lPhone">01712-345678</p>
+<div style="border-top:1px dashed #000;margin-top:5px;padding-top:5px;">
+<p style="font-size:8px;margin:0;" id="lProblem">Display Issue</p>
+<p style="font-size:8px;color:#555;margin:2px 0;" id="lDate">Dec 26, 2025</p>
+</div>
+</div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Success</span>
+</div>
+
+<script>
+const today=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+document.getElementById('currentDate').textContent=today;
+
+const customers=[
+{id:'C001',name:'Mohammad Rafiq',phone:'01712-345678'},
+{id:'C002',name:'Fatima Begum',phone:'01898-765432'},
+{id:'C003',name:'Abdul Karim',phone:'01611-223344'},
+{id:'C004',name:'Rahim Khan',phone:'01712-111222'},
+{id:'C005',name:'Nusrat Jahan',phone:'01812-333444'},
+{id:'C006',name:'Kamal Hossain',phone:'01511-998877'},
+];
+
+function showCustList(){
+document.getElementById('custDropdown').style.display='block';
+renderCustList(customers);
+}
+
+function searchCustomer(){
+const q=document.getElementById('custSearch').value.toLowerCase();
+const filtered=customers.filter(c=>c.name.toLowerCase().includes(q)||c.phone.includes(q));
+renderCustList(filtered);
+document.getElementById('custDropdown').style.display='block';
+}
+
+function renderCustList(list){
+document.getElementById('custList').innerHTML=list.map(c=>`
+<div onclick="selectCustomer('${c.id}')" class="px-3 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-2">
+<span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-600">${c.name.charAt(0)}</span>
+<div><p class="text-sm font-medium">${c.name}</p><p class="text-[10px] text-slate-400">${c.phone}</p></div>
+</div>`).join('');
+}
+
+function selectCustomer(id){
+document.getElementById('custDropdown').style.display='none';
+if(id==='walking'){
+document.getElementById('custName').value='';
+document.getElementById('custPhone').value='';
+document.getElementById('custSearch').value='Walking Customer';
+document.getElementById('custName').focus();
+}else{
+const c=customers.find(x=>x.id===id);
+if(c){
+document.getElementById('custName').value=c.name;
+document.getElementById('custPhone').value=c.phone;
+document.getElementById('custSearch').value=c.name;
+}
+}
+}
+
+document.addEventListener('click',function(e){
+if(!e.target.closest('#custSearch')&&!e.target.closest('#custDropdown')){
+document.getElementById('custDropdown').style.display='none';
+}
+});
+
+function calcDue(){
+const c=parseFloat(document.getElementById('serviceCharge').value)||0;
+const a=parseFloat(document.getElementById('advance').value)||0;
+const d=c-a;
+document.getElementById('sumDue').textContent='৳'+d.toLocaleString();
+}
+
+function showToast(m){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=m;t.style.display='flex';setTimeout(()=>t.style.display='none',3000);}
+
+function getAccessories(){
+const acc=[];
+if(document.getElementById('accCharger').checked)acc.push('Charger');
+if(document.getElementById('accBox').checked)acc.push('Box');
+if(document.getElementById('accCable').checked)acc.push('Cable');
+if(document.getElementById('accBack').checked)acc.push('Back Cover');
+return acc.length?acc.join(', '):'None';
+}
+
+function saveAndPrint(type){
+const charge=parseFloat(document.getElementById('serviceCharge').value)||0;
+const advance=parseFloat(document.getElementById('advance').value)||0;
+const due=charge-advance;
+const data={
+id:document.getElementById('serviceId').textContent,
+custName:document.getElementById('custName').value,
+custPhone:document.getElementById('custPhone').value,
+prodName:document.getElementById('prodName').value,
+prodSerial:document.getElementById('prodSerial').value,
+problemType:document.getElementById('problemType').value,
+problemDesc:document.getElementById('problemDesc').value,
+charge:charge,
+advance:advance,
+due:due,
+accessories:getAccessories(),
+date:today
+};
+
+if(type==='slip'){
+document.getElementById('pSlipId').textContent=data.id;
+document.getElementById('pCustName').textContent=data.custName;
+document.getElementById('pCustPhone').textContent=data.custPhone;
+document.getElementById('pDate').textContent=data.date;
+document.getElementById('pProdName').textContent=data.prodName;
+document.getElementById('pProdSerial').textContent='Serial: '+data.prodSerial;
+document.getElementById('pProblem').textContent=data.problemType+' - '+data.problemDesc;
+document.getElementById('pAccessories').textContent=data.accessories;
+document.getElementById('pCharge').textContent='৳'+data.charge.toLocaleString();
+document.getElementById('pAdvance').textContent='৳'+data.advance.toLocaleString();
+document.getElementById('pDue').textContent='৳'+data.due.toLocaleString();
+document.getElementById('printSlip').style.display='block';
+document.getElementById('printLabel').style.display='none';
+}else{
+document.getElementById('lServiceId').textContent=data.id;
+document.getElementById('lProdName').textContent=data.prodName;
+document.getElementById('lSerial').textContent=data.prodSerial;
+document.getElementById('lCustName').textContent=data.custName;
+document.getElementById('lPhone').textContent=data.custPhone;
+document.getElementById('lProblem').textContent=data.problemType;
+document.getElementById('lDate').textContent=data.date;
+document.getElementById('printLabel').style.display='block';
+document.getElementById('printSlip').style.display='none';
+}
+setTimeout(()=>window.print(),100);
+}
+</script>
+</body>
+</html>

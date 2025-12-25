@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Balance Sheet - FreshMart</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+    body{background:#e5e7eb;padding:20px;color:#000;}
+    
+    .controls{width:210mm;margin:0 auto 15px;display:flex;gap:10px;}
+    .control-group{display:flex;gap:4px;padding:3px;background:#d1d5db;border-radius:6px;}
+    .control-label{font-size:10px;color:#555;padding:8px 10px;font-weight:bold;}
+    .controls button{padding:8px 14px;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;background:transparent;color:#374151;transition:all .2s;}
+    .controls button.active{background:#1f2937;color:#fff;}
+    .controls button:hover:not(.active){background:#9ca3af;}
+    .controls .print-btn{margin-left:auto;background:#1f2937;color:#fff;padding:10px 20px;border-radius:6px;}
+    
+    .sheet{width:210mm;min-height:297mm;background:#fff;margin:0 auto;padding:12mm 15mm;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+    
+    .sheet.a5{width:148mm;min-height:210mm;padding:8mm 10mm;}
+    .sheet.a5 .header h1{font-size:16px;}
+    .sheet.a5 .header p{font-size:8px;}
+    .sheet.a5 .report-title{font-size:12px;}
+    .sheet.a5 .report-period{font-size:8px;}
+    .sheet.a5 table{font-size:9px;}
+    .sheet.a5 th,.sheet.a5 td{padding:4px 6px;}
+    .sheet.a5 .section-header td{padding:5px 6px;font-size:9px;}
+    .sheet.a5 .subsection-header td{font-size:8px;}
+    .sheet.a5 .grand-total td{padding:6px;font-size:10px;}
+    .sheet.a5 .summary-table td{padding:6px 8px;font-size:9px;}
+    .sheet.a5 .footer{font-size:7px;}
+    .sheet.a5 .sig-label{font-size:7px;}
+    
+    .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10px;border-bottom:2px solid #000;margin-bottom:12px;}
+    .company-info h1{font-size:20px;font-weight:bold;margin-bottom:2px;}
+    .company-info p{font-size:9px;line-height:1.4;color:#333;}
+    .header-right{text-align:right;}
+    .report-title{font-size:14px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
+    .report-period{font-size:9px;color:#333;}
+    
+    .summary-table{width:100%;border-collapse:collapse;margin-bottom:15px;}
+    .summary-table td{border:1px solid #000;padding:8px 10px;text-align:center;}
+    .summary-table .label{font-size:9px;text-transform:uppercase;letter-spacing:0.5px;}
+    .summary-table .value{font-size:14px;font-weight:bold;margin-top:3px;}
+    
+    .main-table{width:100%;border-collapse:collapse;margin-bottom:15px;}
+    .main-table th,.main-table td{border:1px solid #000;padding:5px 8px;text-align:left;}
+    .main-table th{background:#f0f0f0;font-size:10px;text-transform:uppercase;}
+    .main-table .amount{text-align:right;font-family:'Courier New',monospace;}
+    
+    .section-header td{background:#000;color:#fff;font-weight:bold;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;padding:6px 8px;}
+    .subsection-header td{background:#e5e5e5;font-weight:bold;font-size:9px;text-transform:uppercase;}
+    .line-item td{font-size:10px;}
+    .subtotal-row td{background:#f5f5f5;font-weight:bold;font-size:10px;}
+    .grand-total td{background:#000;color:#fff;font-weight:bold;font-size:11px;padding:8px;}
+    
+    .ratios-table{width:100%;border-collapse:collapse;margin-bottom:15px;}
+    .ratios-table th,.ratios-table td{border:1px solid #000;padding:8px;text-align:center;}
+    .ratios-table th{background:#f0f0f0;font-size:9px;text-transform:uppercase;}
+    .ratios-table td{font-size:12px;font-weight:bold;}
+    .ratios-table .status{font-size:8px;font-weight:normal;display:block;margin-top:2px;}
+    
+    .signature-table{width:100%;margin-top:25px;border-collapse:collapse;}
+    .signature-table td{width:33.33%;text-align:center;padding:0 15px;vertical-align:bottom;}
+    .sig-line{border-bottom:1px solid #000;height:35px;margin-bottom:5px;}
+    .sig-label{font-size:8px;text-transform:uppercase;letter-spacing:0.5px;color:#333;}
+    
+    .footer{text-align:center;padding-top:12px;border-top:1px solid #000;margin-top:15px;}
+    .footer p{font-size:8px;color:#333;margin-bottom:2px;}
+    
+    @media print{
+      body{background:#fff;padding:0;}
+      .sheet{box-shadow:none;min-height:auto;}
+      .controls{display:none;}
+    }
+  </style>
+</head>
+<body>
+  <div class="controls" id="controls">
+    <div class="control-group">
+      <span class="control-label">Paper:</span>
+      <button class="active" onclick="setSize('a4')">A4</button>
+      <button onclick="setSize('a5')">A5</button>
+    </div>
+    <button class="print-btn" onclick="window.print()">Print</button>
+  </div>
+
+  <div class="sheet" id="sheet">
+    <div class="header">
+      <div class="company-info">
+        <h1>FreshMart</h1>
+        <p>123 Market Street, Dhaka<br>Tel: +880 1711-234567 | BIN: 123456789012</p>
+      </div>
+      <div class="header-right">
+        <div class="report-title">Balance Sheet</div>
+        <div class="report-period">As of January 25, 2025</div>
+      </div>
+    </div>
+    
+    <table class="summary-table">
+      <tr>
+        <td><div class="label">Total Assets</div><div class="value">৳45,80,630</div></td>
+        <td><div class="label">Total Liabilities</div><div class="value">৳13,25,600</div></td>
+        <td><div class="label">Owner's Equity</div><div class="value">৳32,55,030</div></td>
+        <td><div class="label">Working Capital</div><div class="value">৳30,55,030</div></td>
+      </tr>
+    </table>
+    
+    <table class="main-table">
+      <tr>
+        <th style="width:50%">Assets</th>
+        <th class="amount" style="width:15%">Amount</th>
+        <th style="width:20%">Liabilities & Equity</th>
+        <th class="amount" style="width:15%">Amount</th>
+      </tr>
+      
+      <tr class="subsection-header">
+        <td>Current Assets</td>
+        <td></td>
+        <td>Current Liabilities</td>
+        <td></td>
+      </tr>
+      
+      <tr class="line-item">
+        <td>Cash in Hand</td>
+        <td class="amount">৳8,45,230</td>
+        <td>Accounts Payable</td>
+        <td class="amount">৳3,25,600</td>
+      </tr>
+      <tr class="line-item">
+        <td>Bank Accounts</td>
+        <td class="amount">৳24,50,000</td>
+        <td>Salary Payable</td>
+        <td class="amount">৳2,50,000</td>
+      </tr>
+      <tr class="line-item">
+        <td>Accounts Receivable</td>
+        <td class="amount">৳5,85,400</td>
+        <td>VAT Payable</td>
+        <td class="amount">৳2,50,000</td>
+      </tr>
+      
+      <tr class="subtotal-row">
+        <td>Current Assets Total</td>
+        <td class="amount">৳38,80,630</td>
+        <td>Current Liabilities Total</td>
+        <td class="amount">৳8,25,600</td>
+      </tr>
+      
+      <tr class="subsection-header">
+        <td>Fixed Assets</td>
+        <td></td>
+        <td>Long-term Liabilities</td>
+        <td></td>
+      </tr>
+      
+      <tr class="line-item">
+        <td>Equipment & Furniture</td>
+        <td class="amount">৳4,50,000</td>
+        <td>Bank Loan</td>
+        <td class="amount">৳5,00,000</td>
+      </tr>
+      <tr class="line-item">
+        <td>Vehicles</td>
+        <td class="amount">৳2,50,000</td>
+        <td></td>
+        <td></td>
+      </tr>
+      
+      <tr class="subtotal-row">
+        <td>Fixed Assets Total</td>
+        <td class="amount">৳7,00,000</td>
+        <td>Long-term Liabilities Total</td>
+        <td class="amount">৳5,00,000</td>
+      </tr>
+      
+      <tr class="subsection-header">
+        <td></td>
+        <td></td>
+        <td>Owner's Equity</td>
+        <td></td>
+      </tr>
+      
+      <tr class="line-item">
+        <td></td>
+        <td></td>
+        <td>Capital</td>
+        <td class="amount">৳25,00,000</td>
+      </tr>
+      <tr class="line-item">
+        <td></td>
+        <td></td>
+        <td>Retained Earnings</td>
+        <td class="amount">৳7,55,030</td>
+      </tr>
+      
+      <tr class="subtotal-row">
+        <td></td>
+        <td></td>
+        <td>Owner's Equity Total</td>
+        <td class="amount">৳32,55,030</td>
+      </tr>
+      
+      <tr class="grand-total">
+        <td>Total Assets</td>
+        <td class="amount">৳45,80,630</td>
+        <td>Total Liabilities & Equity</td>
+        <td class="amount">৳45,80,630</td>
+      </tr>
+    </table>
+    
+    <table class="ratios-table">
+      <tr>
+        <th>Current Ratio</th>
+        <th>Debt to Equity</th>
+        <th>Quick Ratio</th>
+      </tr>
+      <tr>
+        <td>4.70<span class="status">(Healthy)</span></td>
+        <td>0.41<span class="status">(Low Risk)</span></td>
+        <td>3.99<span class="status">(Strong)</span></td>
+      </tr>
+    </table>
+    
+    <table class="signature-table">
+      <tr>
+        <td>
+          <div class="sig-line"></div>
+          <div class="sig-label">Prepared By</div>
+        </td>
+        <td>
+          <div class="sig-line"></div>
+          <div class="sig-label">Checked By</div>
+        </td>
+        <td>
+          <div class="sig-line"></div>
+          <div class="sig-label">Approved By</div>
+        </td>
+      </tr>
+    </table>
+    
+    <div class="footer">
+      <p>This is a computer generated document. Printed on: December 25, 2025</p>
+      <p>FreshMart POS System | www.freshmart.com</p>
+    </div>
+  </div>
+
+  <script>
+    function setSize(size) {
+      var sheet = document.getElementById('sheet');
+      var buttons = document.querySelectorAll('.control-group button');
+      var controls = document.getElementById('controls');
+      
+      buttons.forEach(function(btn) { btn.classList.remove('active'); });
+      event.target.classList.add('active');
+      
+      sheet.className = 'sheet';
+      
+      if (size === 'a5') {
+        sheet.classList.add('a5');
+        controls.style.width = '148mm';
+      } else {
+        controls.style.width = '210mm';
+      }
+    }
+  </script>
+</body>
+</html>

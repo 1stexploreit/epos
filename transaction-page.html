@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transactions - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Header -->
+<div class="bg-white border-b border-slate-200">
+<div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-slate-800 font-semibold">Transactions</h1>
+<p class="text-xs text-slate-400">Receive & Payment outside sales/purchase</p>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="exportData()" class="px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+Export
+</button>
+<button onclick="openModal()" class="px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+Add Transaction
+</button>
+</div>
+</div>
+</div>
+
+<main class="max-w-7xl mx-auto px-6 py-5 space-y-4">
+
+<!-- Summary Panel -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between cursor-pointer" onclick="toggleSummary()">
+<div class="flex items-center gap-2">
+<svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+<span class="text-sm font-medium text-slate-700">Summary</span>
+</div>
+<button class="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700">
+<span id="summaryBtnText">Show</span>
+<svg id="summaryIcon" class="w-4 h-4 transition-transform rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+</button>
+</div>
+<div id="summaryPanel" class="px-5 py-4" style="display:none">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+<div><p class="text-xs text-slate-400 mb-1">Total Received</p><p class="text-xl font-bold text-emerald-600" id="statReceive">৳0</p></div>
+<div><p class="text-xs text-slate-400 mb-1">Total Payment</p><p class="text-xl font-bold text-red-500" id="statPayment">৳0</p></div>
+<div><p class="text-xs text-slate-400 mb-1">Balance</p><p class="text-xl font-bold text-slate-800" id="statBalance">৳0</p></div>
+<div><p class="text-xs text-slate-400 mb-1">This Month</p><p class="text-xl font-bold text-slate-800" id="statMonth">৳0</p></div>
+</div>
+<div class="border-t border-slate-100 mt-4 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<p class="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider mb-2">Receive by Category</p>
+<div class="space-y-1 text-sm" id="receiveSummary"></div>
+</div>
+<div>
+<p class="text-[10px] text-red-500 font-semibold uppercase tracking-wider mb-2">Payment by Category</p>
+<div class="space-y-1 text-sm" id="paymentSummary"></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-4">
+<div class="flex flex-col lg:flex-row gap-3">
+<div class="flex-1 relative">
+<svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<input type="text" id="search" placeholder="Search..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm" oninput="filterTable()">
+</div>
+<div class="flex flex-wrap gap-2">
+<select id="filterBranch" class="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600" onchange="filterTable()">
+<option value="">All Branches</option>
+<option value="Main Branch">Main Branch</option>
+<option value="Dhanmondi">Dhanmondi</option>
+<option value="Uttara">Uttara</option>
+<option value="Mirpur">Mirpur</option>
+</select>
+<select id="filterType" class="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600" onchange="filterTable()">
+<option value="">All Types</option>
+<option value="receive">↓ Receive</option>
+<option value="payment">↑ Payment</option>
+</select>
+<select id="filterCategory" class="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600" onchange="filterTable()">
+<option value="">All Categories</option>
+</select>
+<input type="date" id="filterDateFrom" class="px-3 py-2 border border-slate-200 rounded-lg text-sm" onchange="filterTable()">
+<input type="date" id="filterDateTo" class="px-3 py-2 border border-slate-200 rounded-lg text-sm" onchange="filterTable()">
+<button onclick="resetFilters()" class="px-3 py-2 text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg font-medium">Reset</button>
+</div>
+</div>
+</div>
+
+<!-- Transactions Table -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<table class="w-full">
+<thead class="bg-slate-50 border-b border-slate-200">
+<tr class="text-[10px] text-slate-500 uppercase tracking-wider">
+<th class="px-4 py-3 text-left font-semibold">Date</th>
+<th class="px-4 py-3 text-left font-semibold">Type</th>
+<th class="px-4 py-3 text-left font-semibold">Category</th>
+<th class="px-4 py-3 text-left font-semibold">Description</th>
+<th class="px-4 py-3 text-left font-semibold">Branch</th>
+<th class="px-4 py-3 text-left font-semibold">Method</th>
+<th class="px-4 py-3 text-right font-semibold">Amount</th>
+<th class="px-4 py-3 text-right font-semibold">Actions</th>
+</tr>
+</thead>
+<tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
+</table>
+<div id="emptyState" class="p-12 text-center" style="display:none">
+<div class="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
+<svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
+</div>
+<p class="text-slate-500 font-medium">No transactions found</p>
+</div>
+<div class="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-slate-50/50">
+<p class="text-xs text-slate-500">Showing <span id="showCount" class="font-medium text-slate-700">0</span> of <span id="totalCount" class="font-medium text-slate-700">0</span></p>
+<div class="flex items-center gap-1">
+<button onclick="changePage(-1)" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
+<span class="px-2 py-1 text-xs text-slate-600" id="pageInfo">1 / 1</span>
+<button onclick="changePage(1)" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+</div>
+</div>
+</div>
+</main>
+
+<!-- Add/Edit Modal -->
+<div id="modal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40" onclick="closeModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+<div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+<h3 class="font-semibold text-slate-800" id="modalTitle">Add Transaction</h3>
+<button onclick="closeModal()" class="p-1 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+<div class="p-4 space-y-3">
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Category *</label>
+<select id="txnCategory" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" onchange="onCategoryChange()">
+<option value="">Select Category</option>
+</select>
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Sub Category *</label>
+<select id="txnSubCategory" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm">
+<option value="">Select</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Branch *</label>
+<select id="txnBranch" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm">
+<option value="Main Branch">Main Branch</option>
+<option value="Dhanmondi">Dhanmondi</option>
+<option value="Uttara">Uttara</option>
+<option value="Mirpur">Mirpur</option>
+</select>
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Method *</label>
+<select id="txnMethod" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm">
+<option value="Cash">Cash</option>
+<option value="Bank">Bank</option>
+<option value="bKash">bKash</option>
+<option value="Nagad">Nagad</option>
+<option value="Card">Card</option>
+<option value="Cheque">Cheque</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Amount *</label>
+<div class="relative mt-1">
+<span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">৳</span>
+<input type="number" id="txnAmount" placeholder="0" class="w-full pl-6 pr-2 py-2 border border-slate-200 rounded-lg text-sm">
+</div>
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Date *</label>
+<input type="date" id="txnDate" class="w-full mt-1 px-2 py-2 border border-slate-200 rounded-lg text-sm">
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Ref/TrxID</label>
+<input type="text" id="txnRef" placeholder="RCP/TXN" class="w-full mt-1 px-2 py-2 border border-slate-200 rounded-lg text-sm">
+</div>
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Description</label>
+<input type="text" id="txnDescription" placeholder="Enter details..." class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm">
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Related with Profit?</label>
+<div class="flex items-center gap-4 mt-1">
+<label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="profitRelated" value="yes" class="w-3.5 h-3.5 text-emerald-600"><span class="text-sm text-slate-600">Yes</span></label>
+<label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="profitRelated" value="no" checked class="w-3.5 h-3.5 text-emerald-600"><span class="text-sm text-slate-600">No</span></label>
+</div>
+</div>
+</div>
+<div class="px-4 py-3 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+<button onclick="closeModal()" class="px-3 py-2 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="saveTransaction()" class="px-4 py-2 text-sm text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg font-medium">Save</button>
+</div>
+</div>
+</div>
+
+<!-- View Modal -->
+<div id="viewModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40" onclick="closeViewModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
+<div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+<h3 class="font-semibold text-slate-800">Transaction Details</h3>
+<button onclick="closeViewModal()" class="p-1 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+<div class="p-4" id="viewContent"></div>
+<div class="px-4 py-3 border-t border-slate-200 bg-slate-50 flex justify-end">
+<button onclick="closeViewModal()" class="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Close</button>
+</div>
+</div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Success</span>
+</div>
+
+<script>
+// Categories (regular list)
+const categoryList = ['Loan', 'Investment', 'Capital', 'Refund', 'Transport', 'Food & Tea', 'Utility Bills', 'Maintenance', 'Office Supplies', 'Rent', 'Other'];
+
+// Sub-categories with type (receive/payment)
+const subCategories = {
+'Loan': [
+{name: 'Bank Loan Received', type: 'receive'},
+{name: 'Personal Loan Received', type: 'receive'},
+{name: 'Microfinance Received', type: 'receive'},
+{name: 'Loan Repayment', type: 'payment'},
+{name: 'Interest Payment', type: 'payment'}
+],
+'Investment': [
+{name: 'Partner Investment', type: 'receive'},
+{name: 'Shareholder Investment', type: 'receive'},
+{name: 'Self Investment', type: 'receive'},
+{name: 'Investment Withdrawal', type: 'payment'}
+],
+'Capital': [
+{name: 'Owner Capital Added', type: 'receive'},
+{name: 'Initial Capital', type: 'receive'},
+{name: 'Capital Withdrawal', type: 'payment'}
+],
+'Refund': [
+{name: 'Supplier Refund', type: 'receive'},
+{name: 'Tax Refund', type: 'receive'},
+{name: 'Deposit Return', type: 'receive'},
+{name: 'Customer Refund Given', type: 'payment'}
+],
+'Transport': [
+{name: 'Fuel Cost', type: 'payment'},
+{name: 'Taxi/Rickshaw', type: 'payment'},
+{name: 'Bus Fare', type: 'payment'},
+{name: 'Courier Charge', type: 'payment'},
+{name: 'Delivery Cost', type: 'payment'}
+],
+'Food & Tea': [
+{name: 'Tea & Snacks', type: 'payment'},
+{name: 'Lunch/Dinner', type: 'payment'},
+{name: 'Staff Meal', type: 'payment'},
+{name: 'Guest Entertainment', type: 'payment'}
+],
+'Utility Bills': [
+{name: 'Electricity Bill', type: 'payment'},
+{name: 'Internet Bill', type: 'payment'},
+{name: 'Water Bill', type: 'payment'},
+{name: 'Gas Bill', type: 'payment'},
+{name: 'Phone Bill', type: 'payment'}
+],
+'Maintenance': [
+{name: 'AC Repair', type: 'payment'},
+{name: 'Plumbing', type: 'payment'},
+{name: 'Electrical Work', type: 'payment'},
+{name: 'Cleaning Service', type: 'payment'},
+{name: 'Equipment Repair', type: 'payment'}
+],
+'Office Supplies': [
+{name: 'Stationery', type: 'payment'},
+{name: 'Printing', type: 'payment'},
+{name: 'Packaging Materials', type: 'payment'},
+{name: 'Computer Accessories', type: 'payment'}
+],
+'Rent': [
+{name: 'Shop Rent', type: 'payment'},
+{name: 'Warehouse Rent', type: 'payment'},
+{name: 'Office Rent', type: 'payment'},
+{name: 'Rent Received', type: 'receive'}
+],
+'Other': [
+{name: 'Miscellaneous Income', type: 'receive'},
+{name: 'Commission Received', type: 'receive'},
+{name: 'Interest Earned', type: 'receive'},
+{name: 'Donation Given', type: 'payment'},
+{name: 'Penalty/Fine', type: 'payment'},
+{name: 'Bank Charges', type: 'payment'},
+{name: 'Miscellaneous Expense', type: 'payment'}
+]
+};
+
+let transactions = [
+{id:1,date:'2025-01-25',category:'Loan',subCategory:'Bank Loan Received',description:'Business loan from Sonali Bank',amount:500000,method:'Bank',ref:'LN-001/TXN789',profitRelated:'no',branch:'Main Branch'},
+{id:2,date:'2025-01-24',category:'Investment',subCategory:'Partner Investment',description:'New partner Mr. Karim',amount:200000,method:'Bank',ref:'INV-001',profitRelated:'no',branch:'Main Branch'},
+{id:3,date:'2025-01-22',category:'Capital',subCategory:'Owner Capital Added',description:'Owner added capital',amount:100000,method:'Bank',ref:'TXN456',profitRelated:'no',branch:'Main Branch'},
+{id:4,date:'2025-01-25',category:'Transport',subCategory:'Fuel Cost',description:'Bike fuel for delivery',amount:500,method:'Cash',ref:'',profitRelated:'yes',branch:'Dhanmondi'},
+{id:5,date:'2025-01-25',category:'Food & Tea',subCategory:'Tea & Snacks',description:'Staff tea',amount:350,method:'Cash',ref:'',profitRelated:'yes',branch:'Main Branch'},
+{id:6,date:'2025-01-24',category:'Utility Bills',subCategory:'Internet Bill',description:'January internet',amount:1500,method:'Bank',ref:'INV-2025',profitRelated:'yes',branch:'Main Branch'},
+{id:7,date:'2025-01-24',category:'Maintenance',subCategory:'AC Repair',description:'AC gas refill',amount:2500,method:'bKash',ref:'SRV-445/TXN112',profitRelated:'yes',branch:'Uttara'},
+{id:8,date:'2025-01-23',category:'Office Supplies',subCategory:'Stationery',description:'Paper and pens',amount:800,method:'Cash',ref:'',profitRelated:'yes',branch:'Main Branch'},
+{id:9,date:'2025-01-20',category:'Refund',subCategory:'Supplier Refund',description:'Damaged goods return',amount:5000,method:'Bank',ref:'RF-123',profitRelated:'yes',branch:'Main Branch'},
+{id:10,date:'2025-01-22',category:'Utility Bills',subCategory:'Electricity Bill',description:'December electricity',amount:4500,method:'Bank',ref:'DESCO-789',profitRelated:'yes',branch:'Main Branch'},
+{id:11,date:'2025-01-21',category:'Rent',subCategory:'Shop Rent',description:'January shop rent',amount:25000,method:'Bank',ref:'RENT-01',profitRelated:'yes',branch:'Main Branch'},
+{id:12,date:'2025-01-19',category:'Loan',subCategory:'Loan Repayment',description:'Monthly EMI payment',amount:15000,method:'Bank',ref:'EMI-01',profitRelated:'no',branch:'Main Branch'},
+];
+
+let currentPage=1,perPage=10,editId=null,summaryVisible=false;
+const fmt=n=>'৳'+n.toLocaleString();
+const fmtDate=d=>{const dt=new Date(d);return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'});};
+
+function getType(category, subCategory) {
+const subs = subCategories[category] || [];
+const sub = subs.find(s => s.name === subCategory);
+return sub ? sub.type : 'payment';
+}
+
+function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.style.display='flex';setTimeout(()=>t.style.display='none',3000);}
+
+function toggleSummary(){
+summaryVisible=!summaryVisible;
+document.getElementById('summaryPanel').style.display=summaryVisible?'block':'none';
+document.getElementById('summaryBtnText').textContent=summaryVisible?'Hide':'Show';
+document.getElementById('summaryIcon').style.transform=summaryVisible?'rotate(0deg)':'rotate(180deg)';
+}
+
+function updateStats(){
+let totalReceive=0,totalPayment=0,monthTotal=0;
+const monthStart=new Date().toISOString().slice(0,7)+'-01';
+let rcats={},pcats={};
+
+transactions.forEach(t=>{
+const type=getType(t.category, t.subCategory);
+if(type==='receive'){
+totalReceive+=t.amount;
+rcats[t.category]=(rcats[t.category]||0)+t.amount;
+}else{
+totalPayment+=t.amount;
+pcats[t.category]=(pcats[t.category]||0)+t.amount;
+if(t.date>=monthStart)monthTotal+=t.amount;
+}
+});
+
+document.getElementById('statReceive').textContent=fmt(totalReceive);
+document.getElementById('statPayment').textContent=fmt(totalPayment);
+document.getElementById('statBalance').textContent=fmt(totalReceive-totalPayment);
+document.getElementById('statMonth').textContent=fmt(monthTotal);
+
+let rh='';Object.keys(rcats).forEach(c=>{rh+=`<div class="flex justify-between"><span class="text-slate-600">${c}</span><span class="font-medium text-emerald-600">${fmt(rcats[c])}</span></div>`;});
+document.getElementById('receiveSummary').innerHTML=rh||'<p class="text-slate-400 text-xs">No data</p>';
+
+let ph='';Object.keys(pcats).forEach(c=>{ph+=`<div class="flex justify-between"><span class="text-slate-600">${c}</span><span class="font-medium text-red-500">${fmt(pcats[c])}</span></div>`;});
+document.getElementById('paymentSummary').innerHTML=ph||'<p class="text-slate-400 text-xs">No data</p>';
+
+// Update filter categories
+const fc=document.getElementById('filterCategory');
+fc.innerHTML='<option value="">All Categories</option>'+categoryList.map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+
+function getFiltered(){
+const search=document.getElementById('search').value.toLowerCase();
+const branch=document.getElementById('filterBranch').value;
+const type=document.getElementById('filterType').value;
+const category=document.getElementById('filterCategory').value;
+const dateFrom=document.getElementById('filterDateFrom').value;
+const dateTo=document.getElementById('filterDateTo').value;
+
+return transactions.filter(t=>{
+const tType=getType(t.category, t.subCategory);
+const ms=t.description.toLowerCase().includes(search)||t.category.toLowerCase().includes(search)||t.subCategory.toLowerCase().includes(search);
+const mb=!branch||t.branch===branch;
+const mt=!type||tType===type;
+const mc=!category||t.category===category;
+const mdf=!dateFrom||t.date>=dateFrom;
+const mdt=!dateTo||t.date<=dateTo;
+return ms&&mb&&mt&&mc&&mdf&&mdt;
+}).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+}
+
+function filterTable(){currentPage=1;renderTable();}
+
+function renderTable(){
+const filtered=getFiltered();
+const totalPages=Math.ceil(filtered.length/perPage)||1;
+if(currentPage>totalPages)currentPage=totalPages;
+const start=(currentPage-1)*perPage;
+const paged=filtered.slice(start,start+perPage);
+
+document.getElementById('totalCount').textContent=filtered.length;
+document.getElementById('showCount').textContent=paged.length;
+document.getElementById('pageInfo').textContent=currentPage+' / '+totalPages;
+
+if(!filtered.length){document.getElementById('tableBody').innerHTML='';document.getElementById('emptyState').style.display='block';return;}
+document.getElementById('emptyState').style.display='none';
+
+document.getElementById('tableBody').innerHTML=paged.map((t,i)=>{
+const type=getType(t.category, t.subCategory);
+const isR=type==='receive';
+const tc=isR?'bg-emerald-100 text-emerald-700':'bg-red-100 text-red-600';
+const tt=isR?'↓ Receive':'↑ Payment';
+const ac=isR?'text-emerald-600':'text-red-500';
+const rowBg=i%2===0?'bg-white':'bg-slate-50/70';
+return `<tr class="${rowBg} hover:bg-emerald-50/50 text-sm">
+<td class="px-4 py-3 text-slate-600 whitespace-nowrap">${fmtDate(t.date)}</td>
+<td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 ${tc} rounded text-[10px] font-semibold">${tt}</span></td>
+<td class="px-4 py-3"><p class="text-slate-800 font-medium text-xs">${t.category}</p><p class="text-[10px] text-slate-400">${t.subCategory||'-'}</p></td>
+<td class="px-4 py-3 text-slate-600 text-xs max-w-[200px] truncate">${t.description||'-'}</td>
+<td class="px-4 py-3 text-xs text-slate-500">${t.branch}</td>
+<td class="px-4 py-3 text-xs text-slate-500">${t.method}</td>
+<td class="px-4 py-3 text-right font-semibold ${ac}">${isR?'+':'−'}${fmt(t.amount)}</td>
+<td class="px-4 py-3"><div class="flex justify-end gap-1">
+<button onclick="viewTransaction(${t.id})" class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded" title="View"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>
+<button onclick="editTransaction(${t.id})" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+<button onclick="deleteTransaction(${t.id})" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+</div></td></tr>`;
+}).join('');
+}
+
+function changePage(d){const f=getFiltered();const tp=Math.ceil(f.length/perPage)||1;const np=currentPage+d;if(np>=1&&np<=tp){currentPage=np;renderTable();}}
+function resetFilters(){document.getElementById('search').value='';document.getElementById('filterBranch').value='';document.getElementById('filterType').value='';document.getElementById('filterCategory').value='';document.getElementById('filterDateFrom').value='';document.getElementById('filterDateTo').value='';filterTable();showToast('Filters reset');}
+
+function onCategoryChange(){
+const cat=document.getElementById('txnCategory').value;
+const subs=subCategories[cat]||[];
+const ss=document.getElementById('txnSubCategory');
+ss.innerHTML='<option value="">Select</option>'+
+'<optgroup label="↓ Receive">'+subs.filter(s=>s.type==='receive').map(s=>`<option value="${s.name}">${s.name}</option>`).join('')+'</optgroup>'+
+'<optgroup label="↑ Payment">'+subs.filter(s=>s.type==='payment').map(s=>`<option value="${s.name}">${s.name}</option>`).join('')+'</optgroup>';
+}
+
+function openModal(){
+editId=null;
+document.getElementById('modalTitle').textContent='Add Transaction';
+const cs=document.getElementById('txnCategory');
+cs.innerHTML='<option value="">Select Category</option>'+categoryList.map(c=>`<option value="${c}">${c}</option>`).join('');
+document.getElementById('txnCategory').value='';
+document.getElementById('txnSubCategory').innerHTML='<option value="">Select</option>';
+document.getElementById('txnBranch').value='Main Branch';
+document.getElementById('txnMethod').value='Cash';
+document.getElementById('txnAmount').value='';
+document.getElementById('txnDate').value=new Date().toISOString().split('T')[0];
+document.getElementById('txnRef').value='';
+document.getElementById('txnDescription').value='';
+document.querySelector('input[name="profitRelated"][value="no"]').checked=true;
+document.getElementById('modal').style.display='flex';
+}
+
+function closeModal(){document.getElementById('modal').style.display='none';}
+
+function editTransaction(id){
+const t=transactions.find(x=>x.id===id);if(!t)return;
+editId=id;
+document.getElementById('modalTitle').textContent='Edit Transaction';
+const cs=document.getElementById('txnCategory');
+cs.innerHTML='<option value="">Select Category</option>'+categoryList.map(c=>`<option value="${c}">${c}</option>`).join('');
+document.getElementById('txnCategory').value=t.category;
+onCategoryChange();
+document.getElementById('txnSubCategory').value=t.subCategory;
+document.getElementById('txnBranch').value=t.branch;
+document.getElementById('txnMethod').value=t.method;
+document.getElementById('txnAmount').value=t.amount;
+document.getElementById('txnDate').value=t.date;
+document.getElementById('txnRef').value=t.ref;
+document.getElementById('txnDescription').value=t.description;
+document.querySelector(`input[name="profitRelated"][value="${t.profitRelated}"]`).checked=true;
+document.getElementById('modal').style.display='flex';
+}
+
+function viewTransaction(id){
+const t=transactions.find(x=>x.id===id);if(!t)return;
+const type=getType(t.category, t.subCategory);
+const isR=type==='receive';
+const tc=isR?'text-emerald-600':'text-red-500';
+const tt=isR?'↓ Receive':'↑ Payment';
+document.getElementById('viewContent').innerHTML=`
+<div class="text-center mb-4">
+<span class="inline-flex px-3 py-1 ${isR?'bg-emerald-100 text-emerald-700':'bg-red-100 text-red-600'} rounded-lg text-sm font-semibold">${tt}</span>
+<p class="text-2xl font-bold ${tc} mt-2">${isR?'+':'−'}${fmt(t.amount)}</p>
+</div>
+<div class="space-y-2 text-sm">
+<div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">Date</span><span class="text-slate-800 font-medium">${fmtDate(t.date)}</span></div>
+<div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">Branch</span><span class="text-slate-800">${t.branch}</span></div>
+<div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">Category</span><span class="text-slate-800">${t.category}</span></div>
+<div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">Sub Category</span><span class="text-slate-800">${t.subCategory||'-'}</span></div>
+<div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">Method</span><span class="text-slate-800">${t.method}</span></div>
+<div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">Ref/TrxID</span><span class="text-slate-800 font-mono">${t.ref||'-'}</span></div>
+<div class="flex justify-between py-1.5 border-b border-slate-100"><span class="text-slate-500">Profit Related</span><span class="text-slate-800">${t.profitRelated==='yes'?'Yes':'No'}</span></div>
+<div class="py-1.5"><span class="text-slate-500">Description</span><p class="text-slate-800 mt-1">${t.description||'-'}</p></div>
+</div>`;
+document.getElementById('viewModal').style.display='flex';
+}
+
+function closeViewModal(){document.getElementById('viewModal').style.display='none';}
+
+function deleteTransaction(id){if(!confirm('Delete this transaction?'))return;transactions=transactions.filter(t=>t.id!==id);updateStats();renderTable();showToast('Transaction deleted');}
+
+function saveTransaction(){
+const category=document.getElementById('txnCategory').value;
+const subCategory=document.getElementById('txnSubCategory').value;
+const branch=document.getElementById('txnBranch').value;
+const method=document.getElementById('txnMethod').value;
+const amount=parseFloat(document.getElementById('txnAmount').value);
+const date=document.getElementById('txnDate').value;
+const ref=document.getElementById('txnRef').value;
+const description=document.getElementById('txnDescription').value;
+const profitRelated=document.querySelector('input[name="profitRelated"]:checked').value;
+
+if(!category||!subCategory||!amount||!date){showToast('Please fill required fields');return;}
+
+if(editId){
+const t=transactions.find(x=>x.id===editId);
+if(t){Object.assign(t,{category,subCategory,branch,method,amount,date,ref,description,profitRelated});}
+showToast('Transaction updated');
+}else{
+transactions.push({id:Date.now(),category,subCategory,branch,method,amount,date,ref,description,profitRelated});
+showToast('Transaction added');
+}
+closeModal();updateStats();renderTable();
+}
+
+function exportData(){showToast('Exporting...');}
+
+updateStats();renderTable();
+</script>
+</body>
+</html>

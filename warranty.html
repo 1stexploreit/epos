@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warranty Claims - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+@keyframes slideIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.animate-modal{animation:slideIn 0.15s ease-out}
+@media print{.no-print{display:none!important}body{background:#fff!important}#sendingNoteContent{box-shadow:none!important;border:none!important}}
+@page{size:A4;margin:10mm}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+
+
+<main class="no-print max-w-7xl mx-auto px-6 py-5 space-y-4">
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<div class="flex border-b border-slate-200 justify-between items-center">
+<div class="flex">
+<button onclick="switchTab('pending')" id="tabPending" class="px-6 py-3 text-sm font-semibold text-emerald-600 border-b-2 border-emerald-600 bg-white -mb-px flex items-center gap-2">
+Pending <span id="pendingBadge" class="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded">3</span>
+</button>
+<button onclick="switchTab('completed')" id="tabCompleted" class="px-6 py-3 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700">Completed</button>
+</div>
+<div class="flex items-center gap-2 pr-4">
+<button onclick="openSendingNote()" class="px-3 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+Sending Note
+</button>
+<a href="warranty_search.html" class="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+Search Product
+</a>
+</div>
+</div>
+
+<div class="p-3 border-b border-slate-100 bg-slate-50/50">
+<div class="flex flex-col md:flex-row gap-2">
+<div class="flex-1 relative">
+<svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<input type="text" id="search" placeholder="Search claim ID, product, customer..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs" oninput="renderTable()">
+</div>
+<div id="statusFilters" class="flex gap-2">
+<select id="filterStatus" class="px-3 py-2 border border-slate-200 rounded-lg text-xs text-slate-600" onchange="renderTable()">
+<option value="">All Status</option>
+<option value="Received">Received</option>
+<option value="At Supplier">At Supplier</option>
+<option value="Ready">Ready</option>
+</select>
+<select id="filterSort" class="px-3 py-2 border border-slate-200 rounded-lg text-xs text-slate-600" onchange="renderTable()">
+<option value="newest">Newest First</option>
+<option value="oldest">Oldest First</option>
+</select>
+</div>
+</div>
+</div>
+
+<table class="w-full" id="pendingTable">
+<thead class="bg-slate-50 border-b border-slate-200">
+<tr class="text-[10px] text-slate-500 uppercase tracking-wider">
+<th class="px-5 py-3 text-left font-semibold">Claim ID</th>
+<th class="px-5 py-3 text-left font-semibold">Product</th>
+<th class="px-5 py-3 text-left font-semibold">Customer</th>
+<th class="px-5 py-3 text-left font-semibold">Issue</th>
+<th class="px-5 py-3 text-center font-semibold">Status</th>
+<th class="px-5 py-3 text-left font-semibold">Date</th>
+<th class="px-5 py-3 text-right font-semibold">Actions</th>
+</tr>
+</thead>
+<tbody id="pendingBody" class="divide-y divide-slate-100"></tbody>
+</table>
+
+<table class="w-full" id="completedTable" style="display:none">
+<thead class="bg-slate-50 border-b border-slate-200">
+<tr class="text-[10px] text-slate-500 uppercase tracking-wider">
+<th class="px-5 py-3 text-left font-semibold">Claim ID</th>
+<th class="px-5 py-3 text-left font-semibold">Product</th>
+<th class="px-5 py-3 text-left font-semibold">Customer</th>
+<th class="px-5 py-3 text-left font-semibold">Issue</th>
+<th class="px-5 py-3 text-center font-semibold">Resolution</th>
+<th class="px-5 py-3 text-left font-semibold">Completed</th>
+<th class="px-5 py-3 text-right font-semibold">Actions</th>
+</tr>
+</thead>
+<tbody id="completedBody" class="divide-y divide-slate-100"></tbody>
+</table>
+
+<div id="emptyState" class="p-12 text-center" style="display:none">
+<div class="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
+<svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+</div>
+<p class="text-slate-600 font-medium">No claims found</p>
+</div>
+
+<div class="px-5 py-3 border-t border-slate-200 flex items-center justify-between bg-slate-50/50">
+<p class="text-xs text-slate-500">Showing <span id="showCount" class="font-medium text-slate-700">0</span> of <span id="totalCount" class="font-medium text-slate-700">0</span></p>
+<div class="flex items-center gap-1">
+<button onclick="changePage(-1)" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg" id="prevBtn"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
+<span class="px-2 py-1 text-xs text-slate-600" id="pageInfo">1 / 1</span>
+<button onclick="changePage(1)" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg" id="nextBtn"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+</div>
+</div>
+</div>
+</main>
+
+<!-- Detail Modal -->
+<div id="modal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md animate-modal">
+<div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-semibold text-slate-800 text-sm" id="mId">WC-2024-1234</span>
+<span id="mStatus" class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-700">At Supplier</span>
+</div>
+<button onclick="closeModal()" class="p-1 text-slate-400 hover:text-slate-600 rounded">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+</button>
+</div>
+<div class="p-4 space-y-4">
+<div class="flex gap-3">
+<div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium text-slate-800" id="mProduct">Samsung Galaxy A54</p>
+<p class="text-[11px] text-slate-400" id="mSerial">R58T30ABCDE</p>
+</div>
+<div class="text-right">
+<p class="text-sm font-medium text-slate-800" id="mCustomer">Mohammad Rafiq</p>
+<p class="text-[11px] text-slate-400" id="mPhone">01712-345678</p>
+</div>
+</div>
+<div class="bg-slate-50 rounded-lg p-3">
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-1">Issue</p>
+<p class="text-sm text-slate-700" id="mIssue">Display flickering</p>
+</div>
+<div>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-2">Timeline</p>
+<div class="flex items-center gap-1" id="mTimeline">
+<div class="flex items-center gap-1">
+<div class="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center"><svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+<span class="text-[10px] text-slate-600">Received</span>
+</div>
+<div class="flex-1 h-0.5 bg-emerald-300" id="line1"></div>
+<div class="flex items-center gap-1" id="step2">
+<div class="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center"><span class="text-[9px] text-slate-500">2</span></div>
+<span class="text-[10px] text-slate-400">Supplier</span>
+</div>
+<div class="flex-1 h-0.5 bg-slate-200" id="line2"></div>
+<div class="flex items-center gap-1" id="step3">
+<div class="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center"><span class="text-[9px] text-slate-500">3</span></div>
+<span class="text-[10px] text-slate-400">Ready</span>
+</div>
+<div class="flex-1 h-0.5 bg-slate-200" id="line3"></div>
+<div class="flex items-center gap-1" id="step4">
+<div class="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center"><span class="text-[9px] text-slate-500">4</span></div>
+<span class="text-[10px] text-slate-400">Done</span>
+</div>
+</div>
+</div>
+<div id="actReceived" style="display:none" class="bg-blue-50 rounded-lg p-3">
+<button onclick="updateStatus('At Supplier')" class="w-full py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600">Send to Supplier</button>
+</div>
+<div id="actSupplier" style="display:none" class="bg-amber-50 rounded-lg p-3">
+<p class="text-xs text-amber-700 mb-2">Supplier returned?</p>
+<div class="flex gap-2">
+<button onclick="updateStatus('Ready','Replaced')" class="flex-1 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600">Replaced</button>
+<button onclick="updateStatus('Ready','Serviced')" class="flex-1 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600">Serviced</button>
+</div>
+</div>
+<div id="actReady" style="display:none" class="bg-emerald-50 rounded-lg p-3 space-y-2">
+<div>
+<label class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">New Serial (if replaced)</label>
+<input type="text" id="newSerial" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Enter new serial...">
+</div>
+<button onclick="completeDelivery()" class="w-full py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600">Complete Delivery</button>
+</div>
+</div>
+<div class="px-4 py-3 border-t border-slate-200 flex justify-between bg-slate-50">
+<button onclick="callCustomer()" class="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+Call
+</button>
+<div class="flex gap-2">
+<button onclick="printClaim()" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded">Print</button>
+<button onclick="closeModal()" class="px-3 py-1.5 text-xs text-slate-600 bg-slate-200 hover:bg-slate-300 rounded font-medium">Close</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Sending Note Modal -->
+<div id="sendingNoteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm no-print" onclick="closeSendingNote()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-auto animate-modal">
+<div class="no-print sticky top-0 bg-white px-6 py-4 border-b border-slate-200 flex items-center justify-between z-10">
+<h2 class="text-lg font-semibold text-slate-800">Generate Warranty Sending Note</h2>
+<button onclick="closeSendingNote()" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+</button>
+</div>
+
+<div class="no-print p-6 border-b border-slate-200 bg-slate-50">
+<div class="flex flex-wrap gap-4 items-end">
+<div class="flex-1 min-w-[200px]">
+<label class="block text-xs font-medium text-slate-600 mb-1">Select Supplier</label>
+<select id="supplierSelect" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" onchange="filterBySupplier()">
+<option value="">-- Select Supplier --</option>
+<option value="Samsung Bangladesh">Samsung Bangladesh</option>
+<option value="Realme Official">Realme Official</option>
+<option value="Xiaomi Service Center">Xiaomi Service Center</option>
+<option value="Apple Authorized">Apple Authorized</option>
+<option value="OnePlus Care">OnePlus Care</option>
+</select>
+</div>
+<div class="flex gap-2">
+<button onclick="printSendingNote()" class="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+Print Note
+</button>
+</div>
+</div>
+</div>
+
+<!-- Printable Sending Note -->
+<div id="sendingNoteContent" class="p-8">
+<div class="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">
+<div>
+<h1 class="text-2xl font-bold text-slate-800">FreshMart</h1>
+<p class="text-xs text-slate-500 mt-1">123 Business Avenue, Dhaka, Bangladesh</p>
+<p class="text-xs text-slate-500">Phone: 01700-123456 | Email: service@freshmart.com</p>
+</div>
+<div class="text-right">
+<h2 class="text-lg font-bold text-slate-800 uppercase tracking-wide">Warranty Sending Note</h2>
+<p class="text-xs text-slate-500 mt-1">Note No: <span class="font-medium text-slate-700" id="noteNo">WSN-2025-001</span></p>
+<p class="text-xs text-slate-500">Date: <span class="font-medium text-slate-700" id="noteDate">Dec 26, 2025</span></p>
+</div>
+</div>
+
+<div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded">
+<div class="flex justify-between">
+<div>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Supplier</p>
+<p class="text-sm font-semibold text-slate-800" id="supplierName">-- Select Supplier --</p>
+</div>
+<div class="text-right">
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Total Items</p>
+<p class="text-sm font-semibold text-slate-800" id="totalItems">0</p>
+</div>
+</div>
+</div>
+
+<table class="w-full mb-6">
+<thead>
+<tr class="border-y-2 border-slate-800">
+<th class="py-2 text-left text-[11px] font-bold text-slate-800 uppercase w-8">#</th>
+<th class="py-2 text-left text-[11px] font-bold text-slate-800 uppercase">Claim ID</th>
+<th class="py-2 text-left text-[11px] font-bold text-slate-800 uppercase">Product</th>
+<th class="py-2 text-left text-[11px] font-bold text-slate-800 uppercase">Serial/IMEI</th>
+<th class="py-2 text-left text-[11px] font-bold text-slate-800 uppercase">Issue Description</th>
+<th class="py-2 text-left text-[11px] font-bold text-slate-800 uppercase">Customer</th>
+</tr>
+</thead>
+<tbody id="sendingNoteTable"></tbody>
+</table>
+
+<div id="emptyNoteState" class="py-12 text-center border border-dashed border-slate-300 rounded-lg mb-6">
+<svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+<p class="text-slate-400 text-sm">Select a supplier to view pending warranty items</p>
+</div>
+
+<div class="border-t border-slate-200 pt-4 mb-6">
+<p class="text-xs font-semibold text-slate-700 mb-1">Terms & Conditions:</p>
+<p class="text-xs text-slate-500">1. All items sent for warranty must be returned within 15 working days.</p>
+<p class="text-xs text-slate-500">2. Replacement items must include new serial numbers for inventory update.</p>
+<p class="text-xs text-slate-500">3. Please attach this note with returned products for reference.</p>
+</div>
+
+<div class="border-t-2 border-slate-800 pt-4 flex justify-between items-end">
+<div>
+<p class="text-xs text-slate-500 mb-8">Sent by: ___________________________</p>
+<p class="text-xs text-slate-400">Shop Representative</p>
+</div>
+<div class="text-right">
+<p class="text-xs text-slate-500 mb-8">Received by: ___________________________</p>
+<p class="text-xs text-slate-400">Supplier Representative</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Success</span>
+</div>
+
+<script>
+const suppliers={
+'Samsung Bangladesh':['Samsung'],
+'Realme Official':['Realme'],
+'Xiaomi Service Center':['Xiaomi'],
+'Apple Authorized':['iPhone','Apple'],
+'OnePlus Care':['OnePlus']
+};
+
+let pendingClaims=[
+{id:'WC-2024-1235',product:'Realme 12 Pro+',serial:'RM2024R12P001',customer:'Fatima Begum',phone:'01898-765432',issue:'Battery draining fast and phone getting hot',status:'Received',date:'Today',created:new Date()},
+{id:'WC-2024-1234',product:'Samsung Galaxy A54',serial:'R58T30ABCDE',customer:'Mohammad Rafiq',phone:'01712-345678',issue:'Display flickering and touch not responding',status:'At Supplier',date:'3 days ago',created:new Date(Date.now()-3*24*60*60*1000)},
+{id:'WC-2024-1230',product:'Xiaomi Note 13 Pro',serial:'XM2024N13P001',customer:'Abdul Karim',phone:'01898-765432',issue:'Camera not focusing properly',status:'Ready',date:'5 days ago',created:new Date(Date.now()-5*24*60*60*1000)},
+{id:'WC-2024-1228',product:'Samsung Galaxy S23',serial:'R58T40XYZAB',customer:'Kamal Hossain',phone:'01611-223344',issue:'Fingerprint sensor not working',status:'Received',date:'6 days ago',created:new Date(Date.now()-6*24*60*60*1000)},
+{id:'WC-2024-1225',product:'Realme GT Neo 5',serial:'RM2024GTN001',customer:'Nasreen Akter',phone:'01511-998877',issue:'Speaker crackling sound',status:'Received',date:'7 days ago',created:new Date(Date.now()-7*24*60*60*1000)},
+];
+
+let completedClaims=[
+{id:'WC-2024-1220',product:'iPhone 14 Pro',serial:'IP14P2024001',customer:'Rahim Khan',phone:'01712-111222',issue:'Touch ID not working',resolution:'Replaced',date:'20 Dec 2024'},
+{id:'WC-2024-1215',product:'OnePlus 12',serial:'OP122024001',customer:'Nusrat Jahan',phone:'01812-333444',issue:'Charging port issue',resolution:'Serviced',date:'18 Dec 2024'},
+];
+
+let currentTab='pending',currentPage=1,perPage=10;
+
+function showToast(m){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=m;t.style.display='flex';setTimeout(()=>t.style.display='none',3000);}
+
+function switchTab(t){
+currentTab=t;currentPage=1;
+document.getElementById('tabPending').className='px-6 py-3 text-sm border-b-2 -mb-px flex items-center gap-2 '+(t==='pending'?'font-semibold text-emerald-600 border-emerald-600 bg-white':'font-medium text-slate-500 border-transparent hover:text-slate-700');
+document.getElementById('tabCompleted').className='px-6 py-3 text-sm border-b-2 -mb-px '+(t==='completed'?'font-semibold text-emerald-600 border-emerald-600 bg-white':'font-medium text-slate-500 border-transparent hover:text-slate-700');
+document.getElementById('pendingTable').style.display=t==='pending'?'table':'none';
+document.getElementById('completedTable').style.display=t==='completed'?'table':'none';
+document.getElementById('statusFilters').style.display=t==='pending'?'flex':'none';
+renderTable();
+}
+
+function getFiltered(){
+const s=document.getElementById('search').value.toLowerCase(),st=document.getElementById('filterStatus').value,so=document.getElementById('filterSort').value;
+let l=currentTab==='pending'?[...pendingClaims]:[...completedClaims];
+l=l.filter(c=>(c.id.toLowerCase().includes(s)||c.product.toLowerCase().includes(s)||c.customer.toLowerCase().includes(s))&&(!st||c.status===st));
+if(so==='newest')l.sort((a,b)=>new Date(b.created||0)-new Date(a.created||0));
+else if(so==='oldest')l.sort((a,b)=>new Date(a.created||0)-new Date(b.created||0));
+return l;
+}
+
+function renderTable(){
+const f=getFiltered(),tp=Math.ceil(f.length/perPage)||1;
+if(currentPage>tp)currentPage=tp;
+const st=(currentPage-1)*perPage,p=f.slice(st,st+perPage);
+document.getElementById('totalCount').textContent=f.length;
+document.getElementById('showCount').textContent=p.length;
+document.getElementById('pageInfo').textContent=currentPage+' / '+tp;
+document.getElementById('pendingBadge').textContent=pendingClaims.length;
+if(!f.length){document.getElementById(currentTab+'Body').innerHTML='';document.getElementById('emptyState').style.display='block';return;}
+document.getElementById('emptyState').style.display='none';
+
+if(currentTab==='pending'){
+document.getElementById('pendingBody').innerHTML=p.map(c=>`
+<tr class="hover:bg-slate-50/80 text-[13px] cursor-pointer" onclick="openModal('${c.id}')">
+<td class="px-5 py-3 font-semibold text-slate-800">${c.id}</td>
+<td class="px-5 py-3"><p class="text-slate-700">${c.product}</p><p class="text-[10px] text-slate-400 font-mono">${c.serial}</p></td>
+<td class="px-5 py-3"><p class="text-slate-700">${c.customer}</p><p class="text-[10px] text-slate-400">${c.phone}</p></td>
+<td class="px-5 py-3 text-slate-600 max-w-[180px] truncate">${c.issue}</td>
+<td class="px-5 py-3 text-center"><span class="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full ${gsc(c.status)}"><span class="w-1.5 h-1.5 rounded-full ${gsd(c.status)}"></span>${c.status}</span></td>
+<td class="px-5 py-3 text-slate-500">${c.date}</td>
+<td class="px-5 py-3 text-right"><svg class="w-4 h-4 text-slate-300 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></td>
+</tr>`).join('');
+}else{
+document.getElementById('completedBody').innerHTML=p.map(c=>`
+<tr class="hover:bg-slate-50/80 text-[13px]">
+<td class="px-5 py-3 font-semibold text-slate-800">${c.id}</td>
+<td class="px-5 py-3"><p class="text-slate-700">${c.product}</p><p class="text-[10px] text-slate-400 font-mono">${c.serial}</p></td>
+<td class="px-5 py-3 text-slate-700">${c.customer}</td>
+<td class="px-5 py-3 text-slate-600 max-w-[180px] truncate">${c.issue}</td>
+<td class="px-5 py-3 text-center"><span class="px-2 py-0.5 text-[10px] font-semibold rounded-full ${c.resolution==='Replaced'?'bg-emerald-50 text-emerald-700':'bg-blue-50 text-blue-700'}">${c.resolution}</span></td>
+<td class="px-5 py-3 text-slate-500">${c.date}</td>
+<td class="px-5 py-3 text-right"><button class="p-1 text-slate-400 hover:text-slate-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button></td>
+</tr>`).join('');
+}
+}
+
+function gsc(s){return s==='Received'?'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20':s==='At Supplier'?'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20':s==='Ready'?'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20':'bg-slate-100 text-slate-600';}
+function gsd(s){return s==='Received'?'bg-blue-500':s==='At Supplier'?'bg-amber-500':s==='Ready'?'bg-emerald-500':'bg-slate-400';}
+
+let selectedClaim=null;
+
+function openModal(id){
+selectedClaim=pendingClaims.find(c=>c.id===id);
+if(!selectedClaim)return;
+document.getElementById('mId').textContent=selectedClaim.id;
+document.getElementById('mProduct').textContent=selectedClaim.product;
+document.getElementById('mSerial').textContent=selectedClaim.serial;
+document.getElementById('mCustomer').textContent=selectedClaim.customer;
+document.getElementById('mPhone').textContent=selectedClaim.phone;
+document.getElementById('mIssue').textContent=selectedClaim.issue;
+document.getElementById('mStatus').textContent=selectedClaim.status;
+document.getElementById('mStatus').className='px-2 py-0.5 text-[10px] font-semibold rounded-full '+gsc(selectedClaim.status);
+updateTimeline(selectedClaim.status);
+document.getElementById('actReceived').style.display=selectedClaim.status==='Received'?'block':'none';
+document.getElementById('actSupplier').style.display=selectedClaim.status==='At Supplier'?'block':'none';
+document.getElementById('actReady').style.display=selectedClaim.status==='Ready'?'block':'none';
+document.getElementById('modal').style.display='flex';
+}
+
+function updateTimeline(status){
+const step2=document.getElementById('step2'),step3=document.getElementById('step3'),step4=document.getElementById('step4');
+const line1=document.getElementById('line1'),line2=document.getElementById('line2'),line3=document.getElementById('line3');
+const done='<div class="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center"><svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>';
+if(status==='At Supplier'||status==='Ready'){
+step2.innerHTML=done+'<span class="text-[10px] text-slate-600">Supplier</span>';
+line1.className='flex-1 h-0.5 bg-emerald-300';
+}
+if(status==='Ready'){
+step3.innerHTML=done+'<span class="text-[10px] text-slate-600">Ready</span>';
+line2.className='flex-1 h-0.5 bg-emerald-300';
+}
+}
+
+function closeModal(){document.getElementById('modal').style.display='none';selectedClaim=null;}
+
+function updateStatus(newStatus,resolution){
+if(!selectedClaim)return;
+selectedClaim.status=newStatus;
+if(resolution)selectedClaim.resolution=resolution;
+closeModal();
+showToast('Status updated. SMS sent to customer.');
+renderTable();
+}
+
+function completeDelivery(){
+if(!selectedClaim)return;
+const ns=document.getElementById('newSerial').value.trim();
+completedClaims.unshift({...selectedClaim,serial:ns||selectedClaim.serial,resolution:selectedClaim.resolution||'Serviced',date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})});
+pendingClaims=pendingClaims.filter(c=>c.id!==selectedClaim.id);
+closeModal();
+showToast('Delivery completed!'+(ns?' Invoice updated.':''));
+renderTable();
+}
+
+function callCustomer(){if(selectedClaim)showToast('Calling '+selectedClaim.phone+'...');}
+function printClaim(){if(selectedClaim)showToast('Printing '+selectedClaim.id+'...');}
+
+function openSendingNote(){
+document.getElementById('sendingNoteModal').style.display='flex';
+document.getElementById('supplierSelect').value='';
+document.getElementById('noteNo').textContent='WSN-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*1000)).padStart(3,'0');
+document.getElementById('noteDate').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+filterBySupplier();
+}
+
+function closeSendingNote(){document.getElementById('sendingNoteModal').style.display='none';}
+
+function filterBySupplier(){
+const sel=document.getElementById('supplierSelect').value;
+document.getElementById('supplierName').textContent=sel||'-- Select Supplier --';
+if(!sel){
+document.getElementById('sendingNoteTable').innerHTML='';
+document.getElementById('emptyNoteState').style.display='block';
+document.getElementById('totalItems').textContent='0';
+return;
+}
+const brands=suppliers[sel]||[];
+const items=pendingClaims.filter(c=>c.status==='Received'&&brands.some(b=>c.product.toLowerCase().includes(b.toLowerCase())));
+document.getElementById('totalItems').textContent=items.length;
+if(!items.length){
+document.getElementById('sendingNoteTable').innerHTML='';
+document.getElementById('emptyNoteState').style.display='block';
+document.getElementById('emptyNoteState').innerHTML=`<svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p class="text-slate-400 text-sm">No pending items for ${sel}</p>`;
+return;
+}
+document.getElementById('emptyNoteState').style.display='none';
+document.getElementById('sendingNoteTable').innerHTML=items.map((c,i)=>`
+<tr class="${i%2?'bg-slate-50':''} border-b border-slate-100">
+<td class="py-2 text-[11px] text-slate-600">${i+1}</td>
+<td class="py-2 text-[11px] font-medium text-slate-800">${c.id}</td>
+<td class="py-2 text-[11px] text-slate-700">${c.product}</td>
+<td class="py-2 text-[11px] text-slate-600 font-mono">${c.serial}</td>
+<td class="py-2 text-[11px] text-slate-600">${c.issue}</td>
+<td class="py-2 text-[11px] text-slate-600">${c.customer}</td>
+</tr>`).join('');
+}
+
+function printSendingNote(){
+const sel=document.getElementById('supplierSelect').value;
+if(!sel){showToast('Please select a supplier first');return;}
+window.print();
+}
+
+function changePage(d){currentPage+=d;renderTable();}
+function exportData(){showToast('Exporting...');}
+
+renderTable();
+</script>
+</body>
+</html>

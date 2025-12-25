@@ -10,7 +10,9 @@
 *{font-family:'Inter',sans-serif}
 input:focus,select:focus,textarea:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes modalIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
 .toast{animation:fadeIn 0.3s ease-out}
+.modal-content{animation:modalIn 0.2s ease-out}
 </style>
 </head>
 <body class="bg-slate-100 min-h-screen">
@@ -86,20 +88,27 @@ History
 </div>
 </div>
 
-<!-- Payment Amount & Less in same row -->
-<div class="grid grid-cols-2 gap-4">
+<!-- Payment Amount, Less & Cashback in same row -->
+<div class="grid grid-cols-3 gap-3">
 <div>
 <label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Payment Amount *</label>
 <div class="relative mt-1.5">
 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
-<input type="number" id="payAmount" placeholder="0.00" class="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm font-semibold" oninput="validateForm()">
+<input type="number" id="payAmount" placeholder="0.00" class="w-full pl-8 pr-2 py-2.5 border border-slate-200 rounded-lg text-sm font-semibold" oninput="validateForm()">
 </div>
 </div>
 <div>
 <label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Less / Discount</label>
 <div class="relative mt-1.5">
 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
-<input type="number" id="lessAmount" placeholder="0.00" class="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm" oninput="calculatePayable()">
+<input type="number" id="lessAmount" placeholder="0.00" class="w-full pl-8 pr-2 py-2.5 border border-slate-200 rounded-lg text-sm" oninput="calculatePayable()">
+</div>
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Cashback</label>
+<div class="relative mt-1.5">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+<input type="number" id="cashbackAmount" placeholder="0.00" class="w-full pl-8 pr-2 py-2.5 border border-slate-200 rounded-lg text-sm text-amber-600 font-medium">
 </div>
 </div>
 </div>
@@ -126,6 +135,28 @@ History
 <div id="refField" style="display:none">
 <label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider" id="refLabel">Reference No.</label>
 <input type="text" id="payRef" placeholder="e.g., TXN-123456" class="w-full mt-1.5 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+</div>
+
+<!-- Next Payment Reminder -->
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Next Payment Reminder</label>
+<div class="mt-1.5 flex items-center gap-2">
+<button onclick="openReminderModal()" class="flex-1 px-3 py-2.5 border border-dashed border-slate-300 rounded-lg text-sm text-slate-500 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 transition flex items-center justify-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+<span id="reminderBtnText">Set Reminder</span>
+</button>
+<div id="reminderPreview" class="hidden flex-1 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-xs font-semibold text-amber-700" id="reminderDateText">Feb 15, 2025</p>
+<p class="text-[10px] text-amber-600" id="reminderAmountText">Amount: $500.00</p>
+</div>
+<button onclick="clearReminder()" class="p-1 text-amber-400 hover:text-red-500 hover:bg-red-50 rounded">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+</button>
+</div>
+</div>
+</div>
 </div>
 
 <!-- Note -->
@@ -178,6 +209,69 @@ Print
 </div>
 </main>
 
+<!-- Reminder Modal -->
+<div id="reminderModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-black/40" onclick="closeReminderModal()"></div>
+<div class="modal-content relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+<!-- Modal Header -->
+<div class="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+</div>
+<div>
+<h3 class="text-white font-semibold">Payment Reminder</h3>
+<p class="text-white/80 text-xs">Schedule next payment date</p>
+</div>
+</div>
+<button onclick="closeReminderModal()" class="p-1.5 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+</button>
+</div>
+</div>
+
+<!-- Modal Body -->
+<div class="p-6 space-y-4">
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Reminder Date *</label>
+<input type="date" id="reminderDate" class="w-full mt-1.5 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Expected Amount</label>
+<div class="relative mt-1.5">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+<input type="number" id="reminderAmount" placeholder="0.00" class="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm">
+</div>
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Reminder Note</label>
+<textarea id="reminderNote" rows="2" placeholder="e.g., Balance payment for INV-0012..." class="w-full mt-1.5 px-3 py-2.5 border border-slate-200 rounded-lg text-sm resize-none"></textarea>
+</div>
+
+<!-- Quick Select -->
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-2 block">Quick Select</label>
+<div class="flex flex-wrap gap-2">
+<button onclick="setQuickDate(7)" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-amber-100 hover:text-amber-700 text-slate-600 rounded-lg font-medium transition">7 Days</button>
+<button onclick="setQuickDate(14)" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-amber-100 hover:text-amber-700 text-slate-600 rounded-lg font-medium transition">14 Days</button>
+<button onclick="setQuickDate(30)" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-amber-100 hover:text-amber-700 text-slate-600 rounded-lg font-medium transition">1 Month</button>
+<button onclick="setQuickDate(60)" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-amber-100 hover:text-amber-700 text-slate-600 rounded-lg font-medium transition">2 Months</button>
+</div>
+</div>
+</div>
+
+<!-- Modal Footer -->
+<div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex gap-3">
+<button onclick="closeReminderModal()" class="flex-1 px-4 py-2.5 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="saveReminder()" class="flex-1 px-4 py-2.5 text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg font-medium shadow-sm hover:shadow flex items-center justify-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+Set Reminder
+</button>
+</div>
+</div>
+</div>
+
 <!-- Toast -->
 <div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2 toast" style="display:none">
 <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -206,6 +300,7 @@ let selectedCustomer = null;
 let customerInvoices = [];
 let selectedInvoice = null;
 let recentPayments = [];
+let currentReminder = null;
 
 const fmt = n => '$' + n.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
 const fmtDate = d => new Date(d).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
@@ -217,9 +312,17 @@ t.style.display = 'flex';
 setTimeout(() => t.style.display = 'none', 3000);
 }
 
+let dropdownOpen = false;
+
 function showDropdown() {
+dropdownOpen = true;
 filterCustomers();
 document.getElementById('customerDropdown').style.display = 'block';
+}
+
+function hideDropdown() {
+dropdownOpen = false;
+document.getElementById('customerDropdown').style.display = 'none';
 }
 
 function filterCustomers() {
@@ -234,8 +337,10 @@ document.getElementById('customerList').innerHTML = filtered.length ? filtered.m
   const idStr = String(c.id).padStart(4,'0');
   const balClass = c.balance > 0 ? 'text-red-500' : 'text-emerald-500';
   const balText = c.balance > 0 ? fmt(c.balance) : 'Paid';
-  return '<div onclick="selectCustomer('+c.id+')" class="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"><div class="flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-xs">'+initials+'</div><div><p class="text-sm font-medium text-slate-800">'+c.name+'</p><p class="text-xs text-slate-400">#'+idStr+' - '+c.phone+'</p></div></div><p class="text-sm font-semibold '+balClass+'">'+balText+'</p></div></div>';
+  return '<div onmousedown="event.preventDefault();selectCustomer('+c.id+')" class="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"><div class="flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-xs">'+initials+'</div><div><p class="text-sm font-medium text-slate-800">'+c.name+'</p><p class="text-xs text-slate-400">#'+idStr+' - '+c.phone+'</p></div></div><p class="text-sm font-semibold '+balClass+'">'+balText+'</p></div></div>';
 }).join('') : '<p class="px-4 py-6 text-center text-sm text-slate-400">No customers found</p>';
+// Keep dropdown open while typing
+if (dropdownOpen) document.getElementById('customerDropdown').style.display = 'block';
 }
 
 function selectCustomer(id) {
@@ -243,8 +348,7 @@ selectedCustomer = customers.find(c => c.id === id);
 if (!selectedCustomer) return;
 
 document.getElementById('customerSearch').value = selectedCustomer.name;
-document.getElementById('customerDropdown').style.display = 'none';
-
+hideDropdown();
 document.getElementById('custName').textContent = selectedCustomer.name;
 document.getElementById('custBalance').textContent = fmt(selectedCustomer.balance);
 
@@ -254,11 +358,10 @@ document.getElementById('selectedCustomer').style.display = 'block';
 document.getElementById('paymentForm').style.display = 'block';
 document.getElementById('actionBtns').style.display = 'flex';
 
-// Populate invoice dropdown
 const select = document.getElementById('invoiceSelect');
 select.innerHTML = '<option value="">-- Select Invoice --</option>';
 select.innerHTML += '<option value="all">All Outstanding (' + fmt(selectedCustomer.balance) + ')</option>';
-customerInvoices.forEach(function(inv) {
+customerInvoices.forEach(inv => {
   select.innerHTML += '<option value="' + inv.id + '">' + inv.id + ' - ' + fmtDate(inv.date) + ' (Due: ' + fmt(inv.due) + ')</option>';
 });
 
@@ -299,21 +402,18 @@ if (val === 'all') {
 }
 
 document.getElementById('lessAmount').value = '';
+document.getElementById('cashbackAmount').value = '';
 document.getElementById('payAmount').value = due > 0 ? due.toFixed(2) : '';
 validateForm();
 }
 
 function calculatePayable() {
 let due = 0;
-if (selectedInvoice === 'all') {
-  due = selectedCustomer.balance;
-} else if (selectedInvoice) {
-  due = selectedInvoice.due;
-}
+if (selectedInvoice === 'all') due = selectedCustomer.balance;
+else if (selectedInvoice) due = selectedInvoice.due;
 
 const less = parseFloat(document.getElementById('lessAmount').value) || 0;
 const payable = Math.max(0, due - less);
-
 document.getElementById('payAmount').value = payable > 0 ? payable.toFixed(2) : '';
 validateForm();
 }
@@ -327,33 +427,22 @@ if (method === 'Cash') {
   refField.style.display = 'none';
 } else {
   refField.style.display = 'block';
-  if (method === 'Cheque') {
-    refLabel.textContent = 'Cheque No.';
-    document.getElementById('payRef').placeholder = 'e.g., CHQ-123456';
-  } else if (method === 'Bank Transfer') {
-    refLabel.textContent = 'Transaction ID';
-    document.getElementById('payRef').placeholder = 'e.g., TXN-123456';
-  } else if (method === 'Card') {
-    refLabel.textContent = 'Card Last 4 Digits';
-    document.getElementById('payRef').placeholder = 'e.g., 4242';
-  } else {
-    refLabel.textContent = 'Reference No.';
-    document.getElementById('payRef').placeholder = 'e.g., REF-123456';
-  }
+  refLabel.textContent = method === 'Cheque' ? 'Cheque No.' : method === 'Bank Transfer' ? 'Transaction ID' : method === 'Card' ? 'Card Last 4 Digits' : 'Reference No.';
+  document.getElementById('payRef').placeholder = method === 'Cheque' ? 'e.g., CHQ-123456' : method === 'Card' ? 'e.g., 4242' : 'e.g., TXN-123456';
 }
 }
 
 function validateForm() {
 const amount = parseFloat(document.getElementById('payAmount').value) || 0;
 const invoice = document.getElementById('invoiceSelect').value;
-const canSave = selectedCustomer && amount > 0 && invoice;
-document.getElementById('saveBtn').disabled = !canSave;
+document.getElementById('saveBtn').disabled = !(selectedCustomer && amount > 0 && invoice);
 }
 
 function resetPaymentFields() {
 document.getElementById('invoiceSelect').value = '';
 document.getElementById('invoiceInfo').style.display = 'none';
 document.getElementById('lessAmount').value = '';
+document.getElementById('cashbackAmount').value = '';
 document.getElementById('payAmount').value = '';
 document.getElementById('payMethod').value = 'Cash';
 document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
@@ -361,7 +450,61 @@ document.getElementById('payRef').value = '';
 document.getElementById('payNote').value = '';
 document.getElementById('refField').style.display = 'none';
 document.querySelector('input[name="sms"][value="no"]').checked = true;
+clearReminder();
 validateForm();
+}
+
+// Reminder Functions
+function openReminderModal() {
+document.getElementById('reminderModal').style.display = 'flex';
+const nextMonth = new Date();
+nextMonth.setDate(nextMonth.getDate() + 30);
+document.getElementById('reminderDate').value = nextMonth.toISOString().split('T')[0];
+
+let suggestedAmount = 0;
+if (selectedInvoice === 'all') suggestedAmount = selectedCustomer.balance;
+else if (selectedInvoice) suggestedAmount = selectedInvoice.due;
+document.getElementById('reminderAmount').value = suggestedAmount > 0 ? suggestedAmount.toFixed(2) : '';
+}
+
+function closeReminderModal() {
+document.getElementById('reminderModal').style.display = 'none';
+}
+
+function setQuickDate(days) {
+const d = new Date();
+d.setDate(d.getDate() + days);
+document.getElementById('reminderDate').value = d.toISOString().split('T')[0];
+}
+
+function saveReminder() {
+const date = document.getElementById('reminderDate').value;
+const amount = parseFloat(document.getElementById('reminderAmount').value) || 0;
+const note = document.getElementById('reminderNote').value;
+
+if (!date) {
+  showToast('Please select a reminder date');
+  return;
+}
+
+currentReminder = { date, amount, note };
+
+document.getElementById('reminderDateText').textContent = fmtDate(date);
+document.getElementById('reminderAmountText').textContent = 'Amount: ' + fmt(amount);
+document.getElementById('reminderPreview').classList.remove('hidden');
+document.querySelector('#reminderBtnText').parentElement.classList.add('hidden');
+
+closeReminderModal();
+showToast('Reminder set for ' + fmtDate(date));
+}
+
+function clearReminder() {
+currentReminder = null;
+document.getElementById('reminderPreview').classList.add('hidden');
+document.querySelector('#reminderBtnText').parentElement.classList.remove('hidden');
+document.getElementById('reminderDate').value = '';
+document.getElementById('reminderAmount').value = '';
+document.getElementById('reminderNote').value = '';
 }
 
 function savePayment() {
@@ -370,22 +513,27 @@ if (!selectedCustomer || amount <= 0) return;
 
 const sendSms = document.querySelector('input[name="sms"]:checked').value === 'yes';
 const less = parseFloat(document.getElementById('lessAmount').value) || 0;
+const cashback = parseFloat(document.getElementById('cashbackAmount').value) || 0;
 
 const payment = {
   id: 'RCP-' + String(Date.now()).slice(-6),
   customer: selectedCustomer.name,
-  amount: amount,
-  less: less,
+  amount,
+  less,
+  cashback,
   method: document.getElementById('payMethod').value,
   date: document.getElementById('payDate').value,
-  sms: sendSms
+  sms: sendSms,
+  reminder: currentReminder
 };
 
 recentPayments.unshift(payment);
 renderRecentPayments();
 
 let msg = 'Payment of ' + fmt(amount) + ' saved!';
+if (cashback > 0) msg += ' Cashback: ' + fmt(cashback);
 if (sendSms) msg += ' SMS sent.';
+if (currentReminder) msg += ' Reminder set.';
 showToast(msg);
 resetForm();
 }
@@ -400,26 +548,30 @@ if (!recentPayments.length) {
   document.getElementById('recentPayments').innerHTML = '<p class="text-xs text-slate-400 text-center py-4">No recent payments</p>';
   return;
 }
-document.getElementById('recentPayments').innerHTML = recentPayments.slice(0, 5).map(function(p) {
-  var smsText = p.sms ? ' - SMS sent' : '';
-  return '<div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><div><p class="text-xs font-semibold text-slate-700">'+p.customer+'</p><p class="text-[10px] text-slate-400">'+p.id+' - '+p.method+smsText+'</p></div><p class="text-sm font-bold text-emerald-600">'+fmt(p.amount)+'</p></div>';
+document.getElementById('recentPayments').innerHTML = recentPayments.slice(0, 5).map(p => {
+  let extras = p.method;
+  if (p.cashback > 0) extras += ' • CB: ' + fmt(p.cashback);
+  if (p.reminder) extras += ' • 🔔';
+  return '<div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><div><p class="text-xs font-semibold text-slate-700">'+p.customer+'</p><p class="text-[10px] text-slate-400">'+p.id+' - '+extras+'</p></div><p class="text-sm font-bold text-emerald-600">'+fmt(p.amount)+'</p></div>';
 }).join('');
 }
 
-function resetForm() {
-clearCustomer();
-}
+function resetForm() { clearCustomer(); }
+function viewHistory() { showToast('Opening payment history...'); }
 
-function viewHistory() {
-showToast('Opening payment history...');
-}
-
-// Init
 document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
 document.addEventListener('click', e => {
 if (!e.target.closest('#customerSearch') && !e.target.closest('#customerDropdown')) {
-  document.getElementById('customerDropdown').style.display = 'none';
+  hideDropdown();
 }
+});
+// Keep dropdown open on input blur only if clicking inside dropdown
+document.getElementById('customerSearch').addEventListener('blur', e => {
+setTimeout(() => {
+  if (!document.activeElement.closest('#customerDropdown')) {
+    // Dropdown stays open if still interacting
+  }
+}, 150);
 });
 </script>
 </body>

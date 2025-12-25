@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Packages - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+.popular{position:relative;border:2px solid #10b981}
+.popular::before{content:'MOST POPULAR';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#10b981,#059669);color:white;font-size:10px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:0.5px}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Header -->
+<div class="bg-white border-b border-slate-200">
+<div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-slate-800 font-semibold">Choose Your Plan</h1>
+<p class="text-xs text-slate-400">Select the perfect package for your business</p>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-xs text-slate-500">Billing:</span>
+<div class="flex bg-slate-100 p-1 rounded-lg">
+<button onclick="toggleBilling('monthly')" id="btnMonthly" class="px-3 py-1.5 text-xs font-medium rounded-md bg-white shadow-sm text-slate-700">Monthly</button>
+<button onclick="toggleBilling('yearly')" id="btnYearly" class="px-3 py-1.5 text-xs font-medium rounded-md text-slate-500">Yearly <span class="text-emerald-500">-20%</span></button>
+</div>
+</div>
+</div>
+</div>
+
+<main class="max-w-6xl mx-auto px-6 py-6">
+
+<!-- App & Web Service Highlight -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+<div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-5 text-white">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+<svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+</div>
+<div>
+<h3 class="font-semibold text-lg">Mobile App</h3>
+<p class="text-blue-100 text-sm mt-0.5">Android & iOS apps for on-the-go management</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mt-4">
+<span class="px-2 py-1 bg-white/20 rounded-md text-xs">Offline Mode</span>
+<span class="px-2 py-1 bg-white/20 rounded-md text-xs">Push Notifications</span>
+<span class="px-2 py-1 bg-white/20 rounded-md text-xs">Barcode Scanner</span>
+<span class="px-2 py-1 bg-white/20 rounded-md text-xs">Real-time Sync</span>
+</div>
+</div>
+<div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-5 text-white">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+<svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+</div>
+<div>
+<h3 class="font-semibold text-lg">Web Platform</h3>
+<p class="text-purple-100 text-sm mt-0.5">Access from any browser, anywhere</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mt-4">
+<span class="px-2 py-1 bg-white/20 rounded-md text-xs">Cloud Based</span>
+<span class="px-2 py-1 bg-white/20 rounded-md text-xs">Multi-device</span>
+<span class="px-2 py-1 bg-white/20 rounded-md text-xs">Auto Backup</span>
+<span class="px-2 py-1 bg-white/20 rounded-md text-xs">SSL Secured</span>
+</div>
+</div>
+</div>
+
+<!-- Pricing Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+
+<!-- Basic Package -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<div class="p-6 border-b border-slate-100">
+<div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-4">
+<svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+</div>
+<h3 class="text-xl font-bold text-slate-800">Basic</h3>
+<p class="text-sm text-slate-500 mt-1">Perfect for small shops</p>
+<div class="mt-4">
+<span class="text-3xl font-bold text-slate-800" id="priceBasic">৳1,500</span>
+<span class="text-slate-400 text-sm">/month</span>
+</div>
+</div>
+<div class="p-6">
+<p class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-3">What's included</p>
+<ul class="space-y-3">
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span><strong class="text-slate-800">1</strong> Branch</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span><strong class="text-slate-800">2</strong> Users</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span><strong class="text-slate-800">500</strong> Products</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>POS & Billing</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>Basic Reports</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>Email Support</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-300">
+<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+<span>Mobile App</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-300">
+<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+<span>SMS Integration</span>
+</li>
+</ul>
+<button onclick="selectPlan('Basic')" class="w-full mt-6 px-4 py-3 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all">Get Started</button>
+</div>
+</div>
+
+<!-- Advanced Package -->
+<div class="bg-white rounded-xl shadow-lg popular overflow-hidden">
+<div class="p-6 border-b border-slate-100 bg-gradient-to-br from-emerald-50 to-white">
+<div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4">
+<svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+</div>
+<h3 class="text-xl font-bold text-slate-800">Advanced</h3>
+<p class="text-sm text-slate-500 mt-1">For growing businesses</p>
+<div class="mt-4">
+<span class="text-3xl font-bold text-emerald-600" id="priceAdvanced">৳2,500</span>
+<span class="text-slate-400 text-sm">/month</span>
+</div>
+</div>
+<div class="p-6">
+<p class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-3">What's included</p>
+<ul class="space-y-3">
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span><strong class="text-slate-800">5</strong> Branches</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span><strong class="text-slate-800">10</strong> Users</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span><strong class="text-slate-800">Unlimited</strong> Products</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>POS & Billing</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>Advanced Reports</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>Mobile App Access</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>SMS Integration</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>Priority Support</span>
+</li>
+</ul>
+<button onclick="selectPlan('Advanced')" class="w-full mt-6 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-xl shadow-sm transition-all">Get Started</button>
+</div>
+</div>
+
+<!-- Ecommerce Package -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<div class="p-6 border-b border-slate-100">
+<div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
+<svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+</div>
+<h3 class="text-xl font-bold text-slate-800">Ecommerce</h3>
+<p class="text-sm text-slate-500 mt-1">Full online store solution</p>
+<div class="mt-4">
+<span class="text-3xl font-bold text-slate-800" id="priceEcommerce">৳4,500</span>
+<span class="text-slate-400 text-sm">/month</span>
+</div>
+</div>
+<div class="p-6">
+<p class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-3">Everything in Advanced, plus</p>
+<ul class="space-y-3">
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span><strong class="text-slate-800">Unlimited</strong> Branches</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span><strong class="text-slate-800">Unlimited</strong> Users</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>Online Store Website</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>Online Payment Gateway</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>Order Management</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>Delivery Tracking</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>Customer App</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-slate-600">
+<svg class="w-5 h-5 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span>24/7 Dedicated Support</span>
+</li>
+</ul>
+<button onclick="selectPlan('Ecommerce')" class="w-full mt-6 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl shadow-sm transition-all">Get Started</button>
+</div>
+</div>
+
+</div>
+
+<!-- Feature Comparison Table -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<div class="px-6 py-4 border-b border-slate-200">
+<h3 class="font-semibold text-slate-800">Compare All Features</h3>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full">
+<thead class="bg-slate-50">
+<tr>
+<th class="px-6 py-3 text-left text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Features</th>
+<th class="px-6 py-3 text-center text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Basic</th>
+<th class="px-6 py-3 text-center text-[10px] text-emerald-600 font-semibold uppercase tracking-wider bg-emerald-50/50">Advanced</th>
+<th class="px-6 py-3 text-center text-[10px] text-purple-600 font-semibold uppercase tracking-wider">Ecommerce</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<tr>
+<td class="px-6 py-3 text-sm text-slate-700">Branches</td>
+<td class="px-6 py-3 text-center text-sm text-slate-600">1</td>
+<td class="px-6 py-3 text-center text-sm text-slate-600 bg-emerald-50/30">5</td>
+<td class="px-6 py-3 text-center text-sm text-slate-600">Unlimited</td>
+</tr>
+<tr>
+<td class="px-6 py-3 text-sm text-slate-700">Users</td>
+<td class="px-6 py-3 text-center text-sm text-slate-600">2</td>
+<td class="px-6 py-3 text-center text-sm text-slate-600 bg-emerald-50/30">10</td>
+<td class="px-6 py-3 text-center text-sm text-slate-600">Unlimited</td>
+</tr>
+<tr>
+<td class="px-6 py-3 text-sm text-slate-700">Products</td>
+<td class="px-6 py-3 text-center text-sm text-slate-600">500</td>
+<td class="px-6 py-3 text-center text-sm text-slate-600 bg-emerald-50/30">Unlimited</td>
+<td class="px-6 py-3 text-center text-sm text-slate-600">Unlimited</td>
+</tr>
+<tr>
+<td class="px-6 py-3 text-sm text-slate-700">Web Platform</td>
+<td class="px-6 py-3 text-center"><svg class="w-5 h-5 text-emerald-500 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></td>
+<td class="px-6 py-3 text-center bg-emerald-50/30"><svg class="w-5 h-5 text-emerald-500 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></td>
+<td class="px-6 py-3 text-center"><svg class="w-5 h-5 text-emerald-500 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></td>
+</tr>
+<tr>
+<td class="px-6 py-3 text-sm text-slate-700">Mobile App</td>
+<td class="px-6 py-3 text-center"><svg class="w-5 h-5 text-slate-300 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></td>
+<td class="px-6 py-3 text-center bg-emerald-50/30"><svg class="w-5 h-5 text-emerald-500 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></td>
+<td class="px-6 py-3 text-center"><svg class="w-5 h-5 text-emerald-500 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></td>
+</tr>
+<tr>
+<td class="px-6 py-3 text-sm text-slate-700">SMS Integration</td>
+<td class="px-6 py-3 text-center"><svg class="w-5 h-5 text-slate-300 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></td>
+<td class="px-6 py-3 text-center bg-emerald-50/30"><svg class="w-5 h-5 text-emerald-500 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></td>
+<td class="px-6 py-3 text-center"><svg class="w-5 h-5 text-emerald-500 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></td>
+</tr>
+<tr>
+<td class="px-6 py-3 text-sm text-slate-700">Online Store</td>
+<td class="px-6 py-3 text-center"><svg class="w-5 h-5 text-slate-300 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></td>
+<td class="px-6 py-3 text-center bg-emerald-50/30"><svg class="w-5 h-5 text-slate-300 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></td>
+<td class="px-6 py-3 text-center"><svg class="w-5 h-5 text-emerald-500 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></td>
+</tr>
+<tr>
+<td class="px-6 py-3 text-sm text-slate-700">Online Payments</td>
+<td class="px-6 py-3 text-center"><svg class="w-5 h-5 text-slate-300 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></td>
+<td class="px-6 py-3 text-center bg-emerald-50/30"><svg class="w-5 h-5 text-slate-300 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></td>
+<td class="px-6 py-3 text-center"><svg class="w-5 h-5 text-emerald-500 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></td>
+</tr>
+<tr>
+<td class="px-6 py-3 text-sm text-slate-700">Customer App</td>
+<td class="px-6 py-3 text-center"><svg class="w-5 h-5 text-slate-300 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></td>
+<td class="px-6 py-3 text-center bg-emerald-50/30"><svg class="w-5 h-5 text-slate-300 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></td>
+<td class="px-6 py-3 text-center"><svg class="w-5 h-5 text-emerald-500 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></td>
+</tr>
+<tr>
+<td class="px-6 py-3 text-sm text-slate-700">Support</td>
+<td class="px-6 py-3 text-center text-sm text-slate-600">Email</td>
+<td class="px-6 py-3 text-center text-sm text-slate-600 bg-emerald-50/30">Priority</td>
+<td class="px-6 py-3 text-center text-sm text-slate-600">24/7 Dedicated</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- FAQ -->
+<div class="mt-6 bg-white rounded-xl shadow-sm border border-slate-200/80 p-6">
+<h3 class="font-semibold text-slate-800 mb-4">Frequently Asked Questions</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="p-4 bg-slate-50 rounded-lg">
+<p class="text-sm font-medium text-slate-700">Can I upgrade my plan later?</p>
+<p class="text-sm text-slate-500 mt-1">Yes, you can upgrade anytime. The price difference will be prorated.</p>
+</div>
+<div class="p-4 bg-slate-50 rounded-lg">
+<p class="text-sm font-medium text-slate-700">Is there a free trial?</p>
+<p class="text-sm text-slate-500 mt-1">Yes, all plans come with a 14-day free trial. No credit card required.</p>
+</div>
+<div class="p-4 bg-slate-50 rounded-lg">
+<p class="text-sm font-medium text-slate-700">What payment methods are accepted?</p>
+<p class="text-sm text-slate-500 mt-1">We accept bKash, Nagad, credit/debit cards, and bank transfers.</p>
+</div>
+<div class="p-4 bg-slate-50 rounded-lg">
+<p class="text-sm font-medium text-slate-700">Can I cancel anytime?</p>
+<p class="text-sm text-slate-500 mt-1">Yes, you can cancel anytime. No long-term contracts.</p>
+</div>
+</div>
+</div>
+
+</main>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Success</span>
+</div>
+
+<script>
+const prices = {
+monthly: { basic: 1500, advanced: 2500, ecommerce: 4500 },
+yearly: { basic: 1200, advanced: 2000, ecommerce: 3600 }
+};
+
+let currentBilling = 'monthly';
+
+function toggleBilling(type) {
+currentBilling = type;
+document.getElementById('btnMonthly').classList.toggle('bg-white', type === 'monthly');
+document.getElementById('btnMonthly').classList.toggle('shadow-sm', type === 'monthly');
+document.getElementById('btnMonthly').classList.toggle('text-slate-700', type === 'monthly');
+document.getElementById('btnMonthly').classList.toggle('text-slate-500', type !== 'monthly');
+
+document.getElementById('btnYearly').classList.toggle('bg-white', type === 'yearly');
+document.getElementById('btnYearly').classList.toggle('shadow-sm', type === 'yearly');
+document.getElementById('btnYearly').classList.toggle('text-slate-700', type === 'yearly');
+document.getElementById('btnYearly').classList.toggle('text-slate-500', type !== 'yearly');
+
+document.getElementById('priceBasic').textContent = '৳' + prices[type].basic.toLocaleString();
+document.getElementById('priceAdvanced').textContent = '৳' + prices[type].advanced.toLocaleString();
+document.getElementById('priceEcommerce').textContent = '৳' + prices[type].ecommerce.toLocaleString();
+}
+
+function selectPlan(plan) {
+showToast('Selected ' + plan + ' plan. Redirecting to checkout...');
+}
+
+function showToast(msg) {
+const t = document.getElementById('toast');
+document.getElementById('toastMsg').textContent = msg;
+t.style.display = 'flex';
+setTimeout(() => t.style.display = 'none', 3000);
+}
+</script>
+</body>
+</html>

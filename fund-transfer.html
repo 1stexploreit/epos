@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fund Transfer - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Header -->
+<div class="bg-white border-b border-slate-200">
+<div class="max-w-3xl mx-auto px-6 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-slate-800 font-semibold">Fund Transfer</h1>
+<p class="text-xs text-slate-400">Transfer funds between accounts</p>
+</div>
+<div class="flex items-center gap-3">
+<a href="#" onclick="openTransferLog()" class="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+Transfer Log
+</a>
+</div>
+</div>
+</div>
+
+<main class="max-w-3xl mx-auto px-6 py-5">
+
+<!-- Transfer Form -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-6">
+<h3 class="text-sm font-semibold text-slate-800 mb-5 flex items-center gap-2">
+<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+Transfer Details
+</h3>
+
+<div class="space-y-4">
+<!-- From & To -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">From <span class="text-red-400">*</span></label>
+<select id="fromAccount" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm">
+<option value="">Select source</option>
+<option value="main">Main Account</option>
+<option value="cash">Cash in Hand</option>
+<option value="petty">Petty Cash</option>
+<option value="bank">Bank Account</option>
+</select>
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">To <span class="text-red-400">*</span></label>
+<select id="toAccount" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm">
+<option value="">Select destination</option>
+<option value="main">Main Account</option>
+<option value="cash">Cash in Hand</option>
+<option value="petty">Petty Cash</option>
+<option value="bank">Bank Account</option>
+</select>
+</div>
+</div>
+
+<!-- Amount -->
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Amount <span class="text-red-400">*</span></label>
+<div class="relative mt-1.5">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">৳</span>
+<input type="number" id="amount" class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="0.00">
+</div>
+</div>
+
+<!-- Date & Reference -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Transfer Date <span class="text-red-400">*</span></label>
+<input type="date" id="transferDate" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm">
+</div>
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Reference No.</label>
+<input type="text" id="reference" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="Auto-generated" readonly>
+</div>
+</div>
+
+<!-- Purpose -->
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Purpose / Reason</label>
+<input type="text" id="purpose" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="Enter purpose of transfer">
+</div>
+
+<!-- Note -->
+<div>
+<label class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Additional Note</label>
+<textarea id="note" rows="2" class="w-full mt-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm resize-none" placeholder="Optional note..."></textarea>
+</div>
+
+<!-- Submit Buttons -->
+<div class="flex gap-3 pt-3">
+<button onclick="resetForm()" class="flex-1 py-2.5 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Reset</button>
+<button onclick="submitTransfer()" class="flex-[2] py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium text-sm flex items-center justify-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+Submit Transfer
+</button>
+</div>
+</div>
+</div>
+
+<!-- Recent Transfers -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5 mt-5">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-semibold text-slate-800">Recent Transfers</h3>
+<a href="#" onclick="openTransferLog()" class="text-xs text-emerald-600 hover:text-emerald-700 font-medium">View All</a>
+</div>
+<div class="space-y-2" id="recentTransfers"></div>
+</div>
+
+</main>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Success</span>
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeConfirmModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+<h3 class="text-lg font-semibold text-slate-800 mb-4">Confirm Transfer</h3>
+<div class="bg-slate-50 rounded-lg p-4 mb-4 space-y-2 text-sm">
+<div class="flex justify-between"><span class="text-slate-500">Amount:</span><span class="font-bold text-slate-800" id="confirmAmount">৳0</span></div>
+<div class="flex justify-between"><span class="text-slate-500">From:</span><span class="text-slate-700" id="confirmFrom">—</span></div>
+<div class="flex justify-between"><span class="text-slate-500">To:</span><span class="text-slate-700" id="confirmTo">—</span></div>
+<div class="flex justify-between"><span class="text-slate-500">Purpose:</span><span class="text-slate-700" id="confirmPurpose">—</span></div>
+</div>
+<div class="flex gap-3">
+<button onclick="closeConfirmModal()" class="flex-1 px-4 py-2.5 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Cancel</button>
+<button onclick="confirmTransfer()" class="flex-1 px-4 py-2.5 text-sm bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium">Confirm</button>
+</div>
+</div>
+</div>
+
+<script>
+const fmt=n=>'৳'+Number(n).toLocaleString('en-BD');
+
+const recentTransfers=[
+{from:'Main Account',to:'Cash in Hand',amount:25000,date:'Today, 10:30 AM',status:'Completed'},
+{from:'Bank Account',to:'Main Account',amount:100000,date:'Yesterday',status:'Completed'},
+{from:'Cash in Hand',to:'Petty Cash',amount:5000,date:'Dec 23',status:'Completed'},
+{from:'Main Account',to:'Bank Account',amount:50000,date:'Dec 22',status:'Pending'},
+];
+
+function showToast(msg){
+const t=document.getElementById('toast');
+document.getElementById('toastMsg').textContent=msg;
+t.style.display='flex';
+setTimeout(()=>t.style.display='none',3000);
+}
+
+function generateRef(){
+document.getElementById('reference').value='TRF-'+Date.now().toString().slice(-8);
+}
+
+function resetForm(){
+document.getElementById('fromAccount').value='';
+document.getElementById('toAccount').value='';
+document.getElementById('amount').value='';
+document.getElementById('purpose').value='';
+document.getElementById('note').value='';
+generateRef();
+showToast('Form reset');
+}
+
+function submitTransfer(){
+const from=document.getElementById('fromAccount').value;
+const to=document.getElementById('toAccount').value;
+const amount=document.getElementById('amount').value;
+const purpose=document.getElementById('purpose').value;
+
+if(!from||!to||!amount){alert('Please fill in all required fields');return;}
+if(from===to){alert('Source and destination cannot be the same');return;}
+
+document.getElementById('confirmAmount').textContent=fmt(amount);
+document.getElementById('confirmFrom').textContent=document.getElementById('fromAccount').options[document.getElementById('fromAccount').selectedIndex].text;
+document.getElementById('confirmTo').textContent=document.getElementById('toAccount').options[document.getElementById('toAccount').selectedIndex].text;
+document.getElementById('confirmPurpose').textContent=purpose||'—';
+
+document.getElementById('confirmModal').style.display='flex';
+}
+
+function closeConfirmModal(){
+document.getElementById('confirmModal').style.display='none';
+}
+
+function confirmTransfer(){
+closeConfirmModal();
+showToast('Transfer completed successfully!');
+resetForm();
+}
+
+function openTransferLog(){showToast('Opening transfer log...');}
+
+function renderRecentTransfers(){
+document.getElementById('recentTransfers').innerHTML=recentTransfers.map(t=>{
+const statusClass=t.status==='Completed'?'bg-emerald-50 text-emerald-600':'bg-amber-50 text-amber-600';
+return`<div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+<div class="flex-1">
+<p class="text-sm font-medium text-slate-700">${t.from} → ${t.to}</p>
+<p class="text-xs text-slate-400">${t.date}</p>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-slate-800">${fmt(t.amount)}</p>
+<span class="text-[10px] px-1.5 py-0.5 rounded-full ${statusClass}">${t.status}</span>
+</div>
+</div>`;}).join('');
+}
+
+// Init
+document.getElementById('transferDate').valueAsDate=new Date();
+generateRef();
+renderRecentTransfers();
+</script>
+</body>
+</html>

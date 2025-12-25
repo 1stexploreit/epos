@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Transaction Categories - FreshMart POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',sans-serif}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Header -->
+<div class="bg-white border-b border-slate-200">
+<div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-slate-800 font-semibold">Manage Transaction Categories</h1>
+<p class="text-xs text-slate-400">Create and manage categories & sub-categories</p>
+</div>
+<div class="flex items-center gap-2">
+<a href="#" class="px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+Back to Transactions
+</a>
+</div>
+</div>
+</div>
+
+<main class="max-w-6xl mx-auto px-6 py-5">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+<!-- Categories List -->
+<div class="lg:col-span-1">
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+<h3 class="font-semibold text-slate-800 text-sm">Categories</h3>
+<div class="flex items-center gap-1">
+<button onclick="openBulkCategoryModal()" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="Bulk Add">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+</button>
+<button onclick="openCategoryModal()" class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Add Category">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+</button>
+</div>
+</div>
+<div class="divide-y divide-slate-100 max-h-[500px] overflow-y-auto" id="categoryList"></div>
+</div>
+</div>
+
+<!-- Sub-Categories List -->
+<div class="lg:col-span-2">
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+<div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+<div>
+<h3 class="font-semibold text-slate-800 text-sm">Sub-Categories</h3>
+<p class="text-xs text-slate-400" id="selectedCategoryName">Select a category to view</p>
+</div>
+<button onclick="openBulkSubCategoryModal()" id="btnBulkSub" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" title="Bulk Add" disabled>
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+</button>
+<button onclick="openSubCategoryModal()" id="btnAddSub" class="px-3 py-1.5 text-sm text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg font-medium flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+Add Sub-Category
+</button>
+</div>
+<div id="subCategoryContent">
+<div class="p-8 text-center">
+<div class="w-12 h-12 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-3">
+<svg class="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+</div>
+<p class="text-slate-500 text-sm">Select a category from the left to manage sub-categories</p>
+</div>
+</div>
+</div>
+
+<!-- Summary -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-4 mt-4">
+<h3 class="font-semibold text-slate-800 text-sm mb-3">Summary</h3>
+<div class="grid grid-cols-3 gap-4 text-center">
+<div class="p-3 bg-slate-50 rounded-lg">
+<p class="text-2xl font-bold text-slate-800" id="totalCategories">0</p>
+<p class="text-xs text-slate-500">Categories</p>
+</div>
+<div class="p-3 bg-emerald-50 rounded-lg">
+<p class="text-2xl font-bold text-emerald-600" id="totalReceive">0</p>
+<p class="text-xs text-slate-500">Receive Items</p>
+</div>
+<div class="p-3 bg-red-50 rounded-lg">
+<p class="text-2xl font-bold text-red-500" id="totalPayment">0</p>
+<p class="text-xs text-slate-500">Payment Items</p>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</main>
+
+<!-- Category Modal -->
+<div id="categoryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40" onclick="closeCategoryModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
+<div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+<h3 class="font-semibold text-slate-800" id="categoryModalTitle">Add Category</h3>
+<button onclick="closeCategoryModal()" class="p-1 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+<div class="p-4 space-y-3">
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Category Name *</label>
+<input type="text" id="catName" placeholder="e.g., Transport, Utility" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm">
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Description</label>
+<input type="text" id="catDesc" placeholder="Optional description" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm">
+</div>
+</div>
+<div class="px-4 py-3 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+<button onclick="closeCategoryModal()" class="px-3 py-2 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="saveCategory()" class="px-4 py-2 text-sm text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg font-medium">Save</button>
+</div>
+</div>
+</div>
+
+<!-- Sub-Category Modal -->
+<div id="subCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40" onclick="closeSubCategoryModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
+<div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+<h3 class="font-semibold text-slate-800" id="subCategoryModalTitle">Add Sub-Category</h3>
+<button onclick="closeSubCategoryModal()" class="p-1 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+<div class="p-4 space-y-3">
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Sub-Category Name *</label>
+<input type="text" id="subName" placeholder="e.g., Fuel Cost, Internet Bill" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm">
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Type *</label>
+<div class="flex gap-4 mt-2">
+<label class="flex-1 cursor-pointer">
+<input type="radio" name="subType" value="receive" class="sr-only peer">
+<div class="px-3 py-2.5 border-2 border-slate-200 rounded-lg text-center text-sm font-medium text-slate-600 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700">
+↓ Receive
+</div>
+</label>
+<label class="flex-1 cursor-pointer">
+<input type="radio" name="subType" value="payment" checked class="sr-only peer">
+<div class="px-3 py-2.5 border-2 border-slate-200 rounded-lg text-center text-sm font-medium text-slate-600 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700">
+↑ Payment
+</div>
+</label>
+</div>
+</div>
+</div>
+<div class="px-4 py-3 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+<button onclick="closeSubCategoryModal()" class="px-3 py-2 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="saveSubCategory()" class="px-4 py-2 text-sm text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg font-medium">Save</button>
+</div>
+</div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40" onclick="closeDeleteModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-xs overflow-hidden">
+<div class="p-5 text-center">
+<div class="w-12 h-12 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-3">
+<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+</div>
+<h3 class="font-semibold text-slate-800 mb-1" id="deleteTitle">Delete Item?</h3>
+<p class="text-sm text-slate-500 mb-4" id="deleteMsg">This action cannot be undone.</p>
+<div class="flex gap-2">
+<button onclick="closeDeleteModal()" class="flex-1 px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Cancel</button>
+<button onclick="confirmDelete()" class="flex-1 px-3 py-2 text-sm text-white bg-red-500 hover:bg-red-600 rounded-lg font-medium">Delete</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Bulk Category Modal -->
+<div id="bulkCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40" onclick="closeBulkCategoryModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+<div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+<h3 class="font-semibold text-slate-800">Bulk Add Categories</h3>
+<button onclick="closeBulkCategoryModal()" class="p-1 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+<div class="p-4 space-y-3">
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Category Names (one per line) *</label>
+<textarea id="bulkCatNames" rows="6" placeholder="Transport&#10;Utility Bills&#10;Office Supplies&#10;Maintenance" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono"></textarea>
+</div>
+<div class="flex items-start gap-2 p-2 bg-blue-50 rounded-lg">
+<svg class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+<p class="text-xs text-blue-700">Enter each category name on a new line. Duplicates will be skipped.</p>
+</div>
+</div>
+<div class="px-4 py-3 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+<button onclick="closeBulkCategoryModal()" class="px-3 py-2 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="saveBulkCategories()" class="px-4 py-2 text-sm text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg font-medium">Add All</button>
+</div>
+</div>
+</div>
+
+<!-- Bulk Sub-Category Modal -->
+<div id="bulkSubCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+<div class="absolute inset-0 bg-slate-900/40" onclick="closeBulkSubCategoryModal()"></div>
+<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+<div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+<div>
+<h3 class="font-semibold text-slate-800">Bulk Add Sub-Categories</h3>
+<p class="text-xs text-slate-400" id="bulkSubCatName"></p>
+</div>
+<button onclick="closeBulkSubCategoryModal()" class="p-1 hover:bg-slate-100 rounded-lg"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+<div class="p-4 space-y-3">
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Default Type *</label>
+<div class="flex gap-3 mt-1">
+<label class="flex-1 cursor-pointer">
+<input type="radio" name="bulkSubType" value="receive" class="sr-only peer">
+<div class="px-3 py-2 border-2 border-slate-200 rounded-lg text-center text-sm font-medium text-slate-600 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700">↓ Receive</div>
+</label>
+<label class="flex-1 cursor-pointer">
+<input type="radio" name="bulkSubType" value="payment" checked class="sr-only peer">
+<div class="px-3 py-2 border-2 border-slate-200 rounded-lg text-center text-sm font-medium text-slate-600 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700">↑ Payment</div>
+</label>
+</div>
+</div>
+<div>
+<label class="text-[10px] text-slate-500 font-semibold uppercase">Sub-Category Names (one per line) *</label>
+<textarea id="bulkSubNames" rows="6" placeholder="Electricity Bill&#10;Internet Bill&#10;Water Bill&#10;Gas Bill" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono"></textarea>
+</div>
+<div class="flex items-start gap-2 p-2 bg-blue-50 rounded-lg">
+<svg class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+<p class="text-xs text-blue-700">Enter each sub-category on a new line. All will use the selected type.</p>
+</div>
+</div>
+<div class="px-4 py-3 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+<button onclick="closeBulkSubCategoryModal()" class="px-3 py-2 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+<button onclick="saveBulkSubCategories()" class="px-4 py-2 text-sm text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg font-medium">Add All</button>
+</div>
+</div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 right-4 z-50 px-4 py-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg flex items-center gap-2" style="display:none">
+<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+<span id="toastMsg">Success</span>
+</div>
+
+<script>
+let categories = [
+{id: 1, name: 'Loan', desc: 'Loan related transactions'},
+{id: 2, name: 'Investment', desc: 'Investment transactions'},
+{id: 3, name: 'Capital', desc: 'Capital transactions'},
+{id: 4, name: 'Refund', desc: 'Refund transactions'},
+{id: 5, name: 'Transport', desc: 'Transport costs'},
+{id: 6, name: 'Food & Tea', desc: 'Food and refreshments'},
+{id: 7, name: 'Utility Bills', desc: 'Utility payments'},
+{id: 8, name: 'Maintenance', desc: 'Maintenance costs'},
+{id: 9, name: 'Office Supplies', desc: 'Office supplies'},
+{id: 10, name: 'Rent', desc: 'Rent payments'},
+{id: 11, name: 'Other', desc: 'Other transactions'}
+];
+
+let subCategories = [
+{id: 1, catId: 1, name: 'Bank Loan Received', type: 'receive'},
+{id: 2, catId: 1, name: 'Personal Loan Received', type: 'receive'},
+{id: 3, catId: 1, name: 'Loan Repayment', type: 'payment'},
+{id: 4, catId: 1, name: 'Interest Payment', type: 'payment'},
+{id: 5, catId: 2, name: 'Partner Investment', type: 'receive'},
+{id: 6, catId: 2, name: 'Investment Withdrawal', type: 'payment'},
+{id: 7, catId: 3, name: 'Owner Capital Added', type: 'receive'},
+{id: 8, catId: 3, name: 'Capital Withdrawal', type: 'payment'},
+{id: 9, catId: 4, name: 'Supplier Refund', type: 'receive'},
+{id: 10, catId: 4, name: 'Customer Refund Given', type: 'payment'},
+{id: 11, catId: 5, name: 'Fuel Cost', type: 'payment'},
+{id: 12, catId: 5, name: 'Taxi/Rickshaw', type: 'payment'},
+{id: 13, catId: 5, name: 'Courier Charge', type: 'payment'},
+{id: 14, catId: 6, name: 'Tea & Snacks', type: 'payment'},
+{id: 15, catId: 6, name: 'Staff Meal', type: 'payment'},
+{id: 16, catId: 7, name: 'Electricity Bill', type: 'payment'},
+{id: 17, catId: 7, name: 'Internet Bill', type: 'payment'},
+{id: 18, catId: 7, name: 'Water Bill', type: 'payment'},
+{id: 19, catId: 8, name: 'AC Repair', type: 'payment'},
+{id: 20, catId: 8, name: 'Cleaning Service', type: 'payment'},
+{id: 21, catId: 9, name: 'Stationery', type: 'payment'},
+{id: 22, catId: 9, name: 'Printing', type: 'payment'},
+{id: 23, catId: 10, name: 'Shop Rent', type: 'payment'},
+{id: 24, catId: 10, name: 'Rent Received', type: 'receive'},
+{id: 25, catId: 11, name: 'Miscellaneous Income', type: 'receive'},
+{id: 26, catId: 11, name: 'Bank Charges', type: 'payment'},
+];
+
+let selectedCategoryId = null;
+let editCategoryId = null;
+let editSubCategoryId = null;
+let deleteType = null;
+let deleteId = null;
+
+function showToast(msg) {
+const t = document.getElementById('toast');
+document.getElementById('toastMsg').textContent = msg;
+t.style.display = 'flex';
+setTimeout(() => t.style.display = 'none', 3000);
+}
+
+function updateSummary() {
+document.getElementById('totalCategories').textContent = categories.length;
+document.getElementById('totalReceive').textContent = subCategories.filter(s => s.type === 'receive').length;
+document.getElementById('totalPayment').textContent = subCategories.filter(s => s.type === 'payment').length;
+}
+
+function renderCategories() {
+const list = document.getElementById('categoryList');
+if (!categories.length) {
+list.innerHTML = '<div class="p-4 text-center text-sm text-slate-400">No categories yet</div>';
+return;
+}
+list.innerHTML = categories.map((c, i) => {
+const subCount = subCategories.filter(s => s.catId === c.id).length;
+const isSelected = selectedCategoryId === c.id;
+const rowBg = i % 2 === 0 ? 'bg-white' : 'bg-slate-50/70';
+return `<div class="px-4 py-3 ${rowBg} ${isSelected ? 'ring-2 ring-inset ring-emerald-500 bg-emerald-50' : 'hover:bg-slate-50'} cursor-pointer" onclick="selectCategory(${c.id})">
+<div class="flex items-center justify-between">
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium text-slate-800 truncate">${c.name}</p>
+<p class="text-xs text-slate-400">${subCount} sub-categories</p>
+</div>
+<div class="flex items-center gap-1 ml-2">
+<button onclick="event.stopPropagation();editCategory(${c.id})" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Edit">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+</button>
+<button onclick="event.stopPropagation();deleteCategory(${c.id})" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded" title="Delete">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+</button>
+</div>
+</div>
+</div>`;
+}).join('');
+}
+
+function selectCategory(id) {
+selectedCategoryId = id;
+const cat = categories.find(c => c.id === id);
+document.getElementById('selectedCategoryName').textContent = cat ? cat.name : '';
+document.getElementById('btnAddSub').disabled = false;
+document.getElementById('btnBulkSub').disabled = false;
+renderCategories();
+renderSubCategories();
+}
+
+function renderSubCategories() {
+const content = document.getElementById('subCategoryContent');
+if (!selectedCategoryId) {
+content.innerHTML = `<div class="p-8 text-center">
+<div class="w-12 h-12 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-3">
+<svg class="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+</div>
+<p class="text-slate-500 text-sm">Select a category from the left</p>
+</div>`;
+return;
+}
+
+const subs = subCategories.filter(s => s.catId === selectedCategoryId);
+if (!subs.length) {
+content.innerHTML = `<div class="p-8 text-center">
+<p class="text-slate-400 text-sm">No sub-categories yet</p>
+<button onclick="openSubCategoryModal()" class="mt-2 text-sm text-emerald-600 hover:text-emerald-700 font-medium">+ Add first sub-category</button>
+</div>`;
+return;
+}
+
+content.innerHTML = `<table class="w-full">
+<thead class="bg-slate-50 border-b border-slate-200">
+<tr class="text-[10px] text-slate-500 uppercase tracking-wider">
+<th class="px-4 py-2 text-left font-semibold">Name</th>
+<th class="px-4 py-2 text-center font-semibold">Type</th>
+<th class="px-4 py-2 text-right font-semibold">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+${subs.map((s, i) => {
+const rowBg = i % 2 === 0 ? 'bg-white' : 'bg-slate-50/70';
+const typeClass = s.type === 'receive' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600';
+const typeText = s.type === 'receive' ? '↓ Receive' : '↑ Payment';
+return `<tr class="${rowBg} hover:bg-emerald-50/50">
+<td class="px-4 py-2.5 text-sm text-slate-800">${s.name}</td>
+<td class="px-4 py-2.5 text-center"><span class="inline-flex px-2 py-0.5 ${typeClass} rounded text-[10px] font-semibold">${typeText}</span></td>
+<td class="px-4 py-2.5">
+<div class="flex justify-end gap-1">
+<button onclick="editSubCategory(${s.id})" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Edit">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+</button>
+<button onclick="deleteSubCategory(${s.id})" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded" title="Delete">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+</button>
+</div>
+</td>
+</tr>`;
+}).join('')}
+</tbody>
+</table>`;
+}
+
+// Category Modal
+function openCategoryModal() {
+editCategoryId = null;
+document.getElementById('categoryModalTitle').textContent = 'Add Category';
+document.getElementById('catName').value = '';
+document.getElementById('catDesc').value = '';
+document.getElementById('categoryModal').style.display = 'flex';
+}
+
+function closeCategoryModal() {
+document.getElementById('categoryModal').style.display = 'none';
+}
+
+function editCategory(id) {
+const cat = categories.find(c => c.id === id);
+if (!cat) return;
+editCategoryId = id;
+document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+document.getElementById('catName').value = cat.name;
+document.getElementById('catDesc').value = cat.desc || '';
+document.getElementById('categoryModal').style.display = 'flex';
+}
+
+function saveCategory() {
+const name = document.getElementById('catName').value.trim();
+const desc = document.getElementById('catDesc').value.trim();
+if (!name) { showToast('Please enter category name'); return; }
+
+if (editCategoryId) {
+const cat = categories.find(c => c.id === editCategoryId);
+if (cat) { cat.name = name; cat.desc = desc; }
+showToast('Category updated');
+} else {
+categories.push({ id: Date.now(), name, desc });
+showToast('Category added');
+}
+closeCategoryModal();
+renderCategories();
+updateSummary();
+}
+
+function deleteCategory(id) {
+deleteType = 'category';
+deleteId = id;
+const cat = categories.find(c => c.id === id);
+document.getElementById('deleteTitle').textContent = 'Delete Category?';
+document.getElementById('deleteMsg').textContent = `"${cat?.name}" and all its sub-categories will be deleted.`;
+document.getElementById('deleteModal').style.display = 'flex';
+}
+
+// Sub-Category Modal
+function openSubCategoryModal() {
+if (!selectedCategoryId) return;
+editSubCategoryId = null;
+document.getElementById('subCategoryModalTitle').textContent = 'Add Sub-Category';
+document.getElementById('subName').value = '';
+document.querySelector('input[name="subType"][value="payment"]').checked = true;
+document.getElementById('subCategoryModal').style.display = 'flex';
+}
+
+function closeSubCategoryModal() {
+document.getElementById('subCategoryModal').style.display = 'none';
+}
+
+function editSubCategory(id) {
+const sub = subCategories.find(s => s.id === id);
+if (!sub) return;
+editSubCategoryId = id;
+document.getElementById('subCategoryModalTitle').textContent = 'Edit Sub-Category';
+document.getElementById('subName').value = sub.name;
+document.querySelector(`input[name="subType"][value="${sub.type}"]`).checked = true;
+document.getElementById('subCategoryModal').style.display = 'flex';
+}
+
+function saveSubCategory() {
+const name = document.getElementById('subName').value.trim();
+const type = document.querySelector('input[name="subType"]:checked').value;
+if (!name) { showToast('Please enter sub-category name'); return; }
+
+if (editSubCategoryId) {
+const sub = subCategories.find(s => s.id === editSubCategoryId);
+if (sub) { sub.name = name; sub.type = type; }
+showToast('Sub-category updated');
+} else {
+subCategories.push({ id: Date.now(), catId: selectedCategoryId, name, type });
+showToast('Sub-category added');
+}
+closeSubCategoryModal();
+renderCategories();
+renderSubCategories();
+updateSummary();
+}
+
+function deleteSubCategory(id) {
+deleteType = 'subCategory';
+deleteId = id;
+const sub = subCategories.find(s => s.id === id);
+document.getElementById('deleteTitle').textContent = 'Delete Sub-Category?';
+document.getElementById('deleteMsg').textContent = `"${sub?.name}" will be permanently deleted.`;
+document.getElementById('deleteModal').style.display = 'flex';
+}
+
+function closeDeleteModal() {
+document.getElementById('deleteModal').style.display = 'none';
+}
+
+function confirmDelete() {
+if (deleteType === 'category') {
+subCategories = subCategories.filter(s => s.catId !== deleteId);
+categories = categories.filter(c => c.id !== deleteId);
+if (selectedCategoryId === deleteId) {
+selectedCategoryId = null;
+document.getElementById('selectedCategoryName').textContent = 'Select a category to view';
+document.getElementById('btnAddSub').disabled = true;
+}
+showToast('Category deleted');
+} else if (deleteType === 'subCategory') {
+subCategories = subCategories.filter(s => s.id !== deleteId);
+showToast('Sub-category deleted');
+}
+closeDeleteModal();
+renderCategories();
+renderSubCategories();
+updateSummary();
+}
+
+// Bulk Category Modal
+function openBulkCategoryModal() {
+document.getElementById('bulkCatNames').value = '';
+document.getElementById('bulkCategoryModal').style.display = 'flex';
+}
+
+function closeBulkCategoryModal() {
+document.getElementById('bulkCategoryModal').style.display = 'none';
+}
+
+function saveBulkCategories() {
+const text = document.getElementById('bulkCatNames').value.trim();
+if (!text) { showToast('Please enter category names'); return; }
+
+const names = text.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+const existingNames = categories.map(c => c.name.toLowerCase());
+let added = 0;
+
+names.forEach(name => {
+if (!existingNames.includes(name.toLowerCase())) {
+categories.push({ id: Date.now() + added, name, desc: '' });
+existingNames.push(name.toLowerCase());
+added++;
+}
+});
+
+closeBulkCategoryModal();
+renderCategories();
+updateSummary();
+showToast(added + ' categories added');
+}
+
+// Bulk Sub-Category Modal
+function openBulkSubCategoryModal() {
+if (!selectedCategoryId) return;
+const cat = categories.find(c => c.id === selectedCategoryId);
+document.getElementById('bulkSubCatName').textContent = 'Category: ' + (cat?.name || '');
+document.getElementById('bulkSubNames').value = '';
+document.querySelector('input[name="bulkSubType"][value="payment"]').checked = true;
+document.getElementById('bulkSubCategoryModal').style.display = 'flex';
+}
+
+function closeBulkSubCategoryModal() {
+document.getElementById('bulkSubCategoryModal').style.display = 'none';
+}
+
+function saveBulkSubCategories() {
+const text = document.getElementById('bulkSubNames').value.trim();
+if (!text) { showToast('Please enter sub-category names'); return; }
+
+const type = document.querySelector('input[name="bulkSubType"]:checked').value;
+const names = text.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+const existingSubs = subCategories.filter(s => s.catId === selectedCategoryId).map(s => s.name.toLowerCase());
+let added = 0;
+
+names.forEach(name => {
+if (!existingSubs.includes(name.toLowerCase())) {
+subCategories.push({ id: Date.now() + added, catId: selectedCategoryId, name, type });
+existingSubs.push(name.toLowerCase());
+added++;
+}
+});
+
+closeBulkSubCategoryModal();
+renderCategories();
+renderSubCategories();
+updateSummary();
+showToast(added + ' sub-categories added');
+}
+
+// Init
+renderCategories();
+updateSummary();
+</script>
+</body>
+</html>
